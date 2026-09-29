@@ -16,7 +16,7 @@
 .topic-number,.topic-note-number { flex-shrink:0;color:var(--darkgray);font-family:var(--codeFont);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;white-space:nowrap; }
 .topic-children { margin:0 0 20px 13px;padding-left:10px;border-left:1px solid var(--lightgray); }
 .topic-children[hidden] { display:none; }
-.topic-children a { display:grid;grid-template-columns:41px minmax(0,1fr);gap:8px;min-height:40px;padding:9px 6px;color:var(--darkgray);font-size:13px;font-weight:400;line-height:1.65;word-break:normal;overflow-wrap:break-word; }
+.topic-children a { display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px;min-height:40px;padding:9px 6px;color:var(--darkgray);font-size:13px;font-weight:400;line-height:1.65;word-break:normal;overflow-wrap:break-word; }
 .topic-children a[aria-current="page"] { background:var(--highlight);color:var(--dark);box-shadow:-2px 0 var(--dark);font-weight:600; }
 .topic-children a:hover,.explorer-shortcuts a:hover { color:var(--dark);background:var(--highlight); }
 .topic-browser :is(a,button):focus-visible { outline:2px solid var(--dark);outline-offset:2px; }
