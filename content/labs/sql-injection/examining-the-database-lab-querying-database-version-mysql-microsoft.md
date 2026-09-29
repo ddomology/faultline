@@ -97,6 +97,10 @@ draft: false
 
 `@@version`은 MySQL에서는 서버의 `version` 시스템 변수이고, SQL Server에서는 버전 정보를 반환하는 내장 함수다. 앞서 확인한 두 열의 형태를 유지하면서 첫 번째 열에 이 값을 넣었다.
 
-**관찰:** 사용자가 이 단계 이후 랩의 **Solved** 상태를 확인했다. 응답에 표시된 정확한 제품명과 버전 문자열은 별도로 전달받지 못했으므로 기록하지 않는다.
+**관찰:** 화면에 `8.0.42-0ubuntu0.20.04.1`이 표시됐다. 사용자가 이 요청 이후 랩의 **Solved** 상태를 확인했다.
+
+![@@version 조회 결과](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-mysql-microsoft/03-version-output.png)
+
+**해석:** 출력된 문자열은 MySQL 8.0.42의 Ubuntu 빌드 버전을 가리킨다.
 
 **판단:** `ORDER BY`로 열 수를 확인하고, `probe`로 문자열 출력 위치를 검증한 뒤, 같은 위치에 `@@version`을 넣는 순서로 목표에 도달했다.
