@@ -1,0 +1,6 @@
+_quartz/
+node_modules/
+public/
+**/.obsidian/
+**/.trash/
+.DS_Store
