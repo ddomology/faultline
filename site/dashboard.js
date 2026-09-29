@@ -58,7 +58,9 @@
     try { return localStorage.getItem(draftKey(lab)); }
     catch { storageAvailable = false; return null; }
   }
-  function hasDraft(lab) { return getDraft(lab) !== null; }
+  // Published notes supersede local drafts in the list and draft filter.
+  // Keep the browser copy intact so unpublished edits are not lost.
+  function hasDraft(lab) { return !lab.noteUrl && getDraft(lab) !== null; }
   function notify(message) {
     clearTimeout(toastTimer);
     $('toast').textContent = message;
