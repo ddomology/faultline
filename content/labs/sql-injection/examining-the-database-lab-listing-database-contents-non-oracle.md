@@ -12,6 +12,15 @@ draft: true
 
 공개 풀이를 참고하지 않고, 실습에서 확인한 요청과 응답을 순서대로 기록한다. 아직 Solved는 확인하지 않았다.
 
+## 문제 조건
+
+공식 문제 설명에 따르면 상품 카테고리 필터에 SQL 주입 취약점이 있고, 조회 결과가 페이지 응답에 표시된다. 따라서 `UNION`으로 다른 테이블의 데이터를 가져올 수 있다.
+
+애플리케이션에는 로그인 기능이 있다. 데이터베이스에는 사용자 이름과 비밀번호를 담은 테이블이 있으며, 그 **테이블 이름과 열 이름을 찾아** 사용자들의 계정 정보를 조회해야 한다. **완료 조건은 `administrator` 계정으로 로그인하는 것**이다.
+
+출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-non-oracle)
+
+
 ## 1. 주입 가능성 확인
 
 **실행:**
