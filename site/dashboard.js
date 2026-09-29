@@ -69,8 +69,8 @@
         const diff = a.categoryTitle.localeCompare(b.categoryTitle);
         if (diff) return diff;
       }
-      if (state.sort === 'title') return a.title.localeCompare(b.title, 'en');
-      return (a.order ?? 99999) - (b.order ?? 99999) || a.title.localeCompare(b.title, 'en');
+      if (state.sort === 'title') return a.title.localeCompare(b.title, 'ko');
+      return (a.order ?? 99999) - (b.order ?? 99999) || a.title.localeCompare(b.title, 'ko');
     });
   }
   function categoryOptions() {
@@ -140,7 +140,13 @@
         footer.append(source);
       }
     } else footer.append(node('span', '', '기록 없음'), node('span', 'note-source', '원본 실습 열기 ↗'));
-    content.append(meta, heading, footer);
+    content.append(meta, heading);
+    if (entry.originalTitle && entry.originalTitle !== entry.title) {
+      const subtitle = node('p', 'note-subtitle', entry.originalTitle);
+      subtitle.lang = 'en';
+      content.append(subtitle);
+    }
+    content.append(footer);
     row.append(number, content, bookmarkButton(entry));
     return row;
   }
@@ -223,13 +229,14 @@
         entry.categoryTitle ||= '일반 노트'; entry.category ||= 'notes';
         entry.updatedAt ||= entry.noteUpdatedAt || '';
         const extras = [];
-        if (/oracle/i.test(entry.title)) extras.push('오라클');
-        if (/mysql/i.test(entry.title)) extras.push('마이에스큐엘');
-        if (/microsoft/i.test(entry.title)) extras.push('마이크로소프트');
-        if (/login/i.test(entry.title)) extras.push('로그인');
-        if (/bypass/i.test(entry.title)) extras.push('우회');
-        if (/hidden/i.test(entry.title)) extras.push('숨김 숨겨진');
-        entry.search = normalize([entry.number, entry.title, entry.categoryTitle, entry.category, entry.difficulty, levelNames[entry.difficulty], entry.searchText || entry.noteSearchText, ...(entry.tags || []), ...(catalog.aliases?.[entry.category] || []), ...extras].join(' '));
+        const titleTerms = `${entry.title} ${entry.originalTitle || ''}`;
+        if (/oracle/i.test(titleTerms)) extras.push('오라클');
+        if (/mysql/i.test(titleTerms)) extras.push('마이에스큐엘');
+        if (/microsoft/i.test(titleTerms)) extras.push('마이크로소프트');
+        if (/login/i.test(titleTerms)) extras.push('로그인');
+        if (/bypass/i.test(titleTerms)) extras.push('우회');
+        if (/hidden/i.test(titleTerms)) extras.push('숨김 숨겨진');
+        entry.search = normalize([entry.number, titleTerms, entry.categoryTitle, entry.category, entry.difficulty, levelNames[entry.difficulty], entry.searchText || entry.noteSearchText, ...(entry.tags || []), ...(catalog.aliases?.[entry.category] || []), ...extras].join(' '));
       }
       bind(); render(); root.dataset.ready = 'true';
     } catch (error) {

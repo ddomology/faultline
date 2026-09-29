@@ -7,6 +7,15 @@ const require = createRequire(resolve('_quartz/package.json'));
 const matter = require('gray-matter');
 const root = resolve('_quartz/content');
 const catalog = JSON.parse(readFileSync('data/labs.json', 'utf8'));
+const titles = JSON.parse(readFileSync('site/lab-titles.json', 'utf8'));
+const normalizeUrl = value => {
+  try {
+    const url = new URL(String(value || ''));
+    return url.origin + url.pathname.replace(/\/+$/, '');
+  } catch { return ''; }
+};
+const byUrl = new Map(catalog.labs.map(lab => [normalizeUrl(lab.url), lab]));
+const byPath = new Map(catalog.labs.map(lab => [lab.notePath, lab]));
 const notes = [];
 const legacyPages = new Set(['index.md', 'notes.md', 'guide.md']);
 
@@ -45,18 +54,26 @@ function walk(dir) {
     const notePath = relative(root, file).replaceAll('\\', '/');
     if (legacyPages.has(notePath)) continue;
     const { data, content } = matter(readFileSync(file, 'utf8'));
-    // Only the copied build input is normalized. The source note stays intact.
+    const lab = byUrl.get(normalizeUrl(data.lab_url)) || byPath.get(notePath);
+    const originalTitle = lab?.title || String(data.english_title || '');
+    const title = String((lab && titles[lab.id]) || data.title || content.match(/^#\s+(.+)$/m)?.[1] || entry.name.slice(0, -3));
+    // Localize the copied build input, preserving authored note bodies and paths.
     const body = content.replace(/^\s*# ([^\r\n]+)(?:\r?\n|$)/, (heading, text) =>
-      data.title && text.trim() === String(data.title).trim() ? '' : heading);
-    if (body !== content) writeFileSync(file, matter.stringify(body, data));
-    const title = String(data.title || content.match(/^#\s+(.+)$/m)?.[1] || entry.name.slice(0, -3));
+      [data.title, originalTitle, title].some(value => value && text.trim() === String(value).trim()) ? '' : heading);
+    const localized = lab && typeof titles[lab.id] === 'string';
+    if (body !== content || localized) {
+      writeFileSync(file, matter.stringify(body, {
+        ...data,
+        ...(localized ? { title, english_title: originalTitle } : {}),
+      }));
+    }
     const tags = (Array.isArray(data.tags) ? data.tags : typeof data.tags === 'string' ? [data.tags] : []).map(String);
     const labUrl = String(data.lab_url || '');
     const noteKind = String(data.note_kind || (labUrl ? 'solution' : 'note'));
     if (!['problem', 'solution', 'note'].includes(noteKind)) throw new Error(`Invalid note_kind in ${notePath}: ${noteKind}`);
     if (noteKind === 'problem' && !labUrl) throw new Error(`Problem page is missing lab_url: ${notePath}`);
     notes.push({
-      notePath, title, tags,
+      notePath, title, originalTitle, tags,
       labUrl, noteKind,
       category: String(data.category || data.topic || ''),
       categoryTitle: String(data.category_title || ''),

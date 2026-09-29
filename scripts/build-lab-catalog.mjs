@@ -3,6 +3,8 @@ import { resolve, join, dirname, posix } from 'node:path';
 
 const catalog = JSON.parse(readFileSync('data/labs.json', 'utf8'));
 const aliases = JSON.parse(readFileSync('site/topic-aliases.json', 'utf8'));
+const titles = JSON.parse(readFileSync('site/lab-titles.json', 'utf8'));
+const explorerTitles = JSON.parse(readFileSync('site/explorer-titles.json', 'utf8'));
 const sourceNotes = JSON.parse(readFileSync('_quartz/note-source-index.json', 'utf8'));
 const output = resolve('_quartz/public');
 const index = JSON.parse(readFileSync(join(output, 'static/contentIndex.json'), 'utf8'));
@@ -20,6 +22,8 @@ for (const lab of catalog.labs) {
   if (new URL(lab.url).origin !== 'https://portswigger.net') throw new Error('Unexpected lab URL: ' + lab.url);
   if (lab.notePath.startsWith('/') || lab.notePath.split('/').includes('..')) throw new Error('Invalid note path');
   ids.add(lab.id); urls.add(lab.url);
+  lab.originalTitle = lab.title;
+  lab.title = titles[lab.id] || lab.title;
   lab.noteUrl = null;
   lab.noteStatus = null;
   lab.noteExists = false;
@@ -44,10 +48,11 @@ catalog.notes = sourceNotes.map(source => {
   const noteUrl = './' + slug.split('/').map(encodeURIComponent).join('/') + '.html';
   const category = lab?.category || source.category || 'notes';
   const categoryTitle = lab?.categoryTitle || source.categoryTitle || byCategory.get(category)?.title || (category === 'notes' ? '개념 · 메모' : category);
-  const searchText = [source.title, lab?.title, category, categoryTitle, ...(aliases[category] || []), ...source.tags, source.searchText].filter(Boolean).join(' ').normalize('NFKC');
+  const originalTitle = source.originalTitle || lab?.originalTitle || '';
+  const searchText = [source.title, originalTitle, lab?.title, lab && explorerTitles[lab.id], category, categoryTitle, ...(aliases[category] || []), ...source.tags, source.searchText].filter(Boolean).join(' ').normalize('NFKC');
   const note = {
     id: lab?.id || `note:${source.notePath}`,
-    title: source.title, noteUrl, notePath: source.notePath,
+    title: source.title, originalTitle, noteUrl, notePath: source.notePath,
     noteKind: source.noteKind || (lab ? 'solution' : 'note'),
     category, categoryTitle,
     difficulty: source.difficulty || lab?.difficulty || '',
@@ -55,6 +60,10 @@ catalog.notes = sourceNotes.map(source => {
     searchText, tags: source.tags,
     ...(lab ? { labId: lab.id } : {}),
   };
+  // Quartz reader search indexes title and content; include the English subtitle too.
+  if (originalTitle && !index[slug].content.startsWith(originalTitle + '\n')) {
+    index[slug].content = originalTitle + '\n' + index[slug].content;
+  }
   if (lab) {
     lab.notePath = source.notePath;
     lab.noteExists = true;
@@ -95,6 +104,7 @@ for (const note of catalog.notes) {
 }
 
 mkdirSync(join(output, '_dashboard'), { recursive: true });
+writeFileSync(join(output, 'static/contentIndex.json'), JSON.stringify(index));
 writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));
 writeFileSync(join(output, '_dashboard/notes.json'), JSON.stringify({ schemaVersion: 1, notes: catalog.notes, aliases }));
 

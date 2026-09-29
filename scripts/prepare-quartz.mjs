@@ -33,6 +33,7 @@ cpSync("site/quartz.layout.ts", "_quartz/quartz.layout.ts");
 cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");
 cpSync("site/LabExplorer.tsx", "_quartz/quartz/components/LabExplorer.tsx");
 cpSync("site/TopicExplorer.tsx", "_quartz/quartz/components/TopicExplorer.tsx");
+cpSync("site/NoteTitle.tsx", "_quartz/quartz/components/NoteTitle.tsx");
 rmSync("_quartz/quartz/components/scripts/topic-explorer.inline.ts", { force: true });
 cpSync("site/topic-explorer.js", "_quartz/quartz/components/scripts/topic-explorer.inline.js");
 cpSync("site/topic-explorer.css", "_quartz/quartz/components/styles/topic-explorer.scss");

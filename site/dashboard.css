@@ -31,7 +31,9 @@
 .note-meta { display:flex;align-items:center;flex-wrap:wrap;gap:10px;color:var(--darkgray);font-size:12px; }
 .note-topic { font-weight:500; }
 .note-level { border-left:1px solid var(--lightgray);padding-left:10px; }
-.lab-explorer .note-title { margin:5px 0 8px;padding:0;border:0;font-size:16px;font-weight:600;line-height:1.6;letter-spacing:0;word-break:normal;overflow-wrap:break-word; }
+.lab-explorer .note-title { margin:5px 0 8px;padding:0;border:0;font-size:17px;font-weight:600;line-height:1.6;letter-spacing:0;word-break:keep-all;overflow-wrap:break-word; }
+.lab-explorer .note-title:has(+ .note-subtitle) { margin-bottom:4px; }
+.lab-explorer .note-subtitle { margin:0 0 12px;color:var(--gray);font-size:13px;font-weight:400;line-height:1.65;word-break:normal;overflow-wrap:break-word; }
 .lab-explorer .note-title a { color:var(--dark);background:transparent;text-decoration:none; }
 .lab-explorer .note-title a:hover { text-decoration:underline;text-underline-offset:3px; }
 .note-row-footer { display:flex;align-items:center;flex-wrap:wrap;gap:10px;color:var(--darkgray);font-size:12px; }

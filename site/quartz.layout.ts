@@ -5,6 +5,7 @@ import { Root } from "hast"
 import NotebookNav from "./quartz/components/NotebookNav"
 import LabExplorer from "./quartz/components/LabExplorer"
 import TopicExplorer from "./quartz/components/TopicExplorer"
+import NoteTitle from "./quartz/components/NoteTitle"
 
 const isHome = (page: QuartzComponentProps) => page.fileData.slug === "index"
 const onReader = (component: QuartzComponent) => Component.ConditionalRender({
@@ -31,7 +32,7 @@ export const defaultContentPageLayout: PageLayout = {
     NotebookNav(),
     // Existing notes already have their own Markdown h1. Render one title only.
     Component.ConditionalRender({
-      component: Component.ArticleTitle(),
+      component: NoteTitle(),
       condition: (page) => !isHome(page) && !(page.tree as Root).children.some((node) => node.type === "element" && node.tagName === "h1"),
     }),
     Component.ConditionalRender({ component: LabExplorer(), condition: isHome }),
