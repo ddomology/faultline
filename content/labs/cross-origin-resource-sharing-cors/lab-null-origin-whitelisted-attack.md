@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-사이트의 CORS 설정이 `null` origin을 신뢰한다. 자기 계정은 `wiener:peter`다.
+사이트의 CORS 설정은 `null` origin을 신뢰한다. 자기 계정은 `wiener:peter`이고 공격 JavaScript는 exploit server에 올린다. 일반적인 웹 출처와 달리 `null`은 브라우저의 특정 격리 문맥에서 나타날 수 있는 출처 값이다.
 
 **완료 조건**
 
-CORS를 이용해 관리자 API 키를 얻는 JavaScript를 exploit server에 올리고 키를 제출한다.
+관리자의 API 키를 CORS를 통해 읽어 확보하고 실습에 제출한다. `Access-Control-Allow-Origin: null` 같은 응답을 보는 것과 관리자 브라우저에서 키를 읽는 것은 별도 검증 단계다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-특정 출처 값에 대한 신뢰가 관리자 정보 접근으로 이어지는지 다룬다.
+서버가 문자열 `null`을 허용하면 그 출처에서 실행되는 스크립트가 보호된 응답을 읽을 여지가 생긴다. 하지만 브라우저가 실제 요청에 어떤 `Origin`을 붙이는지, 인증된 요청의 응답 읽기를 허용하는지 확인해야 한다. 단순한 헤더 재전송 실험만으로 피해자 브라우저의 동작을 증명할 수 없다.
+
+자기 계정에서 API 키 요청과 CORS 응답 헤더를 확인한다. 브라우저에서 `null` origin이 되는 문맥을 시험하고 exploit server에서 요청·응답 읽기 여부를 관찰한다. 관리자 계정의 값을 확보한 뒤 제출까지 확인한다. 아직 필요한 문맥이나 성공 결과는 기록되지 않았다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/cors/lab-null-origin-whitelisted-attack)
 
