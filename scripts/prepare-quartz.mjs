@@ -38,6 +38,7 @@ cpSync("site/topic-explorer.js", "_quartz/quartz/components/scripts/topic-explor
 cpSync("site/topic-explorer.css", "_quartz/quartz/components/styles/topic-explorer.scss");
 mkdirSync("_quartz/quartz/components/data", { recursive: true });
 cpSync("data/labs.json", "_quartz/quartz/components/data/topic-catalog.json");
+cpSync("site/explorer-titles.json", "_quartz/quartz/components/data/explorer-titles.json");
 cpSync("site/topic-aliases.json", "_quartz/quartz/components/data/topic-aliases.json");
 rmSync("_quartz/quartz/components/scripts/lab-explorer.inline.ts", { force: true });
 cpSync("site/dashboard.js", "_quartz/quartz/components/scripts/lab-explorer.inline.js");

@@ -1,6 +1,7 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { pathToRoot } from "../util/path"
 import catalog from "./data/topic-catalog.json"
+import explorerTitles from "./data/explorer-titles.json"
 import style from "./styles/topic-explorer.scss"
 // @ts-ignore
 import script from "./scripts/topic-explorer.inline"
@@ -11,7 +12,8 @@ const normalizeUrl = (value: unknown) => {
 const byUrl = new Map(catalog.labs.map((lab) => [normalizeUrl(lab.url), lab]))
 const bySlug = new Map(catalog.labs.map((lab) => [lab.notePath.replace(/\.md$/, ""), lab]))
 const pad = (value: number) => String(value).padStart(2, "0")
-type Note = { slug: string, path: string, title: string, order: number, number: string }
+const displayTitles: Record<string, string> = explorerTitles
+type Note = { slug: string, path: string, title: string, displayTitle: string, order: number, number: string }
 type Group = { id: string, title: string, number: string, labCount: number, notes: Note[] }
 
 export default (() => {
@@ -32,7 +34,8 @@ export default (() => {
       }
       const numbering = lab ? labNumbers.get(lab.id) : undefined
       const path = String(file.filePath || file.slug).replaceAll("\\", "/").replace(/^(?:.*\/)?content\//, "")
-      group.notes.push({ slug: file.slug, path, title: String(file.frontmatter?.title || lab?.title || file.slug.split("/").pop()), order: numbering?.order ?? Number.MAX_SAFE_INTEGER, number: numbering?.number || "" })
+      const title = String(file.frontmatter?.title || lab?.title || file.slug.split("/").pop())
+      group.notes.push({ slug: file.slug, path, title, displayTitle: (lab && displayTitles[lab.id]) || title, order: numbering?.order ?? Number.MAX_SAFE_INTEGER, number: numbering?.number || "" })
     }
     groups.filter(group => !group.number).sort((a,b) => a.id.localeCompare(b.id)).forEach((group,index) => { group.number = pad(catalog.categories.length + index + 1) })
     groups.forEach(group => {
@@ -60,7 +63,7 @@ export default (() => {
                   <a class="topic-name" href={`${root}/?view=all&topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><span>{group.title}</span></a>
                 </div>
                 <ul class="topic-children" id={`topic-${group.id}`} hidden={!expanded}>
-                  {group.notes.map(note => <li><a href={`${root}/${note.slug.split("/").map(encodeURIComponent).join("/")}.html`} aria-current={note.slug === fileData.slug ? "page" : undefined}><span class="topic-note-number">{note.number}</span><span>{note.title}</span></a></li>)}
+                  {group.notes.map(note => <li><a href={`${root}/${note.slug.split("/").map(encodeURIComponent).join("/")}.html`} title={note.title} aria-current={note.slug === fileData.slug ? "page" : undefined}><span class="topic-note-number">{note.number}</span><span>{note.displayTitle}</span></a></li>)}
                 </ul>
               </li>
             )})}
