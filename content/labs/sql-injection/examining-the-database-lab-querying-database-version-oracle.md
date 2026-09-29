@@ -206,6 +206,59 @@ ConvertTo-Json -InputObject $results -Depth 5 |
 
 ![뷰별 칼럼명과 데이터 타입을 results.json에 저장한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/02-column-names-and-data-types-json.png)
 
+### 5. 뷰별 조회 결과를 CSV로 저장한 시도
+
+앞서 저장한 `results.json`을 읽고 `viewName`별로 묶은 뒤, 각 그룹의 칼럼을 순회하는 PowerShell 코드를 실행했다. 응답 HTML에서 `is-table-longdescription` 테이블의 각 `<th>` 텍스트를 추출하고, 뷰별로 모아 CSV로 저장했다.
+
+**수집 및 저장 방식**
+
+1. `Parse-Table`에서 HTML 태그를 제거하고 엔티티를 디코딩한 뒤 공백을 정리했다. `<th>`가 없는 행은 건너뛰었다.
+2. 추출값은 `column_name` 속성으로 반환했으며, 이번 함수의 `data_type`은 빈 문자열로 두었다.
+3. 각 칼럼에서 얻은 문자열을 `$viewResults[$viewName]` 배열에 순서대로 이어 붙였다.
+4. CSV의 헤더는 뷰 이름으로 지정했다. 가장 긴 배열에 맞춰 행을 만들고, 값이 부족한 열은 빈 문자열로 채웠다.
+5. `Export-Csv -NoTypeInformation -Encoding UTF8`로 `C:\Users\NowKyeong\Downloads\ViewResults\results.csv`에 저장했다.
+
+**첨부 CSV에서 확인한 결과**
+
+- 확인 파일: 업로드된 `results(1).csv`.
+- [수집 CSV 원본 보기](https://github.com/ddomology/portswigger-lab-notes/blob/main/content/labs/sql-injection/data/lab-querying-database-version-oracle/view-results-20260930.csv)
+- 헤더를 제외한 데이터는 **81행·9열**이며, 비어 있지 않은 셀은 **432개**였다.
+
+| 뷰 이름(CSV 헤더) | 비어 있지 않은 값 수 | 고유 문자열 수 | 아래 9개 값의 반복 횟수 |
+| --- | ---: | ---: | ---: |
+| `ALL_FILE_GROUP_VERSIONS` | 72 | 9 | 8 |
+| `ALL_TYPE_VERSIONS` | 72 | 9 | 8 |
+| `GV_$VERSION` | 18 | 9 | 2 |
+| `PRODUCT_COMPONENT_VERSION` | 27 | 9 | 3 |
+| `SM_$VERSION` | 27 | 9 | 3 |
+| `USER_FILE_GROUP_VERSIONS` | 63 | 9 | 7 |
+| `USER_TYPE_VERSIONS` | 63 | 9 | 7 |
+| `V_$VERSION` | 9 | 9 | 1 |
+| `_ALL_FILE_GROUP_VERSIONS` | 81 | 9 | 9 |
+
+모든 열에 다음 9개 문자열이 같은 순서로 반복되어 있었다.
+
+```text
+COMMENTS
+CREATED
+CREATOR
+DEFAULT_DIRECTORY
+FILE_GROUP_NAME
+FILE_GROUP_OWNER
+VERSION_GUID
+VERSION_ID
+VERSION_NAME
+```
+
+**관찰 범위와 해석**
+
+CSV 저장 결과는 확보했지만, 이 파일에는 데이터베이스 버전 문자열이 보이지 않았다. 위 문자열은 **CSV에 실제로 저장된 값**이며, 각 뷰의 실제 칼럼 구조나 조회 성공을 검증한 목록으로 해석하지 않았다.
+
+제공한 코드에서는 여러 칼럼의 응답을 뷰별 한 배열에 이어 붙이므로, CSV에는 각 값이 어느 칼럼 요청에서 나왔는지 남지 않는다. 같은 행에 놓인 서로 다른 뷰의 값들도 동일한 데이터베이스 레코드를 뜻하지 않는다.
+
+원본 HTTP 응답과 요청별 오류 로그는 이번 첨부에 포함되지 않았다. 같은 문자열이 반복된 원인은 이 CSV만으로 확정하지 않았으며, 실습 해결 여부도 아직 확인하지 않았다.
+
+
 ## 해결 과정
 
 ## 배운 점
