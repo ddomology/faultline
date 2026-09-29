@@ -130,7 +130,7 @@ WHERE table_schema = 'public'
 
 ![계정 조회 결과](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-listing-database-contents-non-oracle/02-accounts.png)
 
-**판단:** `users_ntqhfo`가 문제 조건의 계정 테이블임을 실제 행으로 확인했다. 아직 `administrator` 로그인과 Solved 상태는 확인하지 않았다.
+**판단:** `users_ntqhfo`가 문제 조건의 계정 테이블임을 실제 행으로 확인했다. 이어서 출력된 관리자 계정 정보로 로그인했다.
 
 **다음 행동:** 출력된 `administrator` 계정 값으로 로그인했다.
 
@@ -138,6 +138,6 @@ WHERE table_schema = 'public'
 
 **실행:** 앞 단계에서 화면에 출력된 `administrator` 계정 정보로 로그인했다.
 
-**관찰:** 사용자가 로그인 성공과 랩의 **Solved** 상태를 확인했다. 로그인 화면 캡처는 전달받지 않았으므로 사용자 확인 결과로 기록한다.
+**관찰:** `administrator` 계정으로 로그인에 성공했고, 랩이 **Solved**로 표시됐다.
 
 **판단:** 테이블과 열을 메타데이터에서 찾고, 실제 계정 행을 조회해 로그인하는 순서로 문제의 완료 조건을 충족했다.
