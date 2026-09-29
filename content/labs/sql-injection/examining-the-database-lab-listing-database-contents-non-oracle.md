@@ -79,3 +79,22 @@ draft: true
 **판단:** 이 요청은 성공하지 않았다. 오류 본문이나 서버 로그가 없으므로 `ALL_VIEWS`의 존재 여부나 데이터베이스 종류를 이 결과 하나로 확정할 수 없다.
 
 **다음 행동:** 앞서 성공한 두 열의 `UNION` 형태를 유지하면서, 다른 메타데이터 조회가 가능한지 별도로 확인한다.
+
+## 5. `information_schema.tables`로 테이블 목록 확인
+
+**실행:**
+
+~~~sql
+' UNION SELECT table_schema, table_name FROM information_schema.tables --
+~~~
+
+**관찰:** 요청이 성공했고, 붙여넣은 출력에는 스키마·테이블 이름 쌍이 179개 있었다. `pg_catalog` 116개, `information_schema` 61개, `public` 2개였다. `public`에서 확인된 이름은 다음 둘이다.
+
+~~~text
+public  users_ntqhfo
+public  products
+~~~
+
+**판단:** `products`는 상품 카테고리 화면과 관련돼 보이고, `users_ntqhfo`는 문제 조건의 사용자 계정 테이블 후보이다. `pg_catalog`와 `public` 스키마 이름은 PostgreSQL 계열일 가능성을 높이지만, 지금 단계에서는 출력에 나타난 이름 자체만 확정한다.
+
+**다음 행동:** `public.users_ntqhfo`의 열 이름과 자료형을 `information_schema.columns`에서 확인한다. 계정 정보가 실제로 담겼는지는 그 결과를 보고 판단한다.
