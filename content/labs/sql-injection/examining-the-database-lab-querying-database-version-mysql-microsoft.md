@@ -1,4 +1,4 @@
----
+---https://github.com/ddomology/portswigger-lab-notes
 title: "SQL injection attack, querying the database type and version on MySQL and Microsoft"
 tags:
   - portswigger
