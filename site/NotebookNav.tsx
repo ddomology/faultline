@@ -11,12 +11,9 @@ export default (() => {
       <>
         <nav class="notebook-nav" aria-label="기본 탐색">
           <a class="notebook-brand" href={home} aria-label="PortSwigger 풀이 노트 홈">
-            <span class="notebook-brand-mark" aria-hidden="true">p<span>.</span></span>
-            <span class="notebook-brand-text"><strong>PortSwigger</strong><span>LAB NOTES</span></span>
+            PortSwigger <span aria-hidden="true">/</span> Notes
           </a>
           <div class="notebook-nav-actions">
-            {!isHome && <a class="notebook-nav-link" href={home}>풀이 찾기</a>}
-            {!isHome && <a class="notebook-nav-link" href={`${home}?view=all`}>전체 실습</a>}
             <a class="notebook-github" href="https://github.com/ddomology/portswigger-lab-notes" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
             <span class="notebook-theme"><ThemeToggle {...props} /></span>
           </div>

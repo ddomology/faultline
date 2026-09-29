@@ -24,7 +24,7 @@ export const sharedPageComponents: SharedLayout = {
   }),
 }
 
-const left = [onReader(Component.Search()), onReader(TopicExplorer())]
+const left = [onReader(Component.Search()), TopicExplorer()]
 
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [

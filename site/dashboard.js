@@ -32,7 +32,7 @@
       view: ['notes', 'all', 'saved'].includes(view) ? view : 'notes',
       query: params.get('q') || '', category: params.get('topic') || 'all',
       difficulty: Object.hasOwn(levels, params.get('level')) ? params.get('level') : 'all',
-      sort: ['recent', 'title', 'difficulty', 'topic'].includes(sort) ? sort : 'recent',
+      sort: ['number', 'recent', 'title', 'difficulty', 'topic'].includes(sort) ? sort : 'number',
     };
   }
   function syncUrl() {
@@ -41,7 +41,7 @@
     if (state.query) params.set('q', state.query);
     if (state.category !== 'all') params.set('topic', state.category);
     if (state.difficulty !== 'all') params.set('level', state.difficulty);
-    if (state.sort !== 'recent') params.set('sort', state.sort);
+    if (state.sort !== 'number') params.set('sort', state.sort);
     const next = `${location.pathname}${params.size ? '?' + params.toString() : ''}`;
     if (location.pathname + location.search !== next) history.replaceState(null, '', next);
   }
@@ -55,6 +55,7 @@
       (state.difficulty === 'all' || state.difficulty === entry.difficulty) &&
       tokens.every((token) => entry.search.includes(token))
     ).sort((a, b) => {
+      if (state.sort === 'number') return String(a.number || '').localeCompare(String(b.number || ''), 'en', { numeric: true });
       if (state.sort === 'recent') {
         const diff = String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
         if (diff) return diff;
@@ -86,7 +87,7 @@
     const all = node('option', '', '모든 주제'); all.value = 'all';
     $('category').replaceChildren(all);
     for (const [id, group] of groups) {
-      const option = node('option', '', `${group.title} (${group.count})`);
+      const option = node('option', '', `${catalog.categories.find(item => item.id === id)?.number || ''} ${group.title} (${group.count})`.trim());
       option.value = id; $('category').append(option);
     }
     $('category').value = state.category;
@@ -115,7 +116,8 @@
   function renderEntry(entry) {
     const row = node('article', `note-row${entry.noteUrl ? ' has-note' : ''}`);
     row.dataset.entryId = entry.id;
-    const icon = node('span', 'note-icon', entry.noteUrl ? '↳' : '○'); icon.setAttribute('aria-hidden', 'true');
+    const number = node('span', 'note-number', entry.number || '—');
+    number.setAttribute('aria-label', `노트 번호 ${entry.number || ''}`);
     const content = node('div', 'note-row-content');
     const meta = node('div', 'note-meta');
     meta.append(node('span', 'note-topic', entry.categoryTitle));
@@ -129,7 +131,7 @@
     heading.append(link);
     const footer = node('div', 'note-row-footer');
     if (entry.noteUrl) {
-      footer.append(node('span', 'note-available', entry.noteKind === 'problem' ? '문제 읽기' : entry.noteKind === 'note' ? '노트 읽기' : '풀이 읽기'));
+      if (state.view !== 'notes') footer.append(node('span', 'note-available', entry.noteKind === 'problem' ? '문제 읽기' : entry.noteKind === 'note' ? '노트 읽기' : '풀이 읽기'));
       const formatted = dateLabel(entry.updatedAt);
       if (formatted) { const time = node('time', '', `${formatted} 수정`); time.dateTime = entry.updatedAt; footer.append(time); }
       if (entry.noteKind === 'problem' && entry.url) {
@@ -139,19 +141,19 @@
       }
     } else footer.append(node('span', '', '기록 없음'), node('span', 'note-source', '원본 실습 열기 ↗'));
     content.append(meta, heading, footer);
-    row.append(icon, content, bookmarkButton(entry));
+    row.append(number, content, bookmarkButton(entry));
     return row;
   }
   function reset() {
-    state.query = ''; state.category = 'all'; state.difficulty = 'all'; state.sort = 'recent'; limit = PAGE_SIZE;
+    state.query = ''; state.category = 'all'; state.difficulty = 'all'; state.sort = 'number'; limit = PAGE_SIZE;
     render(); $('search').focus();
   }
   function renderEmpty() {
     const box = node('div', 'empty-state');
     const hasFilter = state.query || state.category !== 'all' || state.difficulty !== 'all';
-    box.append(node('span', 'empty-symbol', state.view === 'saved' ? '☆' : '⌕'));
-    box.append(node('h2', '', hasFilter ? '찾는 풀이가 없어요.' : state.view === 'saved' ? '자주 보는 풀이를 모아 보세요.' : '아직 기록한 풀이가 없어요.'));
-    box.append(node('p', '', hasFilter ? '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.' : state.view === 'saved' ? '목록에서 별을 누르면 여기에 모입니다.' : 'GitHub에 기록한 노트가 이곳에 표시됩니다.'));
+
+    box.append(node('h2', '', hasFilter ? '검색 결과 없음' : state.view === 'saved' ? '즐겨찾기 없음' : '등록된 풀이 없음'));
+    box.append(node('p', '', hasFilter ? '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.' : state.view === 'saved' ? '목록의 별을 눌러 추가할 수 있습니다.' : 'GitHub에 기록한 노트가 이곳에 표시됩니다.'));
     const button = node('button', 'empty-action', hasFilter ? '필터 초기화' : '전체 실습 보기'); button.type = 'button';
     button.addEventListener('click', hasFilter ? reset : () => { state.view = 'all'; reset(); });
     box.append(button);
@@ -163,12 +165,13 @@
   }
   function render() {
     categoryOptions();
+    root.querySelector('.library-title').textContent = state.view === 'all' ? '전체 실습' : state.view === 'saved' ? '즐겨찾기' : '풀이 노트';
     $('search').value = state.query; $('difficulty').value = state.difficulty; $('sort').value = state.sort;
     root.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
     $('notes-count').textContent = entries.filter((entry) => entry.noteUrl && entry.noteKind !== 'problem').length;
     $('labs-count').textContent = catalog.labs.length;
     $('saved-count').textContent = entries.filter((entry) => bookmarks.has(entry.id)).length;
-    $('reset-filters').hidden = !state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'recent';
+    $('reset-filters').hidden = !state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'number';
     const matches = filteredEntries();
     $('result-count').textContent = `${state.view === 'notes' ? '풀이 노트' : state.view === 'all' ? '실습 · 노트' : '즐겨찾기'} ${matches.length}개${state.query ? ` · “${state.query}” 검색 결과` : ''}`;
     const fragment = document.createDocumentFragment();
@@ -178,9 +181,11 @@
     $('load-more').hidden = matches.length <= limit;
     $('load-more').textContent = `더 보기 · ${Math.min(limit, matches.length)} / ${matches.length}`;
     $('library-caption').textContent = storageAvailable
-      ? state.view === 'saved' ? '즐겨찾기는 이 브라우저에 저장됩니다.' : state.view === 'all' ? `전체 실습은 ${catalog.snapshotDate} 목록 기준입니다. 각 문제의 조건·설명과 작성한 풀이를 읽을 수 있습니다.` : '자주 찾는 풀이는 오른쪽 별을 눌러 즐겨찾기에 모아 두세요.'
+      ? state.view === 'saved' ? '즐겨찾기는 이 브라우저에 저장됩니다.' : state.view === 'all' ? `전체 실습은 ${catalog.snapshotDate} 목록 기준입니다. 각 문제의 조건·설명과 작성한 풀이를 읽을 수 있습니다.` : ''
       : '브라우저 저장이 차단되어 즐겨찾기는 현재 화면에서만 유지됩니다.';
+    $('library-caption').hidden = !$('library-caption').textContent;
     syncUrl();
+    document.dispatchEvent(new CustomEvent('notebook:view', { detail: { view: state.view, category: state.category } }));
   }
   function bind() {
     root.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
@@ -224,7 +229,7 @@
         if (/login/i.test(entry.title)) extras.push('로그인');
         if (/bypass/i.test(entry.title)) extras.push('우회');
         if (/hidden/i.test(entry.title)) extras.push('숨김 숨겨진');
-        entry.search = normalize([entry.title, entry.categoryTitle, entry.category, entry.difficulty, levelNames[entry.difficulty], entry.searchText || entry.noteSearchText, ...(entry.tags || []), ...(catalog.aliases?.[entry.category] || []), ...extras].join(' '));
+        entry.search = normalize([entry.number, entry.title, entry.categoryTitle, entry.category, entry.difficulty, levelNames[entry.difficulty], entry.searchText || entry.noteSearchText, ...(entry.tags || []), ...(catalog.aliases?.[entry.category] || []), ...extras].join(' '));
       }
       bind(); render(); root.dataset.ready = 'true';
     } catch (error) {
