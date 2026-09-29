@@ -1,16 +1,32 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { pathToRoot } from "../util/path"
+import Darkmode from "./Darkmode"
 
-const NotebookNav: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
-  const root = pathToRoot(fileData.slug!)
-  const current = fileData.slug === "index" ? "problems" : fileData.slug === "guide" ? "guide" : "notes"
-  return (
-    <nav class="notebook-nav" aria-label="노트 탐색">
-      <a class="notebook-home" href={`${root}/`} aria-current={current === "problems" ? "page" : undefined}>문제</a>
-      <a href={`${root}/notes.html`} aria-current={current === "notes" ? "page" : undefined}>노트</a>
-      <a href={`${root}/guide.html`} aria-current={current === "guide" ? "page" : undefined}>작성 안내</a>
-    </nav>
-  )
-}
-
-export default (() => NotebookNav) satisfies QuartzComponentConstructor
+export default (() => {
+  const ThemeToggle = Darkmode()
+  const NotebookNav: QuartzComponent = (props: QuartzComponentProps) => {
+    const home = `${pathToRoot(props.fileData.slug!)}/`
+    const isHome = props.fileData.slug === "index"
+    return (
+      <>
+        <nav class="notebook-nav" aria-label="기본 탐색">
+          <a class="notebook-brand" href={home} aria-label="PortSwigger 풀이 노트 홈">
+            <span class="notebook-brand-mark" aria-hidden="true">p<span>.</span></span>
+            <span class="notebook-brand-text"><strong>PortSwigger</strong><span>LAB NOTES</span></span>
+          </a>
+          <div class="notebook-nav-actions">
+            {!isHome && <a class="notebook-nav-link" href={home}>풀이 찾기</a>}
+            {!isHome && <a class="notebook-nav-link" href={`${home}?view=all`}>전체 실습</a>}
+            <a class="notebook-github" href="https://github.com/ddomology/portswigger-lab-notes" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+            <span class="notebook-theme"><ThemeToggle {...props} /></span>
+          </div>
+        </nav>
+        {!isHome && <a class="notebook-return" data-note-return href={home}><span aria-hidden="true">←</span> 풀이 목록</a>}
+      </>
+    )
+  }
+  NotebookNav.css = ThemeToggle.css
+  NotebookNav.beforeDOMLoaded = ThemeToggle.beforeDOMLoaded
+  NotebookNav.afterDOMLoaded = ThemeToggle.afterDOMLoaded
+  return NotebookNav
+}) satisfies QuartzComponentConstructor

@@ -5,7 +5,6 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/lab-login-bypass"
 difficulty: Apprentice
-draft: false
 ---
 
 # SQL injection vulnerability allowing login bypass

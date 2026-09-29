@@ -1,422 +1,235 @@
 (() => {
   'use strict';
-  if (!document.querySelector('.lab-explorer')) return;
+  const root = document.querySelector('.lab-explorer');
+  if (!root) return;
   const $ = (id) => document.getElementById(id);
   const BOOKMARK_KEY = 'portswigger-lab-notes:bookmarks:v1';
-  const DRAFT_PREFIX = 'portswigger-lab-notes:draft:v1:';
-  const REPO_URL = 'https://github.com/ddomology/portswigger-lab-notes';
-  const difficultyOrder = { Apprentice: 0, Practitioner: 1, Expert: 2 };
-  let catalog = { labs: [], categories: [], snapshotDate: '' };
-  let state = readUrlState();
-  let bookmarks = new Set();
-  let activeLab = null;
-  let returnFocus = null;
-  let saveTimer = null;
-  let toastTimer = null;
-  let searchTimer = null;
+  const RETURN_KEY = 'portswigger-lab-notes:last-list:v1';
+  const PAGE_SIZE = 24;
+  const levels = { Apprentice: 0, Practitioner: 1, Expert: 2 };
+  const levelNames = { Apprentice: '입문', Practitioner: '실전', Expert: '심화' };
+  let catalog, entries = [], bookmarks = new Set(), limit = PAGE_SIZE, timer;
   let storageAvailable = true;
-  try { const parsed = JSON.parse(localStorage.getItem(BOOKMARK_KEY) || '[]'); if (Array.isArray(parsed)) bookmarks = new Set(parsed.filter((v) => typeof v === 'string')); }
-  catch { storageAvailable = false; }
+  let state = readState();
+  try {
+    const saved = JSON.parse(localStorage.getItem(BOOKMARK_KEY) || '[]');
+    if (Array.isArray(saved)) bookmarks = new Set(saved.filter((id) => typeof id === 'string'));
+  } catch { storageAvailable = false; }
 
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
+  function node(tag, className, text) {
+    const result = document.createElement(tag);
+    if (className) result.className = className;
+    if (text !== undefined) result.textContent = text;
+    return result;
   }
-  function externalLink(url, text, className) {
-    const link = el('a', className, text);
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    return link;
-  }
-  function safeUrl(value) {
-    try { const parsed = new URL(value, location.href); return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : null; }
-    catch { return null; }
-  }
-  function readUrlState() {
-    const q = new URLSearchParams(location.search);
-    return { category: q.get('topic') || 'all', query: q.get('q') || '', difficulty: Object.hasOwn(difficultyOrder, q.get('level')) ? q.get('level') : 'all', solved: q.get('solved') === '1', unsolved: q.get('todo') === '1' && q.get('solved') !== '1', notes: q.get('notes') === '1', bookmarks: q.get('saved') === '1', drafts: q.get('drafts') === '1', sort: ['default', 'difficulty', 'title'].includes(q.get('sort')) ? q.get('sort') : 'default' };
+  function normalize(value) { return String(value || '').normalize('NFKC').toLocaleLowerCase(); }
+  function readState() {
+    const params = new URLSearchParams(location.search);
+    // Keep previously bookmarked URLs useful after consolidating the site.
+    const view = params.get('view') || (params.get('saved') === '1' ? 'saved' : 'notes');
+    const sort = params.get('sort');
+    return {
+      view: ['notes', 'all', 'saved'].includes(view) ? view : 'notes',
+      query: params.get('q') || '', category: params.get('topic') || 'all',
+      difficulty: Object.hasOwn(levels, params.get('level')) ? params.get('level') : 'all',
+      sort: ['recent', 'title', 'difficulty', 'topic'].includes(sort) ? sort : 'recent',
+    };
   }
   function syncUrl() {
-    const q = new URLSearchParams();
-    if (state.category !== 'all') q.set('topic', state.category);
-    if (state.query) q.set('q', state.query);
-    if (state.difficulty !== 'all') q.set('level', state.difficulty);
-    if (state.solved) q.set('solved', '1');
-    if (state.unsolved) q.set('todo', '1');
-    if (state.notes) q.set('notes', '1');
-    if (state.bookmarks) q.set('saved', '1');
-    if (state.drafts) q.set('drafts', '1');
-    if (state.sort !== 'default') q.set('sort', state.sort);
-    history.replaceState(null, '', `${location.pathname}${q.size ? '?' + q.toString() : ''}${location.hash}`);
+    const params = new URLSearchParams();
+    if (state.view !== 'notes') params.set('view', state.view);
+    if (state.query) params.set('q', state.query);
+    if (state.category !== 'all') params.set('topic', state.category);
+    if (state.difficulty !== 'all') params.set('level', state.difficulty);
+    if (state.sort !== 'recent') params.set('sort', state.sort);
+    const next = `${location.pathname}${params.size ? '?' + params.toString() : ''}`;
+    if (location.pathname + location.search !== next) history.replaceState(null, '', next);
   }
-  function hasFilters() { return state.query || state.difficulty !== 'all' || state.solved || state.unsolved || state.notes || state.bookmarks || state.drafts; }
-  function draftKey(lab) { return DRAFT_PREFIX + lab.id; }
-  function getDraft(lab) {
-    try { return localStorage.getItem(draftKey(lab)); }
-    catch { storageAvailable = false; return null; }
+  function baseEntries() {
+    return entries.filter((entry) => state.view === 'all' || (state.view === 'notes' ? entry.noteUrl : bookmarks.has(entry.id)));
   }
-  // Published notes supersede local drafts in the list and draft filter.
-  // Keep the browser copy intact so unpublished edits are not lost.
-  function hasDraft(lab) { return !lab.noteUrl && getDraft(lab) !== null; }
-  function notify(message) {
-    clearTimeout(toastTimer);
-    $('toast').textContent = message;
-    $('toast').classList.add('visible');
-    toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 3500);
-  }
-  function saveDraft() {
-    if (!activeLab) return;
-    clearTimeout(saveTimer);
-    try {
-      localStorage.setItem(draftKey(activeLab), $('note-editor').value);
-      storageAvailable = true;
-      $('draft-status').textContent = '이 브라우저에 저장됨';
-    } catch {
-      storageAvailable = false;
-      $('draft-status').textContent = '자동 저장 불가 · 파일로 다운로드해 주세요';
-    }
-  }
-  function bookmark(lab, button) {
-    const isSaved = bookmarks.has(lab.id);
-    if (isSaved) bookmarks.delete(lab.id); else bookmarks.add(lab.id);
-    try { localStorage.setItem(BOOKMARK_KEY, JSON.stringify([...bookmarks])); }
-    catch { storageAvailable = false; notify('브라우저 저장이 차단되어 북마크는 현재 화면에서만 유지됩니다.'); }
-    updateBookmarkButton(lab, button);
-    if (state.bookmarks && isSaved) renderLabs();
-  }
-  function updateBookmarkButton(lab, button) {
-    const saved = bookmarks.has(lab.id);
-    button.textContent = saved ? '★' : '☆';
-    button.setAttribute('aria-pressed', String(saved));
-    button.setAttribute('aria-label', `${lab.title} 북마크 ${saved ? '해제' : '추가'}`);
-    button.title = saved ? '북마크 해제 · 이 브라우저' : '북마크 · 이 브라우저';
-  }
-  function setCategory(category) { state.category = category; render(); $('lab-list-heading').scrollIntoView({ block: 'start' }); }
-  function renderCategories() {
-    const nav = $('category-nav');
-    nav.replaceChildren();
-    const options = [{ id: 'all', title: '모든 실습', count: catalog.labs.length }, ...catalog.categories];
-    const mobile = $('mobile-category');
-    mobile.replaceChildren();
-    options.forEach((category) => {
-      const button = el('button', `category-button${category.id === 'all' ? ' all-category' : ''}${state.category === category.id ? ' active' : ''}`);
-      button.type = 'button';
-      button.setAttribute('aria-pressed', String(state.category === category.id));
-      button.append(el('span', '', category.title), el('span', 'category-count', String(category.count)));
-      button.addEventListener('click', () => setCategory(category.id));
-      nav.append(button);
-      const option = el('option', '', `${category.title} (${category.count})`);
-      option.value = category.id;
-      mobile.append(option);
+  function filteredEntries() {
+    const tokens = normalize(state.query).trim().split(/\s+/).filter(Boolean);
+    return baseEntries().filter((entry) =>
+      (state.category === 'all' || state.category === entry.category) &&
+      (state.difficulty === 'all' || state.difficulty === entry.difficulty) &&
+      tokens.every((token) => entry.search.includes(token))
+    ).sort((a, b) => {
+      if (state.sort === 'recent') {
+        const diff = String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
+        if (diff) return diff;
+        if (!!a.noteUrl !== !!b.noteUrl) return a.noteUrl ? -1 : 1;
+      }
+      if (state.sort === 'difficulty') {
+        const diff = (levels[a.difficulty] ?? 3) - (levels[b.difficulty] ?? 3);
+        if (diff) return diff;
+      }
+      if (state.sort === 'topic') {
+        const diff = a.categoryTitle.localeCompare(b.categoryTitle);
+        if (diff) return diff;
+      }
+      if (state.sort === 'title') return a.title.localeCompare(b.title, 'en');
+      return (a.order ?? 99999) - (b.order ?? 99999) || a.title.localeCompare(b.title, 'en');
     });
-    mobile.value = state.category;
-    document.dispatchEvent(new CustomEvent('lab:topic-change', { detail: { topic: state.category } }));
   }
-  function renderStats() {
-    const total = catalog.labs.length;
-    const solved = catalog.labs.filter((lab) => lab.solved).length;
-    const notes = catalog.labs.filter((lab) => lab.noteUrl).length;
-    const percentage = total ? (solved * 100 / total).toFixed(1) : '0.0';
-    $('stat-total').textContent = total;
-    $('stat-solved').textContent = solved;
-    $('stat-notes').textContent = notes;
-    $('stat-percent').textContent = `${percentage}%`;
-    $('progress-label').textContent = `${solved} / ${total}`;
-    $('progress-fill').style.width = `${percentage}%`;
-    $('snapshot-caption').textContent = `${catalog.snapshotDate} 가져온 해결 기록 · 실시간 연동 아님`;
+  function categoryOptions() {
+    const groups = new Map();
+    for (const entry of baseEntries()) {
+      const group = groups.get(entry.category) || { title: entry.categoryTitle, count: 0 };
+      group.count++; groups.set(entry.category, group);
+    }
+    if (state.category !== 'all' && !groups.has(state.category)) {
+      const known = catalog.categories.find((item) => item.id === state.category);
+      if (known) groups.set(known.id, { title: known.title, count: 0 });
+      else state.category = 'all';
+    }
+    const all = node('option', '', '모든 주제'); all.value = 'all';
+    $('category').replaceChildren(all);
+    for (const [id, group] of groups) {
+      const option = node('option', '', `${group.title} (${group.count})`);
+      option.value = id; $('category').append(option);
+    }
+    $('category').value = state.category;
   }
-  function filterLabs() {
-    const terms = state.query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-    const difficultyKo = { Apprentice: '입문 초급', Practitioner: '실전 중급', Expert: '심화 고급' };
-    const filtered = catalog.labs.filter((lab) => {
-      if (state.category !== 'all' && lab.category !== state.category) return false;
-      if (state.difficulty !== 'all' && lab.difficulty !== state.difficulty) return false;
-      if (state.solved && !lab.solved) return false;
-      if (state.unsolved && lab.solved) return false;
-      if (state.notes && !lab.noteUrl) return false;
-      if (state.bookmarks && !bookmarks.has(lab.id)) return false;
-      if (state.drafts && !hasDraft(lab) && lab.noteStatus !== 'draft') return false;
-      const haystack = `${lab.title} ${lab.category} ${lab.categoryTitle} ${lab.difficulty} ${difficultyKo[lab.difficulty] || ''}`.toLocaleLowerCase();
-      return terms.every((term) => haystack.includes(term));
+  function dateLabel(value) {
+    const date = new Date(value);
+    return value && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date) : '';
+  }
+  function bookmarkButton(entry) {
+    const button = node('button', 'note-bookmark', bookmarks.has(entry.id) ? '★' : '☆');
+    button.type = 'button';
+    button.setAttribute('aria-pressed', String(bookmarks.has(entry.id)));
+    button.setAttribute('aria-label', `${entry.title} 즐겨찾기 ${bookmarks.has(entry.id) ? '해제' : '추가'}`);
+    button.title = '즐겨찾기 · 이 브라우저에 저장';
+    button.addEventListener('click', () => {
+      if (bookmarks.has(entry.id)) bookmarks.delete(entry.id); else bookmarks.add(entry.id);
+      try { localStorage.setItem(BOOKMARK_KEY, JSON.stringify([...bookmarks])); storageAvailable = true; }
+      catch { storageAvailable = false; }
+      render();
+      const replacement = [...root.querySelectorAll('.note-row')].find((row) => row.dataset.entryId === entry.id);
+      if (replacement) replacement.querySelector('.note-bookmark').focus({ preventScroll: true });
+      else root.querySelector('[data-view="saved"]').focus({ preventScroll: true });
     });
-    if (state.sort === 'difficulty') filtered.sort((a, b) => (difficultyOrder[a.difficulty] ?? 3) - (difficultyOrder[b.difficulty] ?? 3));
-    if (state.sort === 'title') filtered.sort((a, b) => a.title.localeCompare(b.title));
-    return filtered;
+    return button;
   }
-  function renderLab(lab, number) {
-    const row = el('article', 'lab-row');
-    row.dataset.labId = lab.id;
-    row.append(el('span', 'lab-index', String(number).padStart(3, '0')));
-    const info = el('div', 'lab-info');
-    const meta = el('div', 'lab-meta');
-    const difficulty = el('span', `difficulty-tag ${lab.difficulty.toLowerCase()}`);
-    const dots = el('span', 'difficulty-dots');
-    dots.setAttribute('aria-hidden', 'true');
-    for (let i = 0; i < 3; i++) dots.append(el('i', i <= (difficultyOrder[lab.difficulty] ?? 0) ? 'filled' : ''));
-    difficulty.append(dots, document.createTextNode(lab.difficulty));
-    meta.append(difficulty);
-    if (lab.solved) {
-      const badge = el('span', 'solved-tag', '✓ 해결 기록');
-      badge.title = `${catalog.snapshotDate}에 가져온 해결 기록`;
-      meta.append(badge);
-    }
-    if (hasDraft(lab)) meta.append(el('span', 'draft-tag', '내 초안 · 이 브라우저'));
-    if (lab.noteStatus === 'draft') meta.append(el('span', 'draft-tag', '저장소 초안'));
-    const title = el('h4', 'lab-title');
-    const titleLink = lab.noteUrl ? el('a', '', lab.title) : externalLink(safeUrl(lab.url) || 'https://portswigger.net/web-security/all-labs', lab.title);
-    if (lab.noteUrl) titleLink.href = lab.noteUrl;
-    title.append(titleLink);
-    info.append(title, meta);
-    const actions = el('div', 'lab-actions');
-    const star = el('button', 'bookmark-button');
-    star.type = 'button';
-    updateBookmarkButton(lab, star);
-    star.addEventListener('click', () => bookmark(lab, star));
-    const source = externalLink(safeUrl(lab.url) || 'https://portswigger.net/web-security/all-labs', '문제 ↗', 'lab-source');
-    source.setAttribute('aria-label', `${lab.title} 원본 문제 열기`);
-    if (lab.noteUrl) {
-      const read = el('a', 'note-button has-note', '풀이 읽기 →');
-      read.href = lab.noteUrl;
-      read.setAttribute('aria-label', `${lab.title} 풀이 읽기`);
-      const edit = externalLink(editUrl(lab), '수정 ↗', 'edit-note');
-      edit.setAttribute('aria-label', `${lab.title} GitHub에서 수정`);
-      actions.append(star, source, read, edit);
-    } else if (lab.noteExists || lab.noteStatus === 'draft') {
-      const edit = externalLink(editUrl(lab), '초안 편집 ↗', 'note-button');
-      edit.setAttribute('aria-label', `${lab.title} 저장소 초안 편집`);
-      actions.append(star, source, edit);
-    } else {
-      const write = el('button', 'note-button', hasDraft(lab) ? '이어서 쓰기 →' : '노트 쓰기 +');
-      write.type = 'button';
-      write.setAttribute('aria-label', `${lab.title} 풀이 노트 ${hasDraft(lab) ? '이어서 쓰기' : '작성'}`);
-      write.addEventListener('click', () => openComposer(lab, write));
-      actions.append(star, source, write);
-    }
-    row.append(info, actions);
+  function renderEntry(entry) {
+    const row = node('article', `note-row${entry.noteUrl ? ' has-note' : ''}`);
+    row.dataset.entryId = entry.id;
+    const icon = node('span', 'note-icon', entry.noteUrl ? '↳' : '○'); icon.setAttribute('aria-hidden', 'true');
+    const content = node('div', 'note-row-content');
+    const meta = node('div', 'note-meta');
+    meta.append(node('span', 'note-topic', entry.categoryTitle));
+    if (entry.difficulty) meta.append(node('span', `note-level level-${normalize(entry.difficulty)}`, `${levelNames[entry.difficulty] || ''} ${entry.difficulty}`.trim()));
+    const heading = node('h2', 'note-title');
+    const link = node('a', '', entry.title);
+    link.href = entry.noteUrl || entry.url;
+    if (entry.noteUrl) {
+      link.addEventListener('click', () => { try { sessionStorage.setItem(RETURN_KEY, location.pathname + location.search); } catch {} });
+    } else { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+    heading.append(link);
+    const footer = node('div', 'note-row-footer');
+    if (entry.noteUrl) {
+      footer.append(node('span', 'note-available', '풀이 읽기'));
+      const formatted = dateLabel(entry.updatedAt);
+      if (formatted) { const time = node('time', '', `${formatted} 수정`); time.dateTime = entry.updatedAt; footer.append(time); }
+    } else footer.append(node('span', '', '기록 없음'), node('span', 'note-source', '원본 실습 열기 ↗'));
+    content.append(meta, heading, footer);
+    row.append(icon, content, bookmarkButton(entry));
     return row;
   }
-  function renderLabs() {
-    const matches = filterLabs();
-    const category = catalog.categories.find((item) => item.id === state.category);
-    $('lab-list-heading').firstChild.textContent = (category ? category.title : '전체 실습 목록') + ' ';
-    $('category-total').textContent = String(category ? category.count : catalog.labs.length);
-    const groups = new Map();
-    catalog.categories.forEach((item) => groups.set(item.id, { category: item, labs: [] }));
-    matches.forEach((lab) => {
-      if (!groups.has(lab.category)) groups.set(lab.category, { category: { id: lab.category, title: lab.categoryTitle || lab.category }, labs: [] });
-      groups.get(lab.category).labs.push(lab);
-    });
-    const visibleGroups = [...groups.values()].filter((group) => group.labs.length);
-    $('result-count').replaceChildren(el('strong', '', `${matches.length}개`), document.createTextNode(` 실습 · ${visibleGroups.length}개 주제${state.query.trim() ? ` · “${state.query.trim()}” 검색 결과` : ' · 전체 목록'}`));
-    const list = $('lab-list');
-    list.replaceChildren();
-    if (!matches.length) {
-      const empty = el('div', 'empty-state');
-      const symbol = el('span', 'empty-symbol', '⌕');
-      symbol.setAttribute('aria-hidden', 'true');
-      const button = el('button', 'button button-secondary', '필터 초기화');
-      button.type = 'button';
-      button.addEventListener('click', resetFilters);
-      empty.append(symbol, el('h3', '', '조건에 맞는 실습이 없어요'), el('p', '', '검색어를 짧게 바꾸거나 필터를 해제해 보세요.'), button);
-      list.append(empty);
-    } else {
-      const fragment = document.createDocumentFragment();
-      let number = 0;
-      visibleGroups.forEach(({ category: topic, labs }, groupIndex) => {
-        const section = el('section', 'lab-group');
-        const headingId = `topic-${topic.id}`;
-        section.setAttribute('aria-labelledby', headingId);
-        const header = el('header', 'lab-group-heading');
-        const heading = el('h3', '', topic.title);
-        heading.id = headingId;
-        const label = el('div', 'group-label');
-        const marker = el('span', 'group-number', String(groupIndex + 1).padStart(2, '0'));
-        marker.setAttribute('aria-hidden', 'true');
-        label.append(marker, heading, el('span', 'group-count', String(labs.length)));
-        const summary = el('span', 'group-summary');
-        const solved = labs.filter((lab) => lab.solved).length;
-        const notes = labs.filter((lab) => lab.noteUrl).length;
-        summary.textContent = [solved ? `해결 기록 ${solved}` : '', notes ? `풀이 ${notes}` : ''].filter(Boolean).join(' · ');
-        if (solved) summary.title = `${catalog.snapshotDate}에 가져온 해결 기록`;
-        header.append(label, summary);
-        const items = el('div', 'lab-group-items');
-        labs.forEach((lab) => items.append(renderLab(lab, ++number)));
-        section.append(header, items);
-        fragment.append(section);
-      });
-      list.append(fragment);
+  function reset() {
+    state.query = ''; state.category = 'all'; state.difficulty = 'all'; state.sort = 'recent'; limit = PAGE_SIZE;
+    render(); $('search').focus();
+  }
+  function renderEmpty() {
+    const box = node('div', 'empty-state');
+    const hasFilter = state.query || state.category !== 'all' || state.difficulty !== 'all';
+    box.append(node('span', 'empty-symbol', state.view === 'saved' ? '☆' : '⌕'));
+    box.append(node('h2', '', hasFilter ? '찾는 풀이가 없어요.' : state.view === 'saved' ? '자주 보는 풀이를 모아 보세요.' : '아직 기록한 풀이가 없어요.'));
+    box.append(node('p', '', hasFilter ? '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.' : state.view === 'saved' ? '목록에서 별을 누르면 여기에 모입니다.' : 'GitHub에 기록한 노트가 이곳에 표시됩니다.'));
+    const button = node('button', 'empty-action', hasFilter ? '필터 초기화' : '전체 실습 보기'); button.type = 'button';
+    button.addEventListener('click', hasFilter ? reset : () => { state.view = 'all'; reset(); });
+    box.append(button);
+    if (hasFilter && state.view === 'notes') {
+      const broader = node('button', 'empty-action secondary', '전체 실습에서 검색'); broader.type = 'button';
+      broader.addEventListener('click', () => { state.view = 'all'; limit = PAGE_SIZE; render(); }); box.append(broader);
     }
-    $('list-end').hidden = !matches.length;
-    $('list-end-caption').textContent = `${matches.length}개 실습을 모두 표시했어요.`;
+    return box;
+  }
+  function render() {
+    categoryOptions();
+    $('search').value = state.query; $('difficulty').value = state.difficulty; $('sort').value = state.sort;
+    root.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
+    $('notes-count').textContent = entries.filter((entry) => entry.noteUrl).length;
+    $('labs-count').textContent = catalog.labs.length;
+    $('saved-count').textContent = entries.filter((entry) => bookmarks.has(entry.id)).length;
+    $('reset-filters').hidden = !state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'recent';
+    const matches = filteredEntries();
+    $('result-count').textContent = `${state.view === 'notes' ? '풀이 노트' : state.view === 'all' ? '실습 · 노트' : '즐겨찾기'} ${matches.length}개${state.query ? ` · “${state.query}” 검색 결과` : ''}`;
+    const fragment = document.createDocumentFragment();
+    for (const entry of matches.slice(0, limit)) fragment.append(renderEntry(entry));
+    if (!matches.length) fragment.append(renderEmpty());
+    $('lab-list').replaceChildren(fragment);
+    $('load-more').hidden = matches.length <= limit;
+    $('load-more').textContent = `더 보기 · ${Math.min(limit, matches.length)} / ${matches.length}`;
+    $('library-caption').textContent = storageAvailable
+      ? state.view === 'saved' ? '즐겨찾기는 이 브라우저에 저장됩니다.' : state.view === 'all' ? `전체 실습은 ${catalog.snapshotDate} 목록 기준입니다. 풀이가 있는 문제는 노트로 바로 연결됩니다.` : '자주 찾는 풀이는 오른쪽 별을 눌러 즐겨찾기에 모아 두세요.'
+      : '브라우저 저장이 차단되어 즐겨찾기는 현재 화면에서만 유지됩니다.';
     syncUrl();
   }
-  function syncControls() {
-    $('search').value = state.query;
-    $('difficulty').value = state.difficulty;
-    $('sort').value = state.sort;
-    $('mobile-category').value = state.category;
-    [['solved', 'solved-filter'], ['unsolved', 'unsolved-filter'], ['notes', 'notes-filter'], ['bookmarks', 'bookmark-filter'], ['drafts', 'draft-filter']].forEach(([key, id]) => $(id).setAttribute('aria-pressed', String(state[key])));
-    $('reset-filters').hidden = !hasFilters();
-  }
-  function render() { syncControls(); renderCategories(); renderLabs(); }
-  function resetFilters() {
-    state.query = ''; state.difficulty = 'all'; state.solved = false; state.unsolved = false; state.notes = false; state.bookmarks = false; state.drafts = false;
-    render();
-  }
-  function editUrl(lab) {
-    return `${REPO_URL}/edit/main/content/${lab.notePath.split('/').map(encodeURIComponent).join('/')}`;
-  }
-  function template(lab) {
-    const quoted = (value) => JSON.stringify(String(value));
-    return `---\ntitle: ${quoted(lab.title)}\ntags:\n  - portswigger\n  - ${lab.category}\nlab_url: ${quoted(lab.url)}\ndifficulty: ${lab.difficulty}\ndraft: false\n---\n\n# ${lab.title}\n\n## 목표와 조건\n\n- 목표: \n- 확인한 조건: \n\n## 탐색 과정\n\n### 1. 첫 번째 시도\n\n**이렇게 생각한 이유**\n\n\n**시도한 요청 / 코드**\n\n\`\`\`text\n\n\`\`\`\n\n**실제 결과**\n\n\n**해석과 다음 시도**\n\n\n## 해결 과정\n\n\n## 배운 점\n\n- \n\n## 참고\n\n- [원본 실습](${lab.url})\n`;
-  }
-  function openComposer(lab, trigger) {
-    activeLab = lab;
-    returnFocus = trigger;
-    $('dialog-lab-title').textContent = lab.title;
-    $('note-filename').textContent = `content/${lab.notePath}`;
-    const saved = getDraft(lab);
-    $('note-editor').value = saved === null ? template(lab) : saved;
-    $('draft-status').textContent = saved === null ? '새 노트 템플릿' : '이 브라우저의 초안을 불러왔어요';
-    if (!storageAvailable) $('draft-status').textContent = '자동 저장 불가 · 파일로 다운로드해 주세요';
-    $('github-help').textContent = 'GitHub 편집 화면에서 내용을 확인하고 Commit changes를 누르면 자동 배포됩니다.';
-    $('note-dialog').showModal();
-    document.body.classList.add('dialog-open');
-    $('note-editor').focus();
-    $('note-editor').setSelectionRange(0, 0);
-  }
-  function finishComposer() {
-    if (saveTimer) saveDraft();
-    document.body.classList.remove('dialog-open');
-    const previousLabId = activeLab && activeLab.id;
-    activeLab = null;
-    renderLabs();
-    const restored = previousLabId && document.querySelector(`[data-lab-id="${CSS.escape(previousLabId)}"] .note-button`);
-    if (restored) restored.focus({ preventScroll: true });
-    else if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
-    else $('lab-list-heading').focus({ preventScroll: true });
-  }
-  function downloadNote() {
-    if (!activeLab) return;
-    saveDraft();
-    const blob = new Blob([$('note-editor').value], { type: 'text/markdown;charset=utf-8' });
-    const blobUrl = URL.createObjectURL(blob);
-    const link = el('a');
-    link.href = blobUrl;
-    link.download = activeLab.notePath.split('/').pop();
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-    notify('Markdown 파일을 다운로드했어요. 옵시디언에서 열 수 있어요.');
-  }
-  async function copyNote() {
-    try {
-      await navigator.clipboard.writeText($('note-editor').value);
-      notify('노트 내용을 복사했어요.');
-    } catch {
-      $('note-editor').focus(); $('note-editor').select();
-      notify('Ctrl+C 또는 ⌘C로 선택된 내용을 복사해 주세요.');
-    }
-  }
-  async function openGitHub() {
-    if (!activeLab) return;
-    saveDraft();
-    const text = $('note-editor').value;
-    const params = new URLSearchParams({ filename: `content/${activeLab.notePath}`, value: text });
-    const target = `${REPO_URL}/new/main?${params.toString()}`;
-    if (target.length > 8000) {
-      const newUrl = `${REPO_URL}/new/main?${new URLSearchParams({ filename: `content/${activeLab.notePath}` })}`;
-      window.open(newUrl, '_blank', 'noopener,noreferrer');
-      $('github-help').textContent = '긴 노트여서 내용을 URL에 넣지 않았어요. 내용을 복사한 뒤 열린 GitHub 편집기에 붙여넣고 커밋해 주세요.';
-      await copyNote();
-      return;
-    }
-    window.open(target, '_blank', 'noopener,noreferrer');
-    $('github-help').textContent = 'GitHub에서 Commit changes를 완료하면 자동 배포돼요. 이 화면의 초안은 커밋 이후에도 보관됩니다.';
-  }
-  function bindEvents() {
-    document.addEventListener('lab:topic-select', (event) => {
-      const topic = event.detail && event.detail.topic;
-      if (topic !== 'all' && !catalog.categories.some(category => category.id === topic)) return;
-      state.category = topic;
-      resetFilters();
-      $('lab-list-heading').scrollIntoView({ block: 'start' });
-    });
+  function bind() {
+    root.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
+      state.view = button.dataset.view; limit = PAGE_SIZE; render();
+    }));
     $('search').addEventListener('input', () => {
-      state.query = $('search').value;
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => { syncControls(); renderLabs(); }, 120);
+      state.query = $('search').value; limit = PAGE_SIZE;
+      clearTimeout(timer); timer = setTimeout(render, 100);
     });
-    $('difficulty').addEventListener('change', (event) => { state.difficulty = event.target.value; render(); });
-    $('sort').addEventListener('change', (event) => { state.sort = event.target.value; render(); });
-    $('mobile-category').addEventListener('change', (event) => setCategory(event.target.value));
-    [['solved', 'solved-filter'], ['unsolved', 'unsolved-filter'], ['notes', 'notes-filter'], ['bookmarks', 'bookmark-filter'], ['drafts', 'draft-filter']].forEach(([key, id]) => $(id).addEventListener('click', () => { state[key] = !state[key]; if (key === 'solved' && state.solved) state.unsolved = false; if (key === 'unsolved' && state.unsolved) state.solved = false; render(); }));
-    $('reset-filters').addEventListener('click', resetFilters);
-    $('close-dialog').addEventListener('click', () => $('note-dialog').close());
-    $('note-dialog').addEventListener('close', finishComposer);
-    $('note-dialog').addEventListener('click', (event) => {
-      if (event.target !== $('note-dialog')) return;
-      const bounds = $('note-dialog').getBoundingClientRect();
-      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) $('note-dialog').close();
+    [['category', 'category'], ['difficulty', 'difficulty'], ['sort', 'sort']].forEach(([id, key]) => {
+      $(id).addEventListener('change', () => { state[key] = $(id).value; limit = PAGE_SIZE; render(); });
     });
-    $('note-editor').addEventListener('input', () => {
-      clearTimeout(saveTimer);
-      $('draft-status').textContent = '저장 중…';
-      saveTimer = setTimeout(() => { saveTimer = null; saveDraft(); }, 400);
+    $('reset-filters').addEventListener('click', reset);
+    $('load-more').addEventListener('click', () => { const start = limit; limit += PAGE_SIZE; render(); $('lab-list').children[start]?.querySelector('.note-title a')?.focus({ preventScroll: true }); });
+    window.addEventListener('popstate', () => { clearTimeout(timer); state = readState(); limit = PAGE_SIZE; render(); });
+    window.addEventListener('storage', (event) => {
+      if (event.key !== BOOKMARK_KEY && event.key !== null) return;
+      try { const value = JSON.parse(event.newValue || '[]'); bookmarks = new Set(Array.isArray(value) ? value : []); render(); } catch {}
     });
-    $('reset-draft').addEventListener('click', () => {
-      if (!activeLab || !confirm('작성한 초안을 지우고 처음 템플릿으로 되돌릴까요?')) return;
-      $('note-editor').value = template(activeLab);
-      saveDraft();
-      $('note-editor').focus();
-    });
-    $('download-note').addEventListener('click', downloadNote);
-    $('copy-note').addEventListener('click', copyNote);
-    $('github-note').addEventListener('click', openGitHub);
-    window.addEventListener('beforeunload', () => { if (activeLab && saveTimer) saveDraft(); });
-    window.addEventListener('popstate', () => { state = readUrlState(); render(); });
     document.addEventListener('keydown', (event) => {
-      // Quartz search also handles Escape, so close this native dialog explicitly.
-      if ($('note-dialog').open && event.key === 'Escape') {
-        event.preventDefault();
-        $('note-dialog').close();
-        return;
-      }
-      if ($('note-dialog').open && event.key === 'Tab') {
-        const focusable = [...$('note-dialog').querySelectorAll('a[href], button:not([disabled]), textarea, input, select')].filter((item) => item.offsetParent !== null);
-        const first = focusable[0], last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-      }
-      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
-      if (event.key === '/' && !typing && !$('note-dialog').open && !event.ctrlKey && !event.metaKey && !event.altKey) { event.preventDefault(); $('search').focus(); }
+      const target = document.activeElement;
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) && !target.isContentEditable) { event.preventDefault(); $('search').focus(); }
     });
   }
   async function init() {
     try {
       const response = await fetch('./_dashboard/catalog.json', { cache: 'no-cache' });
       if (!response.ok) throw new Error(`Catalog ${response.status}`);
-      const data = await response.json();
-      if (!Array.isArray(data.labs) || !Array.isArray(data.categories)) throw new Error('Invalid catalog');
-      catalog = data;
-      if (state.category !== 'all' && !catalog.categories.some((category) => category.id === state.category)) state.category = 'all';
-      bindEvents();
-      document.querySelector('.lab-explorer').dataset.ready = 'true';
-      renderStats(); render();
-      if (!storageAvailable) $('local-caption').textContent = '브라우저 저장이 차단되어 초안·북마크 보관이 제한돼요';
+      catalog = await response.json();
+      if (!Array.isArray(catalog.labs) || !Array.isArray(catalog.notes) || !Array.isArray(catalog.categories)) throw new Error('Invalid catalog');
+      const byLab = new Map(catalog.notes.filter((note) => note.labId).map((note) => [note.labId, note]));
+      entries = catalog.labs.map((lab) => ({ ...lab, ...byLab.get(lab.id), id: lab.id }));
+      entries.push(...catalog.notes.filter((note) => !note.labId));
+      for (const entry of entries) {
+        entry.categoryTitle ||= '일반 노트'; entry.category ||= 'notes';
+        entry.updatedAt ||= entry.noteUpdatedAt || '';
+        const extras = [];
+        if (/oracle/i.test(entry.title)) extras.push('오라클');
+        if (/mysql/i.test(entry.title)) extras.push('마이에스큐엘');
+        if (/microsoft/i.test(entry.title)) extras.push('마이크로소프트');
+        if (/login/i.test(entry.title)) extras.push('로그인');
+        if (/bypass/i.test(entry.title)) extras.push('우회');
+        if (/hidden/i.test(entry.title)) extras.push('숨김 숨겨진');
+        entry.search = normalize([entry.title, entry.categoryTitle, entry.category, entry.difficulty, levelNames[entry.difficulty], entry.searchText || entry.noteSearchText, ...(entry.tags || []), ...(catalog.aliases?.[entry.category] || []), ...extras].join(' '));
+      }
+      bind(); render(); root.dataset.ready = 'true';
     } catch (error) {
-      $('result-count').textContent = '실습 목록을 불러오지 못했어요.';
-      $('snapshot-caption').textContent = '연결 상태를 확인해 주세요';
-      const empty = el('div', 'empty-state');
-      const retry = el('button', 'button button-secondary', '다시 불러오기');
-      retry.type = 'button'; retry.addEventListener('click', () => location.reload());
-      empty.append(el('h3', '', '잠시 연결이 끊겼어요'), el('p', '', '새로고침하거나 GitHub 저장소에서 노트를 확인할 수 있어요.'), retry, externalLink(REPO_URL + '/tree/main/content', 'GitHub에서 보기 ↗', 'lab-source'));
-      $('lab-list').replaceChildren(empty);
-      console.error('Lab catalog could not be loaded:', error);
+      $('result-count').textContent = '목록을 불러오지 못했어요.';
+      const box = node('div', 'empty-state');
+      box.append(node('h2', '', '잠시 후 다시 불러와 주세요.'));
+      const retry = node('button', 'empty-action', '다시 불러오기'); retry.type = 'button'; retry.addEventListener('click', () => location.reload()); box.append(retry);
+      const fallback = node('a', 'empty-action secondary', 'GitHub에서 풀이 보기'); fallback.href = 'https://github.com/ddomology/portswigger-lab-notes/tree/main/content'; box.append(fallback);
+      $('lab-list').replaceChildren(box);
+      console.error('Notebook catalog:', error);
     }
   }
   init();

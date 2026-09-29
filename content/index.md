@@ -1,4 +1,4 @@
 ---
-title: 문제 라이브러리
-description: PortSwigger 실습을 주제별로 탐색하고 옵시디언으로 기록한 풀이를 읽는 공간입니다.
+title: 풀이 노트
+description: 작성한 풀이와 학습 기록을 제목·본문·주제로 빠르게 찾습니다.
 ---

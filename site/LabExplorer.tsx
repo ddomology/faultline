@@ -7,41 +7,38 @@ export default (() => {
   const LabExplorer: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
     if (fileData.slug !== "index") return null
     return (
-      <section class="lab-explorer" aria-label="PortSwigger 문제 라이브러리">
-        <p class="lab-intro">실습을 탐색하고 풀이 과정을 기록하세요. <a href="./notes.html">풀이 노트 모아보기 →</a></p>
-        <div id="category-nav" hidden aria-hidden="true"></div>
-        <section class="lab-overview" aria-label="학습 현황">
-          <div class="stats-panel">
-            <div class="stat"><span>전체 실습</span><strong id="stat-total">—</strong></div>
-            <div class="stat"><span>해결 기록</span><strong id="stat-solved">—</strong><small id="stat-percent">—</small></div>
-            <a class="stat" href="./notes.html"><span>공개한 풀이</span><strong id="stat-notes">—</strong><span class="stat-arrow" aria-hidden="true">↗</span></a>
+      <section class="lab-explorer" aria-label="풀이 노트 검색">
+        <header class="library-intro">
+          <p class="library-eyebrow"><span aria-hidden="true" /> MY LEARNING NOTEBOOK</p>
+          <h1>필요한 풀이를<br /><span>바로 찾으세요.</span></h1>
+          <p>문제 이름부터 본문 속 키워드까지 한 번에 검색하세요.</p>
+        </header>
+        <div class="note-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+          <label class="lab-sr-only" for="search">풀이 제목, 주제, 본문 검색</label>
+          <input id="search" type="search" placeholder="어떤 풀이를 찾으세요?  예: Oracle, 로그인, SQLi" autoComplete="off" />
+          <kbd aria-hidden="true">/</kbd>
+        </div>
+        <div class="library-toolbar">
+          <nav class="view-switch" aria-label="목록 선택">
+            <button type="button" data-view="notes" aria-pressed="true">풀이 노트 <span id="notes-count">—</span></button>
+            <button type="button" data-view="all" aria-pressed="false">전체 실습 <span id="labs-count">—</span></button>
+            <button type="button" data-view="saved" aria-pressed="false">즐겨찾기 <span id="saved-count">0</span></button>
+          </nav>
+          <div class="library-filters">
+            <label><span class="lab-sr-only">주제</span><select id="category"><option value="all">모든 주제</option></select></label>
+            <label><span class="lab-sr-only">난이도</span><select id="difficulty"><option value="all">모든 난이도</option><option value="Apprentice">입문 · Apprentice</option><option value="Practitioner">실전 · Practitioner</option><option value="Expert">심화 · Expert</option></select></label>
+            <label><span class="lab-sr-only">정렬</span><select id="sort"><option value="recent">최근 수정순</option><option value="title">제목순</option><option value="difficulty">난이도순</option><option value="topic">주제순</option></select></label>
           </div>
-          <p id="snapshot-caption" class="snapshot-caption">실습 목록을 불러오는 중</p>
-          <div hidden aria-hidden="true"><span id="progress-label"></span><span id="progress-fill"></span></div>
-        </section>
-        <section class="lab-library" aria-labelledby="lab-list-heading">
-          <div class="library-heading"><h2 id="lab-list-heading" tabIndex={-1}>전체 실습 목록 <span id="category-total"></span></h2><label class="sort-control"><span>정렬</span><select id="sort"><option value="default">주제별 원본 순서</option><option value="difficulty">주제 내 난이도순</option><option value="title">주제 내 제목순</option></select></label></div>
-          <div class="topic-control"><label for="mobile-category">학습 주제</label><select id="mobile-category"><option value="all">모든 실습</option></select></div>
-          <div class="search-panel">
-            <div class="search-box"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.7" cy="10.7" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg><label for="search" class="lab-sr-only">제목, 주제, 난이도로 문제 검색</label><input id="search" type="search" placeholder="제목, 주제, 난이도로 검색" autocomplete="off"/><kbd aria-hidden="true">/</kbd></div>
-            <div class="filter-bar"><div class="filter-left"><label class="difficulty-filter"><span>난이도</span><select id="difficulty"><option value="all">전체</option><option value="Apprentice">Apprentice · 입문</option><option value="Practitioner">Practitioner · 실전</option><option value="Expert">Expert · 심화</option></select></label><button class="filter-chip" id="solved-filter" type="button" aria-pressed="false" title="가져온 해결 기록 기준">해결한 실습</button><button class="filter-chip" id="unsolved-filter" type="button" aria-pressed="false" title="가져온 해결 기록 기준">미해결 실습</button><button class="filter-chip" id="notes-filter" type="button" aria-pressed="false">풀이 있음</button><button class="filter-chip" id="bookmark-filter" type="button" aria-pressed="false"><span aria-hidden="true">☆</span> 북마크</button><button class="filter-chip" id="draft-filter" type="button" aria-pressed="false">내 초안</button></div><button id="reset-filters" type="button" class="text-button" hidden>초기화 ↺</button></div>
-          </div>
-          <div class="results-caption"><p id="result-count" role="status" aria-live="polite">실습을 불러오고 있어요.</p><span id="local-caption">북마크·초안은 이 브라우저에 저장돼요</span></div>
-          <div id="lab-list" class="lab-list" aria-label="실습 목록"><div class="loading-state"><span class="loading-ring"></span><p>문제 목록을 준비하고 있어요.</p></div></div>
-          <div class="list-end" id="list-end" hidden><span id="list-end-caption"></span><a href="#lab-list-heading">목록 위로 ↑</a></div>
-        </section>
-        <dialog id="note-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
-          <div class="dialog-top"><span>새 풀이 노트</span><button id="close-dialog" class="icon-button" type="button" aria-label="노트 작성 닫기">×</button></div>
-          <h2 id="dialog-title">풀이 노트 작성</h2><p id="dialog-lab-title"></p>
-          <p id="dialog-description">시도한 이유와 실제 결과를 적어 보세요. 초안은 <strong>이 브라우저에만 자동 저장</strong>되며, GitHub에서 커밋해야 공개됩니다.</p>
-          <div class="editor-label"><label for="note-editor">Markdown</label><span id="draft-status" role="status" aria-live="polite">새 노트 템플릿</span></div>
-          <textarea id="note-editor" spellcheck={false} aria-label="풀이 노트 Markdown 편집"></textarea>
-          <div class="dialog-helper"><span id="note-filename"></span><button id="reset-draft" type="button" class="text-button">템플릿으로 되돌리기</button></div>
-          <div class="dialog-actions"><div><button id="copy-note" class="button button-secondary" type="button">내용 복사</button><button id="download-note" class="button button-secondary" type="button">.md 다운로드</button></div><button id="github-note" class="button button-primary" type="button">GitHub에서 저장 <span aria-hidden="true">↗</span></button></div>
-          <p class="dialog-footnote" id="github-help">GitHub 편집 화면에서 내용을 확인하고 Commit changes를 누르면 자동 배포됩니다.</p>
-        </dialog>
-        <div id="toast" class="toast" role="status" aria-live="polite"></div>
-        <noscript><p>문제 검색과 노트 작성을 사용하려면 JavaScript를 켜 주세요. <a href="https://github.com/ddomology/portswigger-lab-notes/tree/main/content">GitHub에서 노트 보기</a></p></noscript>
+        </div>
+        <div class="results-heading">
+          <p id="result-count" role="status" aria-live="polite">풀이를 불러오는 중…</p>
+          <button id="reset-filters" type="button" hidden>필터 초기화 <span aria-hidden="true">↺</span></button>
+        </div>
+        <div id="lab-list" class="note-list" aria-label="검색 결과"><p class="loading-state">기록한 풀이를 준비하고 있어요.</p></div>
+        <button id="load-more" class="load-more" type="button" hidden>더 보기</button>
+        <p id="library-caption" class="library-caption">문제 옆의 별을 눌러 자주 보는 풀이를 모아 두세요.</p>
+        <noscript><p>검색을 사용하려면 JavaScript를 켜 주세요. <a href="https://github.com/ddomology/portswigger-lab-notes/tree/main/content">GitHub에서 풀이 보기</a></p></noscript>
       </section>
     )
   }

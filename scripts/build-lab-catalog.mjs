@@ -1,14 +1,18 @@
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
-import { resolve, relative, join } from 'node:path';
-import { createRequire } from 'node:module';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { resolve, join, dirname, posix } from 'node:path';
 
-const require = createRequire(resolve('_quartz/package.json'));
-const matter = require('gray-matter');
 const catalog = JSON.parse(readFileSync('data/labs.json', 'utf8'));
+const aliases = JSON.parse(readFileSync('site/topic-aliases.json', 'utf8'));
+const sourceNotes = JSON.parse(readFileSync('_quartz/note-source-index.json', 'utf8'));
 const output = resolve('_quartz/public');
 const index = JSON.parse(readFileSync(join(output, 'static/contentIndex.json'), 'utf8'));
-const contentRoot = resolve('content');
-const sourcePaths = new Map(Object.entries(index).map(([slug, item]) => [item.filePath.replaceAll('\\', '/'), slug]));
+const sourcePaths = new Map();
+for (const [slug, item] of Object.entries(index)) {
+  const sourcePath = String(item.filePath || '').replaceAll('\\', '/');
+  // Quartz releases have used both content-relative and content-prefixed paths.
+  sourcePaths.set(sourcePath, slug);
+  sourcePaths.set(sourcePath.replace(/^(?:.*\/)?content\//, ''), slug);
+}
 const ids = new Set();
 const urls = new Set();
 for (const lab of catalog.labs) {
@@ -19,6 +23,8 @@ for (const lab of catalog.labs) {
   lab.noteUrl = null;
   lab.noteStatus = null;
   lab.noteExists = false;
+  lab.noteUpdatedAt = null;
+  lab.noteSearchText = '';
 }
 const normalizeUrl = value => {
   try {
@@ -28,29 +34,82 @@ const normalizeUrl = value => {
 };
 const byUrl = new Map(catalog.labs.map(lab => [normalizeUrl(lab.url), lab]));
 const byPath = new Map(catalog.labs.map(lab => [lab.notePath, lab]));
+const byCategory = new Map(catalog.categories.map(category => [category.id, category]));
 
-function walk(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') || ['templates', 'private'].includes(entry.name)) continue;
-    const file = join(dir, entry.name);
-    if (entry.isDirectory()) { walk(file); continue; }
-    if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
-    const notePath = relative(contentRoot, file).replaceAll('\\', '/');
-    const { data } = matter(readFileSync(file, 'utf8'));
-    const lab = byUrl.get(normalizeUrl(data.lab_url)) || byPath.get(notePath);
-    if (!lab) continue;
-    if (lab.noteExists) throw new Error('Multiple notes link to ' + lab.url + ': ' + lab.notePath + ', ' + notePath);
-    const slug = sourcePaths.get(notePath);
-    lab.notePath = notePath;
+catalog.notes = sourceNotes.map(source => {
+  const lab = byUrl.get(normalizeUrl(source.labUrl)) || byPath.get(source.notePath);
+  if (lab?.noteExists) throw new Error('Multiple notes link to ' + lab.url + ': ' + lab.notePath + ', ' + source.notePath);
+  const slug = sourcePaths.get(source.notePath);
+  if (!slug || !existsSync(join(output, slug + '.html'))) throw new Error('Missing rendered note: ' + source.notePath);
+  const noteUrl = './' + slug.split('/').map(encodeURIComponent).join('/') + '.html';
+  const category = lab?.category || source.category || 'notes';
+  const categoryTitle = lab?.categoryTitle || source.categoryTitle || byCategory.get(category)?.title || (category === 'notes' ? '개념 · 메모' : category);
+  const searchText = [source.title, lab?.title, category, categoryTitle, ...(aliases[category] || []), ...source.tags, source.searchText].filter(Boolean).join(' ').normalize('NFKC');
+  const note = {
+    id: lab?.id || `note:${source.notePath}`,
+    title: source.title, noteUrl, notePath: source.notePath,
+    category, categoryTitle,
+    difficulty: source.difficulty || lab?.difficulty || '',
+    updatedAt: source.updatedAt,
+    searchText, tags: source.tags,
+    ...(lab ? { labId: lab.id } : {}),
+  };
+  if (lab) {
+    lab.notePath = source.notePath;
     lab.noteExists = true;
-    lab.noteStatus = slug ? 'published' : 'draft';
-    if (slug) {
-      if (!existsSync(join(output, slug + '.html'))) throw new Error('Missing rendered note: ' + slug);
-      lab.noteUrl = './' + slug.split('/').map(encodeURIComponent).join('/') + '.html';
+    lab.noteStatus = 'published';
+    lab.noteUrl = noteUrl;
+    lab.noteUpdatedAt = source.updatedAt;
+    lab.noteSearchText = searchText;
+  }
+  return note;
+}).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.title.localeCompare(b.title) || a.notePath.localeCompare(b.notePath));
+catalog.aliases = aliases;
+catalog.noteCount = catalog.notes.length;
+
+mkdirSync(join(output, '_dashboard'), { recursive: true });
+writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));
+writeFileSync(join(output, '_dashboard/notes.json'), JSON.stringify({ schemaVersion: 1, notes: catalog.notes, aliases }));
+
+function legacyRedirect(filename, destination, title) {
+  // A real Markdown page takes precedence over any former generated index.
+  if (Object.hasOwn(index, filename.replace(/\.html$/, ''))) return;
+  const escape = value => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  mkdirSync(dirname(join(output, filename)), { recursive: true });
+  writeFileSync(join(output, filename), `<!doctype html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=${escape(destination)}"><meta name="robots" content="noindex"><link rel="canonical" href="${escape(destination)}"><title>${escape(title)}</title></head><body><p><a href="${escape(destination)}">${escape(title)} →</a></p></body></html>\n`);
+}
+legacyRedirect('notes.html', './', '풀이 노트');
+legacyRedirect('guide.html', 'https://github.com/ddomology/portswigger-lab-notes#노트-작성', '노트 작성 안내');
+
+const folderCategories = new Map();
+const legacyTags = new Map();
+const slugTag = tag => tag.split('/').map(segment => segment.replace(/\s/g, '-').replace(/&/g, '-and-').replace(/%/g, '-percent').replace(/[?#]/g, '')).join('/').replace(/\/$/, '');
+const homeFrom = filename => (posix.relative(posix.dirname(filename), '.') || '.') + '/';
+for (const note of catalog.notes) {
+  const slug = sourcePaths.get(note.notePath);
+  const segments = slug.split('/');
+  for (let count = 1; count < segments.length; count++) {
+    const folder = segments.slice(0, count).join('/');
+    if (!folderCategories.has(folder)) folderCategories.set(folder, new Set());
+    folderCategories.get(folder).add(note.category);
+  }
+  for (const tag of note.tags) {
+    const parts = String(tag).split('/');
+    for (let count = 1; count <= parts.length; count++) {
+      const raw = parts.slice(0, count).join('/');
+      const normalized = slugTag(raw);
+      if (normalized && !normalized.split('/').some(segment => !segment || segment === '.' || segment === '..')) legacyTags.set(normalized, raw);
     }
   }
 }
-walk(contentRoot);
-mkdirSync(join(output, '_dashboard'), { recursive: true });
-writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));
-console.log('Quartz lab catalog: ' + catalog.labs.length + ' labs, ' + catalog.categories.length + ' topics, ' + catalog.labs.filter(l => l.noteUrl).length + ' published notes.');
+for (const [folder, categories] of folderCategories) {
+  const filename = `${folder}/index.html`;
+  const topic = categories.size === 1 ? [...categories][0] : '';
+  legacyRedirect(filename, homeFrom(filename) + (topic ? `?topic=${encodeURIComponent(topic)}` : ''), '풀이 노트');
+}
+for (const [tag, raw] of legacyTags) {
+  const filename = `tags/${tag}.html`;
+  legacyRedirect(filename, homeFrom(filename) + `?q=${encodeURIComponent(raw)}`, '태그로 풀이 찾기');
+}
+legacyRedirect('tags/index.html', '../', '풀이 노트');
+console.log(`Quartz catalog: ${catalog.labs.length} labs, ${catalog.notes.length} public notes; legacy links preserved.`);

@@ -5,7 +5,6 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data"
 difficulty: Apprentice
-draft: false
 ---
 
 # SQL injection vulnerability in WHERE clause allowing retrieval of hidden data

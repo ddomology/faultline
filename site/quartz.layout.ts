@@ -1,8 +1,16 @@
 import { PageLayout, SharedLayout } from "./quartz/cfg"
 import * as Component from "./quartz/components"
+import { QuartzComponent, QuartzComponentProps } from "./quartz/components/types"
+import { Root } from "hast"
 import NotebookNav from "./quartz/components/NotebookNav"
 import LabExplorer from "./quartz/components/LabExplorer"
 import TopicExplorer from "./quartz/components/TopicExplorer"
+
+const isHome = (page: QuartzComponentProps) => page.fileData.slug === "index"
+const onReader = (component: QuartzComponent) => Component.ConditionalRender({
+  component,
+  condition: (page) => !isHome(page),
+})
 
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
@@ -16,38 +24,24 @@ export const sharedPageComponents: SharedLayout = {
   }),
 }
 
-const left = [
-  Component.PageTitle(),
-  Component.MobileOnly(Component.Spacer()),
-  Component.Flex({
-    components: [
-      { Component: Component.Search(), grow: true },
-      { Component: Component.Darkmode() },
-      { Component: Component.ReaderMode() },
-    ],
-  }),
-  TopicExplorer(),
-]
+const left = [onReader(Component.Search()), onReader(TopicExplorer())]
 
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
     NotebookNav(),
-    Component.ConditionalRender({ component: Component.Breadcrumbs({ rootName: "문제", showCurrentPage: false }), condition: (page) => page.fileData.slug !== "index" && page.fileData.slug !== "notes" }),
-    Component.ArticleTitle(),
-    Component.ConditionalRender({ component: Component.ContentMeta(), condition: (page) => page.fileData.slug !== "index" }),
-    Component.TagList(),
-    Component.ConditionalRender({ component: LabExplorer(), condition: (page) => page.fileData.slug === "index" }),
+    // Existing notes already have their own Markdown h1. Render one title only.
+    Component.ConditionalRender({
+      component: Component.ArticleTitle(),
+      condition: (page) => !isHome(page) && !(page.tree as Root).children.some((node) => node.type === "element" && node.tagName === "h1"),
+    }),
+    Component.ConditionalRender({ component: LabExplorer(), condition: isHome }),
   ],
   left,
-  right: [
-    Component.ConditionalRender({ component: Component.Graph(), condition: (page) => page.fileData.slug !== "index" }),
-    Component.ConditionalRender({ component: Component.DesktopOnly(Component.TableOfContents()), condition: (page) => page.fileData.slug !== "index" }),
-    Component.ConditionalRender({ component: Component.Backlinks(), condition: (page) => page.fileData.slug !== "index" }),
-  ],
+  right: [onReader(Component.DesktopOnly(Component.TableOfContents()))],
 }
 
 export const defaultListPageLayout: PageLayout = {
-  beforeBody: [NotebookNav(), Component.Breadcrumbs({ rootName: "문제", showCurrentPage: false }), Component.ArticleTitle(), Component.ContentMeta()],
+  beforeBody: [NotebookNav(), Component.ArticleTitle()],
   left,
   right: [],
 }

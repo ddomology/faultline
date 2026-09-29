@@ -5,7 +5,6 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle"
 difficulty: Practitioner
-draft: false
 ---
 
 # SQL injection attack, querying the database type and version on Oracle

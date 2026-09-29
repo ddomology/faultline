@@ -3,7 +3,6 @@ title: 문제 제목
 lab_url: https://portswigger.net/web-security/주제/lab-문제명
 tags:
   - portswigger
-draft: true
 ---
 
 # 문제 제목
