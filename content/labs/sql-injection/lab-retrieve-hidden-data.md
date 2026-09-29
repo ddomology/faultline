@@ -5,11 +5,12 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data"
 difficulty: Apprentice
+note_kind: solution
 ---
 
 # SQL injection vulnerability in WHERE clause allowing retrieval of hidden data
 
-## 문제 설명
+## 문제 조건과 설명
 
 상품을 카테고리별로 조회하는 웹 쇼핑몰이다. 이 실습의 **상품 카테고리 필터**에는 SQL injection 취약점이 있으며, 카테고리를 선택하면 서버가 해당 조건에 맞는 상품을 데이터베이스에서 조회한다.
 
@@ -41,6 +42,8 @@ WHERE category = 'Gifts'
 - **입력 지점:** 상품 카테고리를 선택하는 필터.
 - **취약점 위치:** 상품 조회 SQL의 `WHERE` 절.
 - **확인할 결과:** 요청을 변경한 뒤 응답의 상품 목록에 미출시 상품이 포함되는지 확인한다.
+
+출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data)
 
 ## 탐색 과정
 

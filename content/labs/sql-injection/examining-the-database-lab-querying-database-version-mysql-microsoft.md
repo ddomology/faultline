@@ -5,11 +5,20 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-mysql-microsoft"
 difficulty: Practitioner
+note_kind: solution
 ---
 
 # SQL injection attack, querying the database type and version on MySQL and Microsoft
 
 공개 풀이를 참고하지 않고, 실습에서 직접 확인한 요청과 응답을 순서대로 기록한다. 마지막에 사용자가 랩의 Solved 상태를 확인했다.
+
+## 문제 조건과 설명
+
+상품 카테고리 필터에 SQL injection 취약점이 있다. 필터의 조회 결과가 응답에 표시되므로, `UNION`으로 추가한 조회 결과도 페이지에서 확인할 수 있다. 문제 설명은 반환 열의 수나 문자열이 표시되는 위치를 알려주지 않는다.
+
+**완료 조건은 데이터베이스의 버전 문자열을 화면에 표시하는 것**이다. 이 실습은 MySQL과 Microsoft SQL Server를 대상으로 하므로, 실제 응답에 나타나는 값으로 서버 정보를 확인해야 한다. 아래 기록은 열 수와 출력 위치를 먼저 알아낸 뒤 버전 문자열을 요청한 과정이다.
+
+출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-mysql-microsoft)
 
 ## 1. 첫 `ORDER BY` 요청에서 500
 

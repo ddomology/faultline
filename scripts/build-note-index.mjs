@@ -51,9 +51,13 @@ function walk(dir) {
     if (body !== content) writeFileSync(file, matter.stringify(body, data));
     const title = String(data.title || content.match(/^#\s+(.+)$/m)?.[1] || entry.name.slice(0, -3));
     const tags = (Array.isArray(data.tags) ? data.tags : typeof data.tags === 'string' ? [data.tags] : []).map(String);
+    const labUrl = String(data.lab_url || '');
+    const noteKind = String(data.note_kind || (labUrl ? 'solution' : 'note'));
+    if (!['problem', 'solution', 'note'].includes(noteKind)) throw new Error(`Invalid note_kind in ${notePath}: ${noteKind}`);
+    if (noteKind === 'problem' && !labUrl) throw new Error(`Problem page is missing lab_url: ${notePath}`);
     notes.push({
       notePath, title, tags,
-      labUrl: String(data.lab_url || ''),
+      labUrl, noteKind,
       category: String(data.category || data.topic || ''),
       categoryTitle: String(data.category_title || ''),
       difficulty: String(data.difficulty || ''),

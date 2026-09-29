@@ -46,7 +46,7 @@
     if (location.pathname + location.search !== next) history.replaceState(null, '', next);
   }
   function baseEntries() {
-    return entries.filter((entry) => state.view === 'all' || (state.view === 'notes' ? entry.noteUrl : bookmarks.has(entry.id)));
+    return entries.filter((entry) => state.view === 'all' || (state.view === 'notes' ? entry.noteUrl && entry.noteKind !== 'problem' : bookmarks.has(entry.id)));
   }
   function filteredEntries() {
     const tokens = normalize(state.query).trim().split(/\s+/).filter(Boolean);
@@ -129,9 +129,14 @@
     heading.append(link);
     const footer = node('div', 'note-row-footer');
     if (entry.noteUrl) {
-      footer.append(node('span', 'note-available', '풀이 읽기'));
+      footer.append(node('span', 'note-available', entry.noteKind === 'problem' ? '문제 읽기' : entry.noteKind === 'note' ? '노트 읽기' : '풀이 읽기'));
       const formatted = dateLabel(entry.updatedAt);
       if (formatted) { const time = node('time', '', `${formatted} 수정`); time.dateTime = entry.updatedAt; footer.append(time); }
+      if (entry.noteKind === 'problem' && entry.url) {
+        const source = node('a', 'note-source', '공식 문제 ↗');
+        source.href = entry.url; source.target = '_blank'; source.rel = 'noopener noreferrer';
+        footer.append(source);
+      }
     } else footer.append(node('span', '', '기록 없음'), node('span', 'note-source', '원본 실습 열기 ↗'));
     content.append(meta, heading, footer);
     row.append(icon, content, bookmarkButton(entry));
@@ -160,7 +165,7 @@
     categoryOptions();
     $('search').value = state.query; $('difficulty').value = state.difficulty; $('sort').value = state.sort;
     root.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
-    $('notes-count').textContent = entries.filter((entry) => entry.noteUrl).length;
+    $('notes-count').textContent = entries.filter((entry) => entry.noteUrl && entry.noteKind !== 'problem').length;
     $('labs-count').textContent = catalog.labs.length;
     $('saved-count').textContent = entries.filter((entry) => bookmarks.has(entry.id)).length;
     $('reset-filters').hidden = !state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'recent';
@@ -173,7 +178,7 @@
     $('load-more').hidden = matches.length <= limit;
     $('load-more').textContent = `더 보기 · ${Math.min(limit, matches.length)} / ${matches.length}`;
     $('library-caption').textContent = storageAvailable
-      ? state.view === 'saved' ? '즐겨찾기는 이 브라우저에 저장됩니다.' : state.view === 'all' ? `전체 실습은 ${catalog.snapshotDate} 목록 기준입니다. 풀이가 있는 문제는 노트로 바로 연결됩니다.` : '자주 찾는 풀이는 오른쪽 별을 눌러 즐겨찾기에 모아 두세요.'
+      ? state.view === 'saved' ? '즐겨찾기는 이 브라우저에 저장됩니다.' : state.view === 'all' ? `전체 실습은 ${catalog.snapshotDate} 목록 기준입니다. 각 문제의 조건·설명과 작성한 풀이를 읽을 수 있습니다.` : '자주 찾는 풀이는 오른쪽 별을 눌러 즐겨찾기에 모아 두세요.'
       : '브라우저 저장이 차단되어 즐겨찾기는 현재 화면에서만 유지됩니다.';
     syncUrl();
   }

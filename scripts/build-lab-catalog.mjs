@@ -48,6 +48,7 @@ catalog.notes = sourceNotes.map(source => {
   const note = {
     id: lab?.id || `note:${source.notePath}`,
     title: source.title, noteUrl, notePath: source.notePath,
+    noteKind: source.noteKind || (lab ? 'solution' : 'note'),
     category, categoryTitle,
     difficulty: source.difficulty || lab?.difficulty || '',
     updatedAt: source.updatedAt,
@@ -57,7 +58,7 @@ catalog.notes = sourceNotes.map(source => {
   if (lab) {
     lab.notePath = source.notePath;
     lab.noteExists = true;
-    lab.noteStatus = 'published';
+    lab.noteStatus = note.noteKind;
     lab.noteUrl = noteUrl;
     lab.noteUpdatedAt = source.updatedAt;
     lab.noteSearchText = searchText;
@@ -66,6 +67,7 @@ catalog.notes = sourceNotes.map(source => {
 }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.title.localeCompare(b.title) || a.notePath.localeCompare(b.notePath));
 catalog.aliases = aliases;
 catalog.noteCount = catalog.notes.length;
+catalog.solutionCount = catalog.notes.filter(note => note.labId && note.noteKind === 'solution').length;
 
 mkdirSync(join(output, '_dashboard'), { recursive: true });
 writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));

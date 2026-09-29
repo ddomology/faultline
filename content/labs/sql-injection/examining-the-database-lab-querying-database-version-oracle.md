@@ -5,11 +5,20 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle"
 difficulty: Practitioner
+note_kind: solution
 ---
 
 # SQL injection attack, querying the database type and version on Oracle
 
 목표 문자열은 실습 설명에 있었지만, 그것을 읽을 객체와 열은 몰랐다. 이 글은 **실제로 확인한 요청과 응답**을 바탕으로, 정답을 모르는 상태에서 다시 따라 할 수 있는 탐색 순서로 정리했다. 초기의 실패 시도와 이후 재검증한 전수 조회는 마지막에 구분해 적었다.
+
+## 문제 조건과 설명
+
+상품 카테고리 필터에 SQL injection 취약점이 있다. 필터 조회의 결과가 페이지 응답에 표시되므로 `UNION`으로 더한 행을 화면에서 확인할 수 있다. 실습 제목은 Oracle을 대상으로 한다고 알려주지만, 버전 정보가 들어 있는 객체와 열은 문제 설명에서 제공하지 않는다.
+
+**완료 조건은 데이터베이스 버전 문자열을 페이지에 표시하는 것**이다. 따라서 먼저 원래 조회의 열 수와 출력 가능한 열을 알아내고, 이후 확인한 데이터베이스 메타데이터에서 버전 값을 찾아야 한다. 아래 탐색 과정은 그때 실제로 확인한 요청과 응답을 따른다.
+
+출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)
 
 ## 1. 반환 열 수와 문자열 출력 위치 확인
 

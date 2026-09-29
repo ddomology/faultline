@@ -10,7 +10,9 @@
 .topic-name { display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;padding:0 8px;color:var(--dark);font-size:12px;font-weight:650!important; }
 .topic-count { color:var(--gray);font:11px/1.5 var(--codeFont); }
 .topic-children { display:flex;flex-direction:column;gap:4px; }
-.topic-children a { position:relative;display:block;padding:10px 11px;border-radius:6px;color:var(--darkgray);font-size:12px;line-height:1.65;overflow-wrap:anywhere; }
+.topic-children a { position:relative;display:flex;align-items:flex-start;gap:9px;padding:10px 11px;border-radius:6px;color:var(--darkgray);font-size:12px;line-height:1.65;overflow-wrap:anywhere; }
+.topic-item-index { flex:none;min-width:3ch;color:var(--gray);font:10px/2 var(--codeFont);font-variant-numeric:tabular-nums; }
+.topic-item-title { min-width:0; }
 .topic-children a:hover { color:var(--secondary);background:var(--highlight); }
 .topic-children a[aria-current="page"] { color:var(--secondary);background:var(--highlight);font-weight:600; }
 .topic-children a[aria-current="page"]::before { position:absolute;content:"";width:3px;border-radius:3px;background:var(--secondary);left:0;top:11px;bottom:11px; }

@@ -5,11 +5,12 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/lab-login-bypass"
 difficulty: Apprentice
+note_kind: solution
 ---
 
 # SQL injection vulnerability allowing login bypass
 
-## 문제 조건
+## 문제 조건과 설명
 
 이 실습의 **로그인 기능에는 SQL injection 취약점**이 존재한다. 이를 이용해 애플리케이션에 `administrator` 사용자로 로그인해야 한다.
 
@@ -17,6 +18,10 @@ difficulty: Apprentice
 - **목표 계정:** `administrator`.
 - **해결 조건:** SQL injection으로 인증을 우회하여 해당 계정으로 로그인한다.
 - **제공되지 않은 정보:** 실제 로그인 처리 SQL과 데이터베이스 종류는 문제 설명에 명시되어 있지 않다.
+
+로그인 요청의 어느 입력이 SQL 조건에 영향을 주는지 확인하고, 응답에서 인증 성공 여부를 판별해야 한다. 아래 기록은 실패한 기본 로그인과 입력 변경을 차례로 비교한 결과다.
+
+출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/lab-login-bypass)
 
 > [!info] 문제에서 주어진 정보
 > 위 내용은 공식 문제 설명에서 제공한 조건이다. 직접 관찰한 요청과 응답, 시도한 입력 및 결과는 탐색 과정에 기록한다.

@@ -41,25 +41,28 @@ export default (() => {
     const noteGroups = groups.filter((group) => group.notes.length > 0)
     const total = noteGroups.reduce((count, group) => count + group.notes.length, 0)
     return (
-      <section class="topic-browser" aria-label="작성한 풀이 노트">
+      <section class="topic-browser" aria-label="실습과 노트 목록">
         <button class="topic-mobile-toggle" type="button" aria-expanded="false" aria-controls="topic-note-panel">
-          <span>풀이 목록 <span class="topic-total">{total}</span></span><span class="topic-toggle-arrow" aria-hidden="true">⌄</span>
+          <span>실습 · 노트 <span class="topic-total">{total}</span></span><span class="topic-toggle-arrow" aria-hidden="true">⌄</span>
         </button>
         <div class="topic-note-panel" id="topic-note-panel">
-          <div class="topic-heading"><span>풀이 노트</span><span class="topic-total">{total}</span></div>
+          <div class="topic-heading"><span>실습 · 노트</span><span class="topic-total">{total}</span></div>
           <ul class="topic-tree">
             {noteGroups.map((group) => (
               <li class="topic-entry">
                 <a class="topic-name" href={`${root}/?topic=${encodeURIComponent(group.id)}`}><span>{group.title}</span><span class="topic-count">{group.notes.length}</span></a>
                 <ul class="topic-children">
                   {group.notes.sort((a, b) => a.order - b.order).map((note) => (
-                    <li><a href={`${root}/${note.slug.split("/").map(encodeURIComponent).join("/")}.html`} aria-current={note.slug === fileData.slug ? "page" : undefined}>{note.title}</a></li>
+                    <li><a href={`${root}/${note.slug.split("/").map(encodeURIComponent).join("/")}.html`} aria-current={note.slug === fileData.slug ? "page" : undefined}>
+                      {Number.isSafeInteger(note.order) && note.order < Number.MAX_SAFE_INTEGER ? <span class="topic-item-index" aria-hidden="true">{String(note.order).padStart(3, "0")}</span> : null}
+                      <span class="topic-item-title">{note.title}</span>
+                    </a></li>
                   ))}
                 </ul>
               </li>
             ))}
           </ul>
-          <a class="topic-all" href={`${root}/`}>모든 풀이 보기 <span aria-hidden="true">↗</span></a>
+          <a class="topic-all" href={`${root}/?view=all`}>전체 실습 보기 <span aria-hidden="true">↗</span></a>
         </div>
       </section>
     )

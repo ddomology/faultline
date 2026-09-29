@@ -5,6 +5,7 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-non-oracle"
 difficulty: Practitioner
+note_kind: solution
 draft: false
 ---
 
@@ -12,11 +13,13 @@ draft: false
 
 공개 풀이를 참고하지 않고, 실습에서 확인한 요청과 응답을 순서대로 기록한다. `administrator` 계정으로 로그인해 Solved 상태를 확인했다.
 
-## 문제 조건
+## 문제 조건과 설명
 
 공식 문제 설명에 따르면 상품 카테고리 필터에 SQL 주입 취약점이 있고, 조회 결과가 페이지 응답에 표시된다. 따라서 `UNION`으로 다른 테이블의 데이터를 가져올 수 있다.
 
 애플리케이션에는 로그인 기능이 있다. 데이터베이스에는 사용자 이름과 비밀번호를 담은 테이블이 있으며, 그 **테이블 이름과 열 이름을 찾아** 사용자들의 계정 정보를 조회해야 한다. **완료 조건은 `administrator` 계정으로 로그인하는 것**이다.
+
+문제는 계정 테이블과 열의 실제 이름을 알려주지 않는다. 따라서 화면에 출력되는 조회 결과를 이용해 접근 가능한 테이블을 확인하고, 계정 데이터가 든 열을 찾아야 한다. 아래 과정에서 나온 `users_ntqhfo` 같은 이름은 이 실습 인스턴스에서 직접 확인한 값이다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-non-oracle)
 
