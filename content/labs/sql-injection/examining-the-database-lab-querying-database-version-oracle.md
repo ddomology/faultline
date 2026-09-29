@@ -88,6 +88,8 @@ draft: false
 
 세 후보의 오류 응답에는 `Internal Server Error`만 보였고 Oracle 오류 코드는 없었다. 대조군에서는 행 수 조회가 성공했으므로 `COUNT(*)` 구문 자체가 실패한 것은 아니다. 후보 세 곳은 문자열 열을 선택하지 않고 행 수만 요청해도 실패했다. **열 메타데이터에 나타난다는 사실만으로 해당 뷰를 이 계정에서 조회할 수 있다고 판단할 수 없다.** 다만 500의 정확한 원인(권한, 뷰 접근, 그 밖의 SQL 오류)은 이 응답만으로 구별할 수 없다. 목표 문자열 다섯 개를 새로 얻거나 `Solved` 상태를 확인하지는 못했다.
 
+새 인스턴스에서도 같은 세션으로 정상 조회(`PRODUCT_COMPONENT_VERSION.PRODUCT`: HTTP 200), 알려진 오류 대조군(`ORDER BY 3`: HTTP 500), 후보 뷰 조회(`GV_$VERSION.BANNER`: HTTP 500)를 비교했다. 두 500 응답의 **전체 HTML 본문과 헤더**에서 `ORA-xxxxx`, `PLS-xxxxx`, `SQLSTATE`, `SQLException` 표식을 찾지 못했다. 둘 다 일반적인 `Internal Server Error` 화면을 반환했다. 따라서 현재 HTTP 응답만으로 Oracle 오류 번호를 확인하거나 두 실패 원인이 같은지 판정할 수 없다.
+
 ## 배운 점
 
 - `PRODUCT_COMPONENT_VERSION`의 `PRODUCT`, `VERSION`, `STATUS`를 함께 선택하면 같은 원본 행의 값이 한 줄에 표시된다. 앞선 CSV처럼 열마다 따로 요청한 뒤 행 번호로 맞추는 방식은 원본 행의 대응을 보장하지 않는다.
