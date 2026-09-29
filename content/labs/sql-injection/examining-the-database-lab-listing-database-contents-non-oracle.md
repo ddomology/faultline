@@ -96,4 +96,40 @@ public  products
 
 **판단:** `products`는 상품 카테고리 화면과 관련돼 보이고, `users_ntqhfo`는 문제 조건의 사용자 계정 테이블 후보이다. `pg_catalog`와 `public` 스키마 이름은 PostgreSQL 계열일 가능성을 높이지만, 지금 단계에서는 출력에 나타난 이름 자체만 확정한다.
 
-**다음 행동:** `public.users_ntqhfo`의 열 이름과 자료형을 `information_schema.columns`에서 확인한다. 계정 정보가 실제로 담겼는지는 그 결과를 보고 판단한다.
+**다음 행동:** `public.users_ntqhfo`의 열 이름과 자료형을 확인했다.
+
+## 6. 계정 테이블의 열 확인
+
+**실행:**
+
+~~~sql
+' UNION SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'users_ntqhfo' --
+~~~
+
+**관찰:** 화면에 `email`, `password_zdayfw`, `username_hxfyzh` 세 열이 표시됐고, 자료형은 모두 `character varying`이었다.
+
+![users_ntqhfo 열 목록](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-listing-database-contents-non-oracle/01-columns.png)
+
+**판단:** 사용자 이름과 비밀번호를 담을 가능성이 높은 열을 실제 메타데이터에서 확인했다. 열 이름만으로 데이터 내용까지 확정할 수는 없다.
+
+**다음 행동:** 확인한 두 열을 `UNION SELECT`의 두 출력 위치에 넣어 실제 행을 조회했다.
+
+## 7. 계정 행 출력
+
+**실행:**
+
+~~~sql
+' UNION SELECT username_hxfyzh, password_zdayfw FROM public.users_ntqhfo --
+~~~
+
+**관찰:** 화면에 `administrator`, `wiener`, `carlos`의 사용자 이름과 각 비밀번호가 두 열로 표시됐다. 값은 이 실습 인스턴스의 화면 캡처에 보존했다.
+
+![계정 조회 결과](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-listing-database-contents-non-oracle/02-accounts.png)
+
+**판단:** `users_ntqhfo`가 문제 조건의 계정 테이블임을 실제 행으로 확인했다. 아직 `administrator` 로그인과 Solved 상태는 확인하지 않았다.
+
+**다음 행동:** 출력된 `administrator` 계정 값으로 로그인해 완료 조건을 확인한다.
+
