@@ -6,6 +6,7 @@ const changes = [
   ['pageTitle: "Quartz 4"', 'pageTitle: "PortSwigger Lab Notes"'],
   ['baseUrl: "quartz.jzhao.xyz"', 'baseUrl: "ddomology.github.io/portswigger-lab-notes"'],
   ['locale: "en-US"', 'locale: "ko-KR"'],
+  ['enableSPA: true', 'enableSPA: false'],
   ['analytics: {\n      provider: "plausible",\n    }', 'analytics: null'],
   ['Plugin.CustomOgImages(),', ''],
 ];
