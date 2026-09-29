@@ -37,6 +37,8 @@ jobs:
       - name: Install Quartz
         working-directory: _quartz
         run: npm ci
+      - name: Index Obsidian notes
+        run: node scripts/build-note-index.mjs
       - name: Render notes
         working-directory: _quartz
         run: npx quartz build

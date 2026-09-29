@@ -52,7 +52,7 @@ function walk(dir) {
 }
 walk(contentRoot);
 mkdirSync(join(output, '_dashboard'), { recursive: true });
-cpSync('site/index.html', join(output, 'index.html'));
+cpSync('site/index.html', join(output, 'practice.html'));
 for (const file of ['dashboard.css', 'dashboard.js']) cpSync(join('site', file), join(output, '_dashboard', file));
 writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));
 console.log('Dashboard: ' + catalog.labs.length + ' labs, ' + catalog.categories.length + ' topics, ' + catalog.labs.filter(l => l.noteUrl).length + ' published notes.');

@@ -9,3 +9,13 @@ article img { border-radius: 10px; }
 article a { text-underline-offset: 3px; }
 .page-title a { font-size: 1.25rem; letter-spacing: -.03em; }
 :root[saved-theme="dark"] body { background: #161618; }
+
+@media (max-width: 800px) {
+  .page > #quartz-body { grid-template-columns: minmax(0, 1fr); }
+  .page > #quartz-body .sidebar.left { width: 100%; min-width: 0; }
+  .sidebar.left .readermode { display: none; }
+  .sidebar.left .page-title { min-width: 0; max-width: calc(100% - 150px); flex-shrink: 1; }
+  .sidebar.left .page-title a { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .explorer .explorer-content { width: 100%; max-width: 100%; }
+  article, .page-header { overflow-wrap: anywhere; }
+}

@@ -1,6 +1,8 @@
 # PortSwigger Lab Notes
 
-옵시디언으로 작성하고 GitHub Pages에서 읽는 PortSwigger 풀이 노트입니다. 첫 화면에서 전체 문제를 검색하고 문제별 풀이를 작성할 수 있습니다.
+옵시디언으로 작성하고 GitHub Pages에서 읽는 PortSwigger 풀이 노트입니다. 첫 화면은 Markdown 노트 목록이며, 제목을 누르면 Quartz가 렌더링한 본문이 열립니다. 문제 검색·분류는 별도의 `practice.html` 페이지에서 제공합니다.
+
+`content/` 아래의 모든 공개 `.md` 파일은 문제와 연결되지 않아도 노트 목록에 자동으로 나타납니다. `lab_url`은 문제 목록과 연결할 때만 필요합니다. 일반 노트의 제목·표·코드·이미지·위키링크·콜아웃·수식은 Quartz의 Obsidian Markdown 렌더러가 처리합니다.
 
 ## 문제 탐색과 작성
 - 저장한 All labs 페이지 기준 **273문제 / 31주제 / 완료 3문제**를 수록합니다. 완료 상태는 **2026-09-29 스냅샷**입니다.
@@ -44,7 +46,7 @@ Quartz 4.5.2의 고정 커밋을 GitHub Actions에서 가져와 빌드하므로 
 - 새 문제 목록을 반영하려면 저장한 HTML을 로컬에서 변환합니다:
 
 ```bash
-python scripts/import-portswigger-labs.py saved-all-labs.html --output data/labs.json --snapshot-date YYYY-MM-DD
+python scripts/import-portswigger-labs.py saved-all-practice.html --output data/labs.json --snapshot-date YYYY-MM-DD
 ```
 
 그 뒤 변경된 `data/labs.json`을 commit/push합니다. 저장한 HTML 자체는 올리지 않습니다.
