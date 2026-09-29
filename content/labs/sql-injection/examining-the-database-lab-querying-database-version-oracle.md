@@ -263,12 +263,44 @@ CSV 저장 결과는 확보했지만, 이 파일에는 데이터베이스 버전
 원본 HTTP 응답과 요청별 오류 로그는 이번 첨부에 포함되지 않았다. 같은 문자열이 반복된 원인은 이 CSV만으로 확정하지 않았으며, 실습 해결 여부도 아직 확인하지 않았다.
 
 
+### 6. `PRODUCT_COMPONENT_VERSION`에서 버전 문자열 확인
+
+2026-09-30에 앞 단계의 `results.json`을 입력으로 사용해 뷰의 **값**을 다시 조회했다. 열 정보 수집 당시의 랩 호스트와 이번 값 조회의 랩 호스트는 다르다. JSON에는 `PRODUCT_COMPONENT_VERSION` 뷰의 `PRODUCT`, `STATUS`, `VERSION`이라는 열 이름과 자료형만 들어 있었다. 아래 버전 문자열은 JSON에서 읽은 값이 아니다.
+
+각 열에 대해 상품 카테고리 필터의 `category` 매개 변수로 별도 요청을 보냈다. 실제 요청은 이 문자열을 URL 인코딩하고 실습 세션 쿠키를 붙여 `/filter`에 보낸 것이다. 세션 쿠키 값은 노트에 남기지 않는다.
+
+```sql
+' UNION ALL SELECT "PRODUCT", NULL FROM "PRODUCT_COMPONENT_VERSION" --
+' UNION ALL SELECT "STATUS", NULL FROM "PRODUCT_COMPONENT_VERSION" --
+' UNION ALL SELECT "VERSION", NULL FROM "PRODUCT_COMPONENT_VERSION" --
+```
+
+응답 HTML의 `is-table-longdescription` 표에서 각 행의 `<th>` 텍스트를 추출했다. `request-log.csv`에는 세 요청이 모두 `SUCCESS`이고 각각 4개 값을 얻었다고 기록되어 있다. `results-long.csv`의 해당 값은 다음과 같다.
+
+| 요청한 열 | 관찰한 값 |
+| --- | --- |
+| `PRODUCT` | `NLSRTL`, `Oracle Database 11g Express Edition`, `PL/SQL`, `TNS for Linux:` |
+| `STATUS` | `Production` 3개, `64bit Production` 1개 |
+| `VERSION` | `11.2.0.2.0` 4개 |
+
+따라서 이 실습 응답에서 **Oracle Database 11g Express Edition, 버전 `11.2.0.2.0`**을 확인했다. Oracle 문서에 따르면 `PRODUCT_COMPONENT_VERSION`은 설치된 데이터베이스와 구성 요소의 제품명, 버전, 상태를 보여주는 데이터 딕셔너리 뷰다. 이 값은 상품 데이터나 이전에 모은 열 이름 목록이 아니라, 해당 뷰를 조회한 결과다.
+
+`results.csv`는 서로 다른 열을 **별도 요청**으로 가져와 가로로 나란히 배치한다. 쿼리에 `ORDER BY`가 없으므로 가로 CSV의 같은 행이 동일한 원본 레코드라고 단정할 수 없다. 다만 `VERSION` 요청의 네 값이 모두 `11.2.0.2.0`이어서 위 데이터베이스 버전 확인은 행 정렬에 의존하지 않는다.
+
+이번 로그 전체에서는 48개 열 중 `SUCCESS` 11개, `EMPTY` 22개, HTTP 500 오류 6개, 식별자 검사로 `SKIPPED` 9개였다. 앞에 `_`가 붙은 뷰를 건너뛴 검사 오류는 이후 스크립트에서 수정했지만, 이 CSV는 수정 **전** 실행 결과다. HTTP 500의 원인은 응답 로그만으로 확정하지 않았다.
+
 ## 해결 과정
+
+버전 문자열은 저장된 CSV에서 확인했다. 수집 스크립트는 서버 응답 HTML을 파싱하지만, 원본 HTTP 응답은 따로 보관되지 않았다. PortSwigger의 공식 풀이에서는 `v$version`의 `BANNER`를 조회하지만, 이 기록에서는 `PRODUCT_COMPONENT_VERSION`을 통해 같은 목표인 데이터베이스 버전 식별에 도달했다. 실습 화면의 `Solved` 표시 여부는 별도로 확인하지 않았다.
 
 ## 배운 점
 
--
+- 열 이름을 나열한 결과와 열의 **실제 값**을 조회한 결과를 분리해서 기록해야 한다.
+- 여러 열을 별도 쿼리로 가져온 뒤 행 번호만으로 합치면 원본 레코드의 관계가 보장되지 않는다.
+- Oracle의 `PRODUCT_COMPONENT_VERSION`은 데이터베이스와 구성 요소의 버전을 확인할 수 있는 뷰다.
 
 ## 참고
 
-- [PortSwigger 원본 실습](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)
+- [PortSwigger 원본 실습과 공식 풀이](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)
+- [Oracle: PRODUCT_COMPONENT_VERSION으로 릴리스 확인](https://docs.oracle.com/cd/B28359_01/server.111/b28310/dba004.htm)
+
