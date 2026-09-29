@@ -67,6 +67,31 @@ catalog.notes = sourceNotes.map(source => {
 catalog.aliases = aliases;
 catalog.noteCount = catalog.notes.length;
 
+// Keep reference numbers independent of list filtering, sorting and note dates.
+// Original catalog categories retain their position; note-only categories follow.
+const newCategories = [...new Set([...catalog.labs, ...catalog.notes].map(entry => entry.category))]
+  .filter(id => !byCategory.has(id)).sort((a, b) => a.localeCompare(b));
+for (const id of newCategories) {
+  const entry = catalog.notes.find(note => note.category === id) || catalog.labs.find(lab => lab.category === id);
+  const category = { id, title: entry?.categoryTitle || id, count: catalog.labs.filter(lab => lab.category === id).length, solved: catalog.labs.filter(lab => lab.category === id && lab.solved).length };
+  catalog.categories.push(category);
+  byCategory.set(id, category);
+}
+const padNumber = value => String(value).padStart(2, '0');
+catalog.categories.forEach((category, index) => {
+  category.number = padNumber(index + 1);
+  const labs = catalog.labs.filter(lab => lab.category === category.id)
+    .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) || a.id.localeCompare(b.id));
+  labs.forEach((lab, position) => { lab.number = `${category.number}.${padNumber(position + 1)}`; });
+  const standalone = catalog.notes.filter(note => !note.labId && note.category === category.id)
+    .sort((a, b) => a.notePath.localeCompare(b.notePath));
+  standalone.forEach((note, position) => { note.number = `${category.number}.${padNumber(labs.length + position + 1)}`; });
+});
+const byLabId = new Map(catalog.labs.map(lab => [lab.id, lab]));
+for (const note of catalog.notes) {
+  if (note.labId) note.number = byLabId.get(note.labId).number;
+}
+
 mkdirSync(join(output, '_dashboard'), { recursive: true });
 writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));
 writeFileSync(join(output, '_dashboard/notes.json'), JSON.stringify({ schemaVersion: 1, notes: catalog.notes, aliases }));
