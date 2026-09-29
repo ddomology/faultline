@@ -20,8 +20,8 @@ for (const [before, after] of changes) {
 }
 // Set Quartz's base palette too, so first paint and generated styles stay monochrome.
 const palettes = {
-  lightMode: { light: "#ffffff", lightgray: "#e2e2e2", gray: "#747474", darkgray: "#444444", dark: "#111111", secondary: "#111111", tertiary: "#555555", highlight: "#f4f4f4", textHighlight: "#dedede" },
-  darkMode: { light: "#111111", lightgray: "#333333", gray: "#aaaaaa", darkgray: "#cccccc", dark: "#f1f1f1", secondary: "#f1f1f1", tertiary: "#bbbbbb", highlight: "#222222", textHighlight: "#444444" },
+  lightMode: { light: "#ffffff", lightgray: "#dedede", gray: "#666666", darkgray: "#303030", dark: "#111111", secondary: "#111111", tertiary: "#555555", highlight: "#f5f5f5", textHighlight: "#dedede" },
+  darkMode: { light: "#111111", lightgray: "#3a3a3a", gray: "#aaaaaa", darkgray: "#dddddd", dark: "#f1f1f1", secondary: "#f1f1f1", tertiary: "#bbbbbb", highlight: "#202020", textHighlight: "#444444" },
 };
 for (const [mode, colors] of Object.entries(palettes)) {
   const block = new RegExp(`${mode}: \\{[^}]*\\}`);

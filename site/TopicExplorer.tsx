@@ -51,17 +51,19 @@ export default (() => {
             <a data-explorer-view="all" href={`${root}/?view=all`}>전체 실습 <span>{catalog.labs.length}</span></a>
           </nav>
           <ul class="topic-tree">
-            {visible.map(group => (
-              <li class="topic-entry">
+            {visible.map(group => {
+              const expanded = group.notes.some(note => note.slug === fileData.slug)
+              return (
+              <li class="topic-entry" data-topic={group.id}>
                 <div class="topic-row">
-                  <button class="topic-expand" type="button" aria-expanded="true" aria-controls={`topic-${group.id}`} aria-label={`${group.title} 접기`}><span aria-hidden="true">⌄</span></button>
-                  <a class="topic-name" href={`${root}/?topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><span>{group.title}</span></a>
+                  <button class="topic-expand" type="button" aria-expanded={expanded} aria-controls={`topic-${group.id}`} aria-label={`${group.title} ${expanded ? "접기" : "펼치기"}`}><span aria-hidden="true">⌄</span></button>
+                  <a class="topic-name" href={`${root}/?view=all&topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><span>{group.title}</span></a>
                 </div>
-                <ul class="topic-children" id={`topic-${group.id}`}>
+                <ul class="topic-children" id={`topic-${group.id}`} hidden={!expanded}>
                   {group.notes.map(note => <li><a href={`${root}/${note.slug.split("/").map(encodeURIComponent).join("/")}.html`} aria-current={note.slug === fileData.slug ? "page" : undefined}><span class="topic-note-number">{note.number}</span><span>{note.title}</span></a></li>)}
                 </ul>
               </li>
-            ))}
+            )})}
           </ul>
         </div>
       </section>

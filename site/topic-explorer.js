@@ -8,6 +8,28 @@
       else link.removeAttribute('aria-current');
     });
   }
+  function revealInitialTopic(browser) {
+    const activeNote = browser.querySelector('.topic-children a[aria-current="page"]');
+    const topic = document.body.dataset.slug === 'index' ? new URLSearchParams(location.search).get('topic') : null;
+    const group = activeNote?.closest('.topic-entry') || [...browser.querySelectorAll('.topic-entry')].find(entry => entry.dataset.topic === topic);
+    if (!group) return;
+    const button = group.querySelector('.topic-expand');
+    const children = group.querySelector('.topic-children');
+    button.setAttribute('aria-expanded', 'true');
+    button.setAttribute('aria-label', button.getAttribute('aria-label').replace(/접기|펼치기$/, '접기'));
+    children.hidden = false;
+    requestAnimationFrame(() => {
+      const container = browser.querySelector(matchMedia('(max-width: 640px)').matches ? '.topic-note-panel' : '.topic-tree');
+      const target = activeNote || group.querySelector('.topic-name');
+      if (!container || !target || !container.clientHeight || container.scrollHeight <= container.clientHeight) return;
+      const bounds = container.getBoundingClientRect();
+      const item = target.getBoundingClientRect();
+      const top = bounds.top + container.clientTop + 8;
+      const bottom = bounds.top + container.clientTop + container.clientHeight - 8;
+      const delta = item.top < top ? item.top - top : item.bottom > bottom ? item.bottom - bottom : 0;
+      if (delta) container.scrollTop += delta;
+    });
+  }
   function setup() {
     document.querySelectorAll('.topic-mobile-toggle,.topic-expand').forEach(button => {
       if (initialized.has(button)) return;
@@ -35,6 +57,11 @@
         const path = url => url.pathname.replace(/index(?:\.html)?$/, '').replace(/\/$/, '');
         if (target.origin === home.origin && path(target) === path(home)) link.href = target.href;
       } catch {}
+    });
+    document.querySelectorAll('.topic-browser').forEach(browser => {
+      if (initialized.has(browser)) return;
+      initialized.add(browser);
+      revealInitialTopic(browser);
     });
     highlight(new URLSearchParams(location.search).get('view') || 'notes');
   }
