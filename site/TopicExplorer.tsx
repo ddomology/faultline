@@ -43,9 +43,9 @@ export default (() => {
     const total = visible.reduce((sum,group) => sum + group.notes.length, 0)
     return (
       <section class="topic-browser" aria-label="풀이 탐색기">
-        <button class="topic-mobile-toggle" type="button" aria-expanded="false" aria-controls="topic-note-panel">탐색기 <span aria-hidden="true">⌄</span></button>
+        <button class="topic-mobile-toggle" type="button" aria-expanded="true" aria-controls="topic-note-panel"><span>Explorer <small>탐색기</small></span><span class="topic-toggle-arrow" aria-hidden="true">⌄</span></button>
         <div class="topic-note-panel" id="topic-note-panel">
-          <div class="topic-heading"><span>EXPLORER</span><span>{total}</span></div>
+          <div class="topic-heading"><span>Explorer <small>탐색기</small></span><span class="topic-total">{total}</span></div>
           <nav class="explorer-shortcuts" aria-label="목록 선택">
             <a data-explorer-view="notes" href={`${root}/`}>풀이 노트</a>
             <a data-explorer-view="all" href={`${root}/?view=all`}>전체 실습 <span>{catalog.labs.length}</span></a>

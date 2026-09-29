@@ -18,6 +18,16 @@ for (const [before, after] of changes) {
   if (config.includes(before)) config = config.replace(before, after);
   else if (after && !config.includes(after)) throw new Error("Quartz configuration changed: " + before);
 }
+// Set Quartz's base palette too, so first paint and generated styles stay monochrome.
+const palettes = {
+  lightMode: { light: "#ffffff", lightgray: "#e2e2e2", gray: "#747474", darkgray: "#444444", dark: "#111111", secondary: "#111111", tertiary: "#555555", highlight: "#f4f4f4", textHighlight: "#dedede" },
+  darkMode: { light: "#111111", lightgray: "#333333", gray: "#aaaaaa", darkgray: "#cccccc", dark: "#f1f1f1", secondary: "#f1f1f1", tertiary: "#bbbbbb", highlight: "#222222", textHighlight: "#444444" },
+};
+for (const [mode, colors] of Object.entries(palettes)) {
+  const block = new RegExp(`${mode}: \\{[^}]*\\}`);
+  if (!block.test(config)) throw new Error(`Quartz palette missing: ${mode}`);
+  config = config.replace(block, `${mode}: ${JSON.stringify(colors)}`);
+}
 writeFileSync(path, config);
 cpSync("site/quartz.layout.ts", "_quartz/quartz.layout.ts");
 cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");

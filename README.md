@@ -53,6 +53,7 @@ GitHub Pages의 배포 소스는 **GitHub Actions**입니다. `.github/workflows
 3. `scripts/build-note-index.mjs`: 공개 노트의 제목·태그·본문 검색어·수정일을 수집합니다.
 4. Quartz에서 `npx quartz build`를 실행합니다.
 5. `scripts/build-lab-catalog.mjs`: 실제 렌더링 주소를 검증하고 검색 목록 및 이전 주소의 이동 페이지를 만듭니다.
+6. `scripts/fingerprint-assets.mjs`: CSS·JavaScript 파일명에 내용 해시를 붙이고 HTML 참조를 검증해 이전 디자인의 캐시가 재사용되지 않도록 합니다.
 
 주요 파일:
 
