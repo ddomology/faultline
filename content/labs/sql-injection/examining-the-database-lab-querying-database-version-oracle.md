@@ -53,11 +53,21 @@ draft: false
 
    ![버전 정보 네 행과 Not solved 상태](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/03-product-component-version-not-solved.png)
 
-## 캡처에서 Not solved인 이유
+## 현재 결과 분석
 
-캡처의 실습 설명은 `Oracle Database 11g Express Edition Release ...`, `PL/SQL Release ...`, `CORE ...`, `TNS for Linux: Version ...`, `NLSRTL Version ...` 등 **다섯 개의 문자열**을 요구한다. 위 쿼리는 네 행을 표시했고 `CORE`가 없으며 `Release`/`Version` 표기도 다르다. 화면의 배지도 `Not solved`다. 출력 형식과 항목의 차이가 판정에 영향을 준 것으로 보이지만, 채점 로직 자체는 확인하지 않았다.
+이번 쿼리는 `PRODUCT_COMPONENT_VERSION`에서 같은 행의 `PRODUCT`, `VERSION`, `STATUS`를 결합해 **네 개의 구성 요소와 공통 버전 `11.2.0.2.0`을 화면에 표시했다.** 데이터베이스 버전 조회 자체는 성공했다.
 
-[PortSwigger 공식 풀이](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)는 `v$version`의 `BANNER`를 조회한다. 다음 쿼리는 **이 캡처에서 실행한 것으로 확인되지 않았다**.
+하지만 캡처의 목표 문구와 현재 출력은 다르다.
+
+| 항목 | 현재 출력과 목표 문자열의 차이 |
+| --- | --- |
+| Oracle Database, PL/SQL | 목표에는 `Release`와 ` - `가 들어간다. 현재 출력은 값 사이에 ` | `를 넣었다. |
+| TNS for Linux:, NLSRTL | 목표에는 `Version`과 ` - `가 들어간다. 현재 출력에는 이 단어가 없다. |
+| CORE | 목표에는 `CORE 11.2.0.2.0 Production`이 있지만 현재 네 행에는 `CORE`가 없다. |
+
+따라서 **이 캡처의 배지는 `Not solved`**다. 위 차이가 판정에 영향을 준 것으로 보이지만, 채점 로직 자체는 확인하지 않았다. 현재 조회에서 `CORE` 행이 없으므로 네 행의 구분자만 바꾸는 것으로 목표의 다섯 문자열을 모두 얻을 수는 없다.
+
+[PortSwigger 공식 풀이](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)는 `v$version`의 `BANNER`를 조회한다. 아래 쿼리는 **이번 캡처에서 실행한 것으로 확인되지 않은 다음 검증 항목**이다.
 
 ```sql
 ' UNION SELECT BANNER, NULL FROM v$version --
