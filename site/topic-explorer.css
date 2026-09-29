@@ -9,12 +9,14 @@
 .explorer-shortcuts a[aria-current="page"] { background:var(--highlight);color:var(--dark);font-weight:600; }
 .explorer-shortcuts a span { color:var(--darkgray);font-family:var(--codeFont);font-size:12px; }
 .topic-tree,.topic-children { list-style:none;padding:0;margin:0; }
-.topic-row { display:flex;align-items:center;gap:4px;margin-bottom:6px; }
+.topic-entry { padding:8px 0; }
+.topic-entry + .topic-entry { border-top:1px solid var(--lightgray); }
+.topic-row { display:flex;align-items:center;gap:4px;margin:0; }
 .topic-expand { flex:0 0 28px;width:28px;height:40px;border:0;background:transparent;color:var(--darkgray);font-size:16px;padding:0;cursor:pointer; }
 .topic-expand[aria-expanded="false"] span { display:inline-block;transform:rotate(-90deg); }
 .topic-name { display:flex;align-items:baseline;gap:8px;min-width:0;padding:8px 0;color:var(--dark);font-weight:600;font-size:14px;word-break:normal;overflow-wrap:break-word; }
 .topic-number,.topic-note-number { flex-shrink:0;color:var(--darkgray);font-family:var(--codeFont);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;white-space:nowrap; }
-.topic-children { margin:0 0 20px 13px;padding-left:10px;border-left:1px solid var(--lightgray); }
+.topic-children { margin:6px 0 8px 13px;padding-left:10px;border-left:1px solid var(--lightgray); }
 .topic-children[hidden] { display:none; }
 .topic-children a { display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px;min-height:40px;padding:9px 6px;color:var(--darkgray);font-size:13px;font-weight:400;line-height:1.65;word-break:normal;overflow-wrap:break-word; }
 .topic-children a[aria-current="page"] { background:var(--highlight);color:var(--dark);box-shadow:-2px 0 var(--dark);font-weight:600; }
