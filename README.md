@@ -7,6 +7,8 @@
 ## 문제 탐색과 작성
 - 저장한 All labs 페이지 기준 **273문제 / 31주제 / 완료 3문제**를 수록합니다. 완료 상태는 **2026-09-29 스냅샷**입니다.
 - 문제 검색, 주제·난이도·완료 여부·노트 유무로 필터링합니다.
+- 왼쪽 **주제별 탐색**에서 31개 주제의 문제 수와 공개 풀이 수를 확인합니다. 주제를 누르면 해당 문제 목록이 열리고, 화살표를 펼치면 연결된 풀이로 바로 이동합니다.
+- 주제는 `XSS`, `SQLi` 같은 약어나 `인증`, `파일 업로드` 같은 한국어로도 찾을 수 있습니다. **노트 폴더로 탐색**에서는 기존 폴더 구조를 확인합니다.
 - 문제 목록은 메인 주소 `/`에서 제공합니다. 기존 별도 문제 페이지는 폐기했습니다.
 - 노트 작성 화면에서 문제 제목과 원문 링크가 채워진 Markdown 초안을 편집합니다.
 - 작성 중 초안과 즐겨찾기는 현재 브라우저에 저장됩니다. GitHub나 PortSwigger 계정에 자동 동기화되지는 않습니다.
@@ -42,6 +44,7 @@ Quartz 4.5.2의 고정 커밋을 GitHub Actions에서 가져와 빌드하므로 
 
 - `data/labs.json`: 문제 메타데이터와 완료 스냅샷. 원본 계정 HTML은 저장하지 않습니다.
 - `site/LabExplorer.tsx`: Quartz 첫 화면에 들어가는 문제 목록 컴포넌트.
+- `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css`: 모든 페이지의 주제별 탐색기. `site/topic-aliases.json`에 한국어·약어 검색어를 추가할 수 있습니다.
 - `site/dashboard.js`, `site/dashboard.css`: Quartz 테마를 따르는 검색·필터·작성 기능과 스타일.
 - `site/reader.scss`, `site/quartz.layout.ts`: 모든 페이지에 적용되는 공통 Quartz 테마와 배치.
 - `content/notes.md`: 노트 모아보기 소개. 실제 노트 목록은 배포할 때 자동으로 붙습니다.

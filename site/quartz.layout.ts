@@ -2,6 +2,7 @@ import { PageLayout, SharedLayout } from "./quartz/cfg"
 import * as Component from "./quartz/components"
 import NotebookNav from "./quartz/components/NotebookNav"
 import LabExplorer from "./quartz/components/LabExplorer"
+import TopicExplorer from "./quartz/components/TopicExplorer"
 
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
@@ -25,7 +26,7 @@ const left = [
       { Component: Component.ReaderMode() },
     ],
   }),
-  Component.Explorer(),
+  TopicExplorer(),
 ]
 
 export const defaultContentPageLayout: PageLayout = {

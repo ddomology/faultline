@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, cpSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from "node:fs";
 
 const path = "_quartz/quartz.config.ts";
 let config = readFileSync(path, "utf8");
@@ -28,6 +28,12 @@ writeFileSync(explorerPath, explorer);
 cpSync("site/quartz.layout.ts", "_quartz/quartz.layout.ts");
 cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");
 cpSync("site/LabExplorer.tsx", "_quartz/quartz/components/LabExplorer.tsx");
+cpSync("site/TopicExplorer.tsx", "_quartz/quartz/components/TopicExplorer.tsx");
+cpSync("site/topic-explorer.js", "_quartz/quartz/components/scripts/topic-explorer.inline.ts");
+cpSync("site/topic-explorer.css", "_quartz/quartz/components/styles/topic-explorer.scss");
+mkdirSync("_quartz/quartz/components/data", { recursive: true });
+cpSync("data/labs.json", "_quartz/quartz/components/data/topic-catalog.json");
+cpSync("site/topic-aliases.json", "_quartz/quartz/components/data/topic-aliases.json");
 cpSync("site/dashboard.js", "_quartz/quartz/components/scripts/lab-explorer.inline.ts");
 cpSync("site/dashboard.css", "_quartz/quartz/components/styles/lab-explorer.scss");
 writeFileSync("_quartz/quartz/styles/custom.scss", readFileSync("site/reader.scss", "utf8"));

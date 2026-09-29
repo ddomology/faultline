@@ -111,6 +111,7 @@
       mobile.append(option);
     });
     mobile.value = state.category;
+    document.dispatchEvent(new CustomEvent('lab:topic-change', { detail: { topic: state.category } }));
   }
   function renderStats() {
     const total = catalog.labs.length;
@@ -336,6 +337,13 @@
     $('github-help').textContent = 'GitHub에서 Commit changes를 완료하면 자동 배포돼요. 이 화면의 초안은 커밋 이후에도 보관됩니다.';
   }
   function bindEvents() {
+    document.addEventListener('lab:topic-select', (event) => {
+      const topic = event.detail && event.detail.topic;
+      if (topic !== 'all' && !catalog.categories.some(category => category.id === topic)) return;
+      state.category = topic;
+      resetFilters();
+      $('lab-list-heading').scrollIntoView({ block: 'start' });
+    });
     $('search').addEventListener('input', () => {
       state.query = $('search').value;
       clearTimeout(searchTimer);
@@ -394,7 +402,9 @@
       if (!Array.isArray(data.labs) || !Array.isArray(data.categories)) throw new Error('Invalid catalog');
       catalog = data;
       if (state.category !== 'all' && !catalog.categories.some((category) => category.id === state.category)) state.category = 'all';
-      bindEvents(); renderStats(); render();
+      bindEvents();
+      document.querySelector('.lab-explorer').dataset.ready = 'true';
+      renderStats(); render();
       if (!storageAvailable) $('local-caption').textContent = '브라우저 저장이 차단되어 초안·북마크 보관이 제한돼요';
     } catch (error) {
       $('result-count').textContent = '실습 목록을 불러오지 못했어요.';
