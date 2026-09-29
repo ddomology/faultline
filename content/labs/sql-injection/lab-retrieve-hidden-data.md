@@ -45,7 +45,27 @@ WHERE category = 'Gifts'
 
 ## 탐색 과정
 
-### 1. 첫 번째 시도
+### 1. URL 관찰
+
+먼저 다음 URL을 관찰했다.
+
+[관찰한 상품 필터 URL](https://0a28008d03d1147f828f6ab50099002e.web-security-academy.net/filter?category=Clothing%2c+shoes+and+accessories)
+
+```text
+https://0a28008d03d1147f828f6ab50099002e.web-security-academy.net/filter?category=Clothing%2c+shoes+and+accessories
+```
+
+URL의 경로는 `/filter`이고, 쿼리 문자열에는 `category` 파라미터가 있다. 그 값은 `Clothing%2c+shoes+and+accessories`로 전달된다.
+
+이를 폼 방식의 쿼리 문자열로 디코딩하면 `%2c`는 쉼표(`,`), `+`는 공백이므로 카테고리 이름은 다음과 같다.
+
+```text
+Clothing, shoes and accessories
+```
+
+이 URL에서 상품 카테고리가 `category` 파라미터로 전달된다는 점을 확인했다.
+
+### 2. 첫 번째 시도
 
 **이렇게 생각한 이유**
 
