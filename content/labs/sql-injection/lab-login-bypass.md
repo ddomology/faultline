@@ -39,11 +39,11 @@ HTTP 응답은 `200 OK`였지만, 화면에는 `Invalid username or password.`�
 
 **로그인 요청 헤더**
 
-![로그인 요청의 POST 메서드와 200 OK 응답](./images/lab-login-bypass/01-login-request-headers.png)
+![로그인 요청의 POST 메서드와 200 OK 응답](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/01-login-request-headers.png)
 
 **로그인 요청의 전송 데이터**
 
-![csrf 항목과 username=test, password=test 전송 데이터](./images/lab-login-bypass/02-login-request-payload.png)
+![csrf 항목과 username=test, password=test 전송 데이터](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/02-login-request-payload.png)
 
 ### 2. 사용자 이름에 작은따옴표 추가 — 첫 번째 입력 변경 시도
 
@@ -61,7 +61,7 @@ password: test
 
 작은따옴표를 추가한 시도에서 기존과 다른 오류 화면을 관찰했다. 다만 이 화면만으로 SQL 구문 오류가 발생했다고 확정할 수는 없으며, 현재 확인된 사실은 브라우저가 `ERR_HTTP2_PROTOCOL_ERROR`를 표시했다는 것이다.
 
-![사용자 이름에 작은따옴표를 추가한 첫 시도에서 표시된 ERR_HTTP2_PROTOCOL_ERROR](./images/lab-login-bypass/03-username-quote-error.png)
+![사용자 이름에 작은따옴표를 추가한 첫 시도에서 표시된 ERR_HTTP2_PROTOCOL_ERROR](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/03-username-quote-error.png)
 
 ## 해결 과정
 
