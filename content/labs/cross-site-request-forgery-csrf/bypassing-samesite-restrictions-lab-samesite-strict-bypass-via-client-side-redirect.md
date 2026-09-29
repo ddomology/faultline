@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-이메일 변경 기능에 CSRF 취약점이 있다. 문제 제목은 `SameSite=Strict`와 브라우저 측 리디렉션을 다룬다. 자신의 계정은 `wiener:peter`다.
+이메일 변경 기능에 CSRF 취약점이 있고, 제목은 `SameSite=Strict` 제한과 클라이언트 측 리디렉션을 단서로 준다. 자기 계정은 `wiener:peter`이며 공격 페이지는 제공된 exploit server에 올려야 한다.
 
 **완료 조건**
 
-제공된 exploit server를 통해 피해자의 이메일 주소를 변경한다.
+피해자가 exploit server의 페이지를 방문한 뒤 이메일 주소가 변경되도록 한다. 단순히 리디렉션이 일어나거나 변경 URL로 이동한 것만으로는 계정 변경을 증명하지 못한다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-세션 쿠키의 `SameSite` 제약이 있는 이메일 변경 흐름이다.
+`SameSite=Strict`는 다른 사이트에서 시작한 요청에 인증 쿠키가 붙는 것을 제한할 수 있다. 제목의 브라우저 측 리디렉션은 사이트 내부 스크립트가 이어서 만들어 내는 탐색 흐름에 주목하라는 단서다. 다만 어느 페이지가 어떤 값을 받아 어디로 이동하는지는 직접 확인해야 한다.
+
+먼저 정상 이메일 변경 요청과 세션 쿠키의 속성을 살핀다. 사이트 안에서 사용자 입력으로 발생하는 리디렉션이 있는지 확인하고, 각 이동 단계의 시작 사이트·도착 URL·전송된 쿠키를 브라우저에서 기록한다. 검증된 흐름을 exploit server의 HTML과 연결한 뒤 변경 결과를 확인한다. 아직 사용할 리디렉션이나 성공 결과는 관찰되지 않았다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-client-side-redirect)
 

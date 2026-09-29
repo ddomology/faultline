@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-이메일 변경 기능에 CSRF 취약점이 있다. 문제 제목은 `SameSite=Lax`와 요청 방식 변경을 다루며 피해자는 Chrome을 사용한다. 자신의 계정은 `wiener:peter`다.
+이메일 변경 기능에 CSRF 취약점이 있다. 제목은 `SameSite=Lax` 제한과 요청 메서드 재지정을 단서로 준다. 공격에는 제공된 exploit server를 사용하고, 정상 기능은 `wiener:peter`로 확인할 수 있다. 모의 피해자가 Chrome을 사용하므로 공식 설명은 Chrome이나 Burp 내장 Chromium으로 시험하라고 권한다.
 
 **완료 조건**
 
-제공된 exploit server로 피해자의 이메일 주소를 변경한다.
+exploit server에서 시작한 공격으로 피해자의 이메일 주소를 변경한다. 브라우저가 요청을 보냈다는 사실과 세션 쿠키가 함께 전송되어 변경이 승인되었다는 사실을 구별해야 한다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-브라우저별 `SameSite` 동작이 달라 Chrome에서 시험하라는 조건이 명시되어 있다.
+`SameSite`는 교차 사이트 상황에서 쿠키가 붙는 조건을 제한한다. 메서드 재지정이 지원된다면 브라우저가 보낸 메서드와 서버가 처리한 메서드가 달라질 수 있다. 하지만 실제 재지정 매개변수나 쿠키 속성은 실습에서 확인해야 하며, 다른 브라우저의 동작으로 Chrome 결과를 추정하면 안 된다.
+
+자기 계정의 정상 변경 요청과 세션 쿠키 속성을 기록한다. Chrome에서 exploit server로부터 시작하는 요청의 메서드·쿠키·서버 응답을 확인하고, 메서드 재지정 기능의 유무와 처리 결과를 따로 시험한다. 마지막에는 피해자 이메일의 변경을 검증한다. 아직 성공 요청은 확인되지 않았다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-lax-bypass-via-method-override)
 
