@@ -67,7 +67,7 @@ filter?category=' OR 1=1 --
 
 뷰 이름을 얻는 데 성공했다. 화면에 `ALL_ALL_TABLES`, `ALL_ANNOTATION_TEXT_METADATA`, `ALL_APPLY` 등의 뷰 이름이 표시되었다.
 
-![UNION SELECT로 뷰 이름 조회에 성공한 화면](images/lab-querying-database-version-oracle/01-union-select-view-names.png)
+![UNION SELECT로 뷰 이름 조회에 성공한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
 
 ## 해결 과정
 
