@@ -10,16 +10,22 @@ note_kind: problem
 
 # 2FA simple bypass
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 이중 인증을 우회할 수 있다. 자신의 계정은 `wiener:peter`, 피해자 계정의 알려진 자격 증명은 `carlos:montoya`이며 피해자의 2FA 코드는 알 수 없다.
 
-## 완료 조건
+**완료 조건**
 
 Carlos의 계정 페이지에 접근한다.
 
-## 문제 설명
+**문제 설명**
 
 비밀번호 확인 뒤의 인증 단계가 모든 요청에 강제되는지 확인하는 문제다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-simple-bypass)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.

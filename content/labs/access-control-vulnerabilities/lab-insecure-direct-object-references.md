@@ -10,16 +10,22 @@ note_kind: problem
 
 # Insecure direct object references
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 사용자 채팅 기록을 서버 파일 시스템에 저장하고 정적 URL로 제공한다.
 
-## 완료 조건
+**완료 조건**
 
 `carlos`의 비밀번호를 찾아 그의 계정에 로그인한다.
 
-## 문제 설명
+**문제 설명**
 
 정적 파일 경로가 다른 사용자의 기록을 보호하는지 확인하는 문제다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/access-control/lab-insecure-direct-object-references)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.

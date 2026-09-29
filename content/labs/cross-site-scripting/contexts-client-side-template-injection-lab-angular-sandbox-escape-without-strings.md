@@ -10,16 +10,22 @@ note_kind: problem
 
 # Reflected XSS with AngularJS sandbox escape without strings
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 AngularJS가 특이하게 사용되어 `$eval` 함수를 쓸 수 없고 AngularJS 입력에서 문자열도 사용할 수 없다.
 
-## 완료 조건
+**완료 조건**
 
 `$eval` 없이 AngularJS 샌드박스를 벗어나 `alert` 함수를 실행한다.
 
-## 문제 설명
+**문제 설명**
 
 사용 가능한 표현식이 제한된 AngularJS 실행 환경이다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-without-strings)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.

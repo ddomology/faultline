@@ -10,16 +10,22 @@ note_kind: problem
 
 # DOM XSS in document.write sink using source location.search
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 검색어 추적 기능이 URL의 `location.search` 값을 `document.write`로 페이지에 쓴다.
 
-## 완료 조건
+**완료 조건**
 
 DOM XSS로 `alert` 함수를 호출한다.
 
-## 문제 설명
+**문제 설명**
 
 서버 응답보다 브라우저의 URL 값과 DOM 쓰기 동작이 연결되는 지점이 중요하다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-document-write-sink)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.

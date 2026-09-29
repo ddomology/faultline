@@ -10,16 +10,22 @@ note_kind: problem
 
 # CSRF vulnerability with no defenses
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 이메일 변경 기능에 CSRF 방어가 없다. 자신의 계정은 `wiener:peter`로 로그인할 수 있다.
 
-## 완료 조건
+**완료 조건**
 
 이메일 주소를 바꾸는 CSRF용 HTML을 만들어 exploit server에 올린다.
 
-## 문제 설명
+**문제 설명**
 
 피해자가 HTML을 열었을 때 이메일 변경 요청이 발생하는지가 완료 조건이다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/csrf/lab-no-defenses)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.

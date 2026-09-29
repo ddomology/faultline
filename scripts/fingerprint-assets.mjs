@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, copyFileSync, readdirSync, existsSync } from 'node:fs';
-import { resolve, relative, join } from 'node:path';
+import { resolve, relative, join, sep } from 'node:path';
 
 const output = resolve('_quartz/public');
 const site = new URL('https://ddomology.github.io/portswigger-lab-notes/');
@@ -53,7 +53,7 @@ for (const file of htmlFiles(output)) {
       const url = localUrl(attribute[3], page);
       if (!url) continue;
       const target = resolve(output, decodeURIComponent(url.pathname.slice(site.pathname.length)));
-      if (!target.startsWith(output + '/') || !existsSync(target)) missing.add(`${relative(output, file)}: ${attribute[3]}`);
+      if (!target.startsWith(output + sep) || !existsSync(target)) missing.add(`${relative(output, file)}: ${attribute[3]}`);
     }
   }
 }

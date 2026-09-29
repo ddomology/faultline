@@ -10,16 +10,22 @@ note_kind: problem
 
 # Accessing private GraphQL posts
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 블로그에 비밀번호가 포함된 숨겨진 게시물이 있다.
 
-## 완료 조건
+**완료 조건**
 
 숨겨진 게시물을 찾고 그 비밀번호를 입력한다.
 
-## 문제 설명
+**문제 설명**
 
 GraphQL로 노출되는 게시물 데이터에 일반 화면에서 보이지 않는 항목이 있는지 확인하는 문제다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/graphql/lab-graphql-reading-private-posts)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.

@@ -131,10 +131,10 @@
     heading.append(link);
     const footer = node('div', 'note-row-footer');
     if (entry.noteUrl) {
-      if (state.view !== 'notes') footer.append(node('span', 'note-available', entry.noteKind === 'problem' ? '문제 읽기' : entry.noteKind === 'note' ? '노트 읽기' : '풀이 읽기'));
+      if (state.view !== 'notes') footer.append(node('span', 'note-available', '노트 읽기'));
       const formatted = dateLabel(entry.updatedAt);
       if (formatted) { const time = node('time', '', `${formatted} 수정`); time.dateTime = entry.updatedAt; footer.append(time); }
-      if (entry.noteKind === 'problem' && entry.url) {
+      if (entry.url) {
         const source = node('a', 'note-source', '공식 문제 ↗');
         source.href = entry.url; source.target = '_blank'; source.rel = 'noopener noreferrer';
         footer.append(source);

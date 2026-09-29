@@ -10,16 +10,22 @@ note_kind: problem
 
 # JWT authentication bypass via jwk header injection
 
-## 문제 조건
+## 문제 조건과 설명
+
+**주어진 조건**
 
 JWT 헤더의 jwk 매개변수로 검증 키를 토큰에 포함할 수 있지만, 서버가 키의 신뢰 출처를 확인하지 않는다. 개인 계정은 wiener:peter로 로그인한다.
 
-## 완료 조건
+**완료 조건**
 
 JWT를 수정하고 서명해 /admin에 접근한 뒤 carlos를 삭제한다.
 
-## 문제 설명
+**문제 설명**
 
 토큰이 제시한 검증 키를 그대로 받아들이는지 확인하는 문제다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection)
+
+## 탐색 및 풀이 기록
+
+아직 작성하지 않았다. 직접 확인한 요청·응답, 시도한 이유와 결과를 이 파일에 이어서 기록한다.
