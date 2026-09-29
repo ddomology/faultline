@@ -63,7 +63,30 @@ password: test
 
 ![사용자 이름에 작은따옴표를 추가한 첫 시도에서 표시된 ERR_HTTP2_PROTOCOL_ERROR](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/03-username-quote-error.png)
 
+### 3. 참인 조건과 주석을 입력하여 로그인 성공
+
+이전 입력 변경 시도에 이어 사용자 이름에 다음 값을 입력하고 로그인을 시도했다.
+
+```text
+username: test' OR 1=1 --
+```
+
+- **비밀번호:** 입력한 상태로 제출했다. 첨부 화면에서는 마스킹되어 있어 실제 값은 확인할 수 없다.
+- **관찰 결과:** 로그인 후 **My Account** 화면으로 이동했다.
+- **로그인된 계정:** 화면에 `Your username is: administrator`가 표시되었다.
+- **결과:** `administrator` 계정으로 로그인하는 데 성공했다.
+
+**성공한 시도의 로그인 입력 화면**
+
+![사용자 이름에 test' OR 1=1 --를 입력한 로그인 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/04-login-bypass-input.png)
+
+**관리자 계정으로 로그인된 결과**
+
+![My Account 화면의 Your username is: administrator 표시](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/05-administrator-login-success.png)
+
 ## 해결 과정
+
+사용자 이름에 `test' OR 1=1 --`를 입력하여 로그인을 시도했고, `My Account` 화면에서 `Your username is: administrator`를 확인했다. 따라서 문제의 목표인 **SQL injection을 통한 administrator 계정 로그인**을 달성했다.
 
 ## 배운 점
 
