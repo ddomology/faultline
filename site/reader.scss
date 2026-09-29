@@ -1,0 +1,11 @@
+@use "./base.scss";
+
+body { background: #f8f7f3; }
+:root { --bodyFont: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif; --headerFont: var(--bodyFont); }
+article { line-height: 1.85; }
+article h2 { margin-top: 2.4rem; padding-bottom: .65rem; border-bottom: 1px solid var(--lightgray); }
+article pre { border-radius: 12px; }
+article img { border-radius: 10px; }
+article a { text-underline-offset: 3px; }
+.page-title a { font-size: 1.25rem; letter-spacing: -.03em; }
+:root[saved-theme="dark"] body { background: #161618; }

@@ -40,6 +40,8 @@ jobs:
       - name: Render notes
         working-directory: _quartz
         run: npx quartz build
+      - name: Build lab dashboard and connect notes
+        run: node scripts/build-dashboard.mjs
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
