@@ -45,6 +45,24 @@ HTTP 응답은 `200 OK`였지만, 화면에는 `Invalid username or password.`�
 
 ![csrf 항목과 username=test, password=test 전송 데이터](./images/lab-login-bypass/02-login-request-payload.png)
 
+### 2. 사용자 이름에 작은따옴표 추가 — 첫 번째 입력 변경 시도
+
+기본 로그인 실패 응답과 비교하기 위해 비밀번호는 `test`로 유지하고, 사용자 이름에 작은따옴표 하나를 추가하여 로그인을 시도했다.
+
+```text
+username: test'
+password: test
+```
+
+- **대상 경로:** `/login`
+- **관찰 결과:** 기존의 `Invalid username or password.` 대신 브라우저에 **사이트에 연결할 수 없음** 화면이 표시되었다.
+- **브라우저 오류 코드:** `ERR_HTTP2_PROTOCOL_ERROR`
+- **HTTP 응답 상태:** 첨부 화면에서는 확인되지 않음.
+
+작은따옴표를 추가한 시도에서 기존과 다른 오류 화면을 관찰했다. 다만 이 화면만으로 SQL 구문 오류가 발생했다고 확정할 수는 없으며, 현재 확인된 사실은 브라우저가 `ERR_HTTP2_PROTOCOL_ERROR`를 표시했다는 것이다.
+
+![사용자 이름에 작은따옴표를 추가한 첫 시도에서 표시된 ERR_HTTP2_PROTOCOL_ERROR](./images/lab-login-bypass/03-username-quote-error.png)
+
 ## 해결 과정
 
 ## 배운 점
