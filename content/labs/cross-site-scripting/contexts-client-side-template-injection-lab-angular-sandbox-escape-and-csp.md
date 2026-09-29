@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-페이지에 CSP와 AngularJS가 함께 적용된다.
+페이지에 AngularJS와 CSP가 함께 적용된다. 따라서 입력이 템플릿에서 평가되는지와, 브라우저 정책이 스크립트 실행을 허용하는지는 별도로 따져야 한다. 공식 설명은 CSP 지시문이나 AngularJS 버전, 입력 위치를 구체적으로 제시하지 않는다.
 
 **완료 조건**
 
-CSP를 우회하고 AngularJS 샌드박스를 벗어나 `document.cookie`를 경고창에 표시한다.
+CSP 제약을 통과하고 AngularJS 샌드박스를 벗어나 `document.cookie`를 `alert()`에 표시한다. 임의의 경고창을 띄우거나 쿠키 문자열이 화면에 출력되는 것만으로는 명시된 목표를 충족하지 않는다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-브라우저 정책과 AngularJS 실행 제한을 모두 다루는 XSS 문제다.
+AngularJS 템플릿의 평가, 샌드박스 제한, CSP 차단은 서로 다른 층에서 발생한다. 어느 단계에서 실패했는지를 구분하지 않으면 표현식 자체의 오류를 CSP 문제로 오인하거나 그 반대로 판단할 수 있다. 특히 정책에 의해 거부된 실행은 브라우저 콘솔에 남을 수 있다.
+
+먼저 응답의 CSP 헤더 또는 문서 정책과 AngularJS가 처리하는 DOM 범위를 확인한다. 작은 표현식으로 템플릿 평가 여부를 살핀 뒤 콘솔의 정책 위반 및 JavaScript 오류를 분리해 기록한다. 최종 검증은 실제 `document.cookie` 값이 경고창에 나타나는지로 한다. 아직 정책 내용이나 성공 표현식은 확인되지 않았다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-and-csp)
 

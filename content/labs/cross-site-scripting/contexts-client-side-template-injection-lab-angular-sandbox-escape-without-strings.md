@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-AngularJS가 특이하게 사용되어 `$eval` 함수를 쓸 수 없고 AngularJS 입력에서 문자열도 사용할 수 없다.
+페이지가 AngularJS를 특이하게 사용해 `$eval` 함수를 사용할 수 없고 AngularJS 표현식에서 문자열도 사용할 수 없다. 문제 제목과 설명은 반사형 XSS 및 AngularJS 샌드박스 탈출을 목표로 제시하지만, 입력이 구체적으로 어느 템플릿에 놓이는지는 보여 주지 않는다.
 
 **완료 조건**
 
-`$eval` 없이 AngularJS 샌드박스를 벗어나 `alert` 함수를 실행한다.
+문자열이나 `$eval`에 의존하지 않고 AngularJS 샌드박스를 벗어나 `alert()`를 실행한다. 표현식이 화면에 나타나거나 단순 계산이 평가되는 것만으로는 탈출과 실행을 입증하지 못한다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-사용 가능한 표현식이 제한된 AngularJS 실행 환경이다.
+클라이언트 측 템플릿 주입에서는 서버 응답의 입력이 브라우저에서 AngularJS 표현식으로 다시 해석되는지가 먼저 관건이다. 그다음에는 어떤 객체와 연산이 허용되는지, 문자열을 쓸 수 없는 제한이 실제로 어디까지 적용되는지를 살펴야 한다. 샌드박스 탈출 방법을 알고 있다고 가정해 입력을 고르면 문제의 제약을 확인할 수 없다.
+
+입력의 반사 지점과 AngularJS가 관리하는 DOM 범위를 확인하고, 단순한 평가 여부부터 검사한다. 표현식 결과와 콘솔 오류를 기록하면서 `$eval` 및 문자열 없이 접근 가능한 기능을 좁혀 간다. 현재 AngularJS 버전, 사용 가능한 객체, 성공한 표현식은 직접 확인되지 않았다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-without-strings)
 
