@@ -1,16 +1,16 @@
----https://github.com/ddomology/portswigger-lab-notes
+---
 title: "SQL injection attack, querying the database type and version on MySQL and Microsoft"
 tags:
   - portswigger
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-mysql-microsoft"
 difficulty: Practitioner
-draft: true
+draft: false
 ---
 
 # SQL injection attack, querying the database type and version on MySQL and Microsoft
 
-공개 풀이를 참고하지 않고, 실습에서 직접 본 요청과 응답만 기록한다. **아직 Solved 여부는 확인하지 않았다.**
+공개 풀이를 참고하지 않고, 실습에서 직접 확인한 요청과 응답을 순서대로 기록한다. 마지막에 사용자가 랩의 Solved 상태를 확인했다.
 
 ## 1. 첫 `ORDER BY` 요청에서 500
 
@@ -83,4 +83,20 @@ draft: true
 
 **판단:** 두 열 모두 문자열을 받아 화면에 표시할 수 있다. 아직 데이터베이스 종류나 버전은 조회하지 않았다.
 
-**다음 행동:** 두 열 중 하나에 데이터베이스 정보를 읽는 식을 넣어 응답을 비교한다. 실행 결과가 나오기 전까지 데이터베이스 종류와 버전은 추정하지 않는다.
+**다음 행동:** 첫 번째 열에 서버 버전 정보를 반환하는 식을 넣어 확인한다.
+
+## 5. 버전 정보 조회와 완료
+
+**질문:** 문자열을 표시할 수 있는 첫 번째 열에 서버 버전 정보를 넣으면 랩의 목표를 충족할까?
+
+**실행:**
+
+~~~sql
+' UNION SELECT @@version, NULL -- -
+~~~
+
+`@@version`은 MySQL에서는 서버의 `version` 시스템 변수이고, SQL Server에서는 버전 정보를 반환하는 내장 함수다. 앞서 확인한 두 열의 형태를 유지하면서 첫 번째 열에 이 값을 넣었다.
+
+**관찰:** 사용자가 이 단계 이후 랩의 **Solved** 상태를 확인했다. 응답에 표시된 정확한 제품명과 버전 문자열은 별도로 전달받지 못했으므로 기록하지 않는다.
+
+**판단:** `ORDER BY`로 열 수를 확인하고, `probe`로 문자열 출력 위치를 검증한 뒤, 같은 위치에 `@@version`을 넣는 순서로 목표에 도달했다.
