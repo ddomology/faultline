@@ -24,6 +24,27 @@ draft: false
 
 ## 탐색 과정
 
+### 1. 기본 로그인 시도 및 요청 확인
+
+먼저 사용자 이름과 비밀번호에 각각 `test`를 입력하여 로그인을 시도하고, 개발자 도구에서 로그인 요청을 확인했다.
+
+- **요청 경로:** `/login`
+- **요청 메서드:** `POST`
+- **전송 항목:** `csrf`, `username`, `password`
+- **입력값:** `username=test`, `password=test`
+- **HTTP 응답 상태:** `200 OK`
+- **화면에 표시된 결과:** `Invalid username or password.`
+
+HTTP 응답은 `200 OK`였지만, 화면에는 `Invalid username or password.`가 표시되어 로그인에 실패했다.
+
+**로그인 요청 헤더**
+
+![로그인 요청의 POST 메서드와 200 OK 응답](./images/lab-login-bypass/01-login-request-headers.png)
+
+**로그인 요청의 전송 데이터**
+
+![csrf 항목과 username=test, password=test 전송 데이터](./images/lab-login-bypass/02-login-request-payload.png)
+
 ## 해결 과정
 
 ## 배운 점
