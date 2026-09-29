@@ -8,6 +8,10 @@ article pre { border-radius: 12px; }
 article img { border-radius: 10px; }
 article a { text-underline-offset: 3px; }
 .page-title a { font-size: 1.25rem; letter-spacing: -.03em; }
+.notebook-nav { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; align-items: center; padding-bottom: 1.2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--lightgray); font-size: .85rem; }
+.notebook-nav a { display: inline-flex; align-items: center; min-height: 40px; color: var(--secondary); }
+.notebook-nav .notebook-home { font-weight: 700; }
+.notebook-nav a:focus-visible { outline: 2px solid var(--secondary); outline-offset: 4px; border-radius: 4px; }
 :root[saved-theme="dark"] body { background: #161618; }
 
 @media (max-width: 800px) {
@@ -15,7 +19,9 @@ article a { text-underline-offset: 3px; }
   .page > #quartz-body .sidebar.left { width: 100%; min-width: 0; }
   .sidebar.left .readermode { display: none; }
   .sidebar.left .page-title { min-width: 0; max-width: calc(100% - 150px); flex-shrink: 1; }
-  .sidebar.left .page-title a { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar.left .page-title a { display: block; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .explorer .explorer-content { width: 100%; max-width: 100%; }
+  .article-title { font-size: 1.65rem; line-height: 1.35; }
+  .notebook-nav { margin-bottom: 1.3rem; gap: .25rem 1rem; }
   article, .page-header { overflow-wrap: anywhere; }
 }

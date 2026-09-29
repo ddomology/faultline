@@ -12,9 +12,14 @@ function walk(dir) {
     if (entry.isDirectory()) { walk(file); continue; }
     if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
     const notePath = relative(root,file).replaceAll('\\','/');
-    if (['index.md','guide.md'].includes(notePath)) continue;
+    if (['index.md','notes.md','guide.md'].includes(notePath)) continue;
     const { data, content } = matter(readFileSync(file,'utf8'));
     if (data.draft === true || data.draft === 'true') continue;
+    // Quartz already prints the frontmatter title. Keep the source vault intact,
+    // but avoid repeating the same opening H1 in the generated reading page.
+    const body = content.replace(/^\s*# ([^\r\n]+)(?:\r?\n|$)/, (heading, text) =>
+      data.title && text.trim() === String(data.title).trim() ? '' : heading);
+    if (body !== content) writeFileSync(file, matter.stringify(body, data));
     const title = String(data.title || content.match(/^#\s+(.+)$/m)?.[1] || entry.name.slice(0,-3));
     notes.push({path: notePath, title, topic: notePath.includes('/') ? notePath.split('/').slice(0,-1).join('/') : '노트'});
   }
@@ -22,12 +27,12 @@ function walk(dir) {
 walk(root);
 notes.sort((a,b)=>a.topic.localeCompare(b.topic)||a.title.localeCompare(b.title));
 const escape = value => value.replace(/[\\\[\]<>|]/g, '\\$&');
-let body = readFileSync('content/index.md','utf8').trimEnd() + '\n\n## 노트 · ' + notes.length + '\n\n';
+let body = readFileSync('content/notes.md','utf8').trimEnd() + '\n\n## 공개 노트 · ' + notes.length + '\n\n';
 if (!notes.length) body += '아직 공개된 풀이 노트가 없습니다. `content/`에 `.md` 파일을 넣고 GitHub에 올리면 여기에 자동으로 표시됩니다.\n';
 let topic='';
 for(const note of notes) {
   if(note.topic!==topic){topic=note.topic;body+='\n### '+escape(topic)+'\n\n';}
   body+='- ['+escape(note.title)+']('+note.path.split('/').map(encodeURIComponent).join('/')+')\n';
 }
-writeFileSync(join(root,'index.md'),body);
+writeFileSync(join(root,'notes.md'),body);
 console.log('Indexed '+notes.length+' public Obsidian notes.');

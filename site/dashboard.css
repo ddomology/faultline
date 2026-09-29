@@ -13,3 +13,72 @@
 @media(max-width:1050px){.results-caption{flex-direction:column}.lab-actions{gap:10px}.stat-label{font-size:12px}.snapshot-tag{font-size:10px}.progress-stat small{font-size:11px}}
 @media(max-width:800px){.topbar-link{font-size:11px}.hero-description{font-size:13px}.lab-row{grid-template-columns:28px minmax(0,1fr);gap:8px 10px;padding:20px 0}.lab-index{grid-row:1/3}.lab-info{grid-column:2;grid-row:1}.lab-actions{grid-column:2;grid-row:2;max-width:none;justify-content:flex-start;gap:12px}.lab-title{font-size:14px}.bookmark-button{order:3}.lab-source{order:2}.lab-actions .edit-note{order:4}.lab-actions .note-button{min-width:98px}.mobile-topic label{font-size:12px;color:#64745c}.mobile-topic select{font-size:12px;color:#445d39}.results-caption>span{font-size:11px}.hero-mark{display:none}}
 @media(max-width:580px){.topbar-link{font-size:10px}.hero-description{font-size:13px}.eyebrow{font-size:9px}.stat-label{font-size:11px}.stat>div>span{font-size:9px}.snapshot-tag{font-size:9px}.stat:nth-child(2) .snapshot-tag{bottom:-15px}.progress-stat{padding-top:17px;grid-template-columns:1.6fr 1fr}.progress-stat>div:first-child{font-size:10px;gap:6px}.progress-stat small{font-size:10px}.mobile-topic label{font-size:11px}.mobile-topic select{font-size:12px}.sort-control{font-size:10px}.sort-control select{font-size:11px}.section-eyebrow{font-size:9px}.search-box input{font-size:12px}.difficulty-filter{font-size:11px}.difficulty-filter select{font-size:11px;min-height:36px}.filter-chip{font-size:11px;padding:7px 9px}.filter-bar>.text-button{font-size:10px}.results-caption p{font-size:12px}.results-caption>span{font-size:10px}.lab-meta{gap:7px;line-height:1.35}.category-tag,.difficulty-tag{font-size:11px}.solved-tag,.draft-tag{font-size:10px}.lab-index{font-size:10px;margin-top:4px}.lab-title{font-size:14px}.lab-actions{gap:11px}.lab-actions .note-button{font-size:12px;padding:9px 11px;min-height:40px}.lab-source,.edit-note{font-size:12px}.bookmark-button{width:36px;height:40px;font-size:22px}.page-footer{font-size:10px}.pagination button{font-size:11px;min-height:36px;min-width:31px}.dialog-helper,.dialog-footnote{font-size:10px}.dialog-helper .text-button{font-size:10px}#dialog-lab-title{font-size:12px}#dialog-description{font-size:11px}#draft-status{font-size:10px}#note-editor{font-size:12px}.dialog-actions .button{font-size:12px}}
+
+/* Full library: a continuous, grouped index of every lab. */
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+.topbar{height:68px}
+.topbar-links{display:flex;align-items:center;gap:24px}
+.topbar-notes{font-size:12px;font-weight:600;color:var(--ink);padding:10px 0}
+.topbar-notes:hover{color:var(--accent)}
+.sidebar-label{margin-top:20px;margin-bottom:21px}
+.sidebar-notes-link{display:flex;align-items:center;gap:9px;border:1px solid #d9ded1;padding:11px 12px;border-radius:6px;font-size:12px;color:#53634c;margin-bottom:24px;min-height:41px}
+.sidebar-notes-link>span:first-child{font-size:16px;color:#697b60}
+.sidebar-notes-link>span:last-child{margin-left:auto;color:#85917b}
+.sidebar-notes-link:hover{background:#e5e9de;border-color:#c5cfb9}
+.hero{padding:23px 0 20px;gap:18px;min-height:0}
+.hero h1{font-size:29px;letter-spacing:-1.25px;margin:9px 0 8px;line-height:1.3}
+.hero .eyebrow{font-size:9px;letter-spacing:1.55px}
+.hero-description{font-size:12px;line-height:1.7}
+.hero-notes-link{display:flex;align-items:center;gap:20px;flex:none;font-size:12px;padding:13px 16px;border:1px solid #d7ddcf;border-radius:7px;background:#f0f2e9;color:#526747}
+.hero-notes-link:hover{background:#e6eadb;border-color:#bdcaae}
+.stats-panel{padding:17px 0;margin-bottom:24px;border-radius:8px}
+.stat{gap:8px;padding:0 20px}
+.stat strong{font-size:26px}
+.stat-label{font-size:11px}
+.progress-stat{gap:8px}
+.progress-stat small{font-size:10px}
+.library-heading{margin-bottom:13px}
+.library-heading>.section-eyebrow,.library-heading>div>.section-eyebrow{display:none}
+.library-heading h2{font-size:20px;margin:0}
+.sort-control select{max-width:165px}
+.search-box{height:46px}
+.filter-bar{padding:11px 0 12px}
+.results-caption{padding:13px 0 11px}
+.lab-list{border-top:0}
+.lab-group{margin-bottom:25px;scroll-margin-top:16px}
+.lab-group-heading{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 12px;background:#edeFE5;border-top:1px solid #dbe1d1;border-bottom:1px solid #dbe1d1;min-height:49px;box-shadow:0 2px 0 #f8f7f3}
+.group-label{display:flex;align-items:center;gap:10px;min-width:0}
+.group-number{font:10px ui-monospace,monospace;color:#8a987d;min-width:19px}
+.lab-group-heading h3{font-size:15px;line-height:1.4;font-weight:600;margin:0;letter-spacing:-.15px;overflow-wrap:anywhere;color:#34492e}
+.group-count{font:10px ui-monospace,monospace;color:#637355;background:#dfe5d5;padding:3px 6px;border-radius:4px;flex:none}
+.group-summary{font-size:10px;color:#6c7e5e;white-space:nowrap}
+.lab-row{min-height:75px;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;padding:11px 10px;align-items:center}
+.lab-row:hover{background:#f0f2e9}
+.lab-index{align-self:center;margin:0;font-size:10px;grid-column:1;grid-row:1}
+.lab-info{grid-column:2;grid-row:1}
+.lab-title{font-size:14px;line-height:1.55;font-weight:550}
+.lab-meta{gap:7px;line-height:1.2;margin:5px 0 0;min-height:14px}
+.difficulty-tag{font-size:10px}
+.difficulty-dots i{height:7px}
+.solved-tag,.draft-tag{font-size:10px;padding:2px 5px;line-height:1.2}
+.lab-actions{grid-column:3;grid-row:1;gap:7px;max-width:none;flex-wrap:nowrap;justify-content:flex-end;margin:0}
+.bookmark-button{min-height:38px;height:38px;min-width:32px;width:32px;font-size:21px;order:0}
+.lab-source{font-size:11px;min-height:38px;padding:8px 5px;order:0}
+.note-button{font-size:11px;min-height:38px;min-width:89px;padding:8px 10px;gap:5px}
+.edit-note{font-size:11px;min-height:38px;order:0}
+.list-end{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0 23px;font-size:11px;color:#7c8970}
+.list-end a{font-size:12px;min-height:38px;display:inline-flex;align-items:center;color:#526747}
+.list-end a:hover{color:var(--accent)}
+@media(max-width:1250px){.hero-notes-link{font-size:11px;padding:12px;gap:11px}.stat{padding:0 16px}.lab-row{grid-template-columns:20px minmax(0,1fr) auto;gap:9px}.lab-actions{gap:3px}.lab-group-heading{padding-left:10px;padding-right:10px}}
+@media(max-width:1050px){.hero-notes-link{display:none}.progress-stat{margin-top:17px;padding-top:12px;display:grid;grid-template-columns:1.2fr 1fr;gap:7px 20px}.progress-stat small{font-size:10px}.stats-panel{margin-bottom:22px}.lab-row{grid-template-columns:20px minmax(0,1fr) auto;gap:8px}.lab-title{font-size:13px}.lab-actions{gap:3px}.lab-source{font-size:10px;padding:8px 3px}.note-button{font-size:11px;min-width:83px;padding:8px}.bookmark-button{min-width:28px;width:28px}.edit-note{font-size:10px}.lab-meta{gap:5px}.group-summary{font-size:9px}}
+@media(max-width:800px){.topbar{height:60px}.topbar-links{gap:17px}.topbar-notes{font-size:11px}.hero{padding:21px 0 17px}.hero h1{font-size:27px}.hero-description{font-size:12px}.stats-panel{padding:15px 0;margin-bottom:18px}.mobile-topic{padding-bottom:17px;margin-bottom:20px}.library-heading h2{font-size:19px}.results-caption{flex-direction:row;align-items:center}.results-caption p{font-size:11px}.results-caption>span{font-size:10px}.lab-title{font-size:14px}.lab-row{min-height:77px;padding:11px 8px}.lab-actions{grid-column:3;grid-row:1;gap:5px;justify-content:flex-end}.lab-actions .note-button{min-width:88px;font-size:11px;min-height:38px}.lab-source{font-size:11px;order:0}.lab-actions .edit-note{font-size:11px;order:0}.bookmark-button{order:0}.lab-info{grid-row:1}.lab-index{grid-row:1}.group-summary{font-size:10px}.lab-group{margin-bottom:22px}}
+@media(max-width:580px){.topbar-links{gap:14px}.topbar-notes{font-size:11px}.topbar-link{font-size:10px}.hero{padding:20px 0 16px}.hero h1{font-size:26px;margin:8px 0 7px}.hero-description{font-size:11px}.hero .eyebrow{font-size:8px}.stats-panel{padding:15px 0 12px}.stat{padding:0 12px;gap:8px}.stat strong{font-size:25px}.stat-label{font-size:10px}.snapshot-tag{font-size:8px}.stat:nth-child(2) .snapshot-tag{bottom:-13px;left:12px}.progress-stat{margin-top:22px;padding:12px 12px 0;grid-template-columns:1.5fr 1fr;gap:6px 10px}.progress-stat small{font-size:9px}.progress-stat>div:first-child{font-size:9px}.mobile-topic{padding-bottom:14px;margin-bottom:17px;gap:10px}.mobile-topic select{padding:9px 10px}.library-heading{gap:8px;margin-bottom:12px}.library-heading h2{font-size:18px}.library-heading h2 span{font-size:11px;margin-left:4px}.sort-control{font-size:9px;gap:3px}.sort-control select{font-size:10px;max-width:122px}.search-box{height:44px}.filter-bar{padding:10px 0}.filter-chip{min-height:34px;padding:6px 9px}.difficulty-filter select{min-height:34px}.results-caption{flex-direction:column;align-items:flex-start;gap:4px;padding:11px 0 12px}.results-caption>span{font-size:9px}.lab-group-heading{min-height:46px;padding:11px 9px;gap:8px}.group-label{gap:7px}.group-number{font-size:9px;min-width:17px}.lab-group-heading h3{font-size:13px;line-height:1.4}.group-count{font-size:9px;padding:3px 5px}.group-summary{font-size:9px;max-width:83px;white-space:normal;text-align:right;line-height:1.5}.lab-row{grid-template-columns:18px minmax(0,1fr);gap:7px 6px;padding:12px 6px;min-height:0}.lab-index{align-self:start;grid-column:1;grid-row:1/3;margin-top:4px;font-size:9px}.lab-info{grid-column:2;grid-row:1}.lab-title{font-size:13px;line-height:1.6}.lab-meta{margin-top:5px;gap:6px;line-height:1.3}.difficulty-tag{font-size:10px}.lab-actions{grid-column:2;grid-row:2;justify-content:flex-start;gap:12px}.lab-actions .note-button{min-height:36px;padding:8px 10px;font-size:11px;min-width:89px}.lab-source,.lab-actions .edit-note{font-size:11px;min-height:36px;padding:6px 3px}.bookmark-button{height:36px;min-height:36px;min-width:31px;width:31px;order:3}.lab-source{order:2}.lab-actions .edit-note{order:4}.solved-tag,.draft-tag{font-size:9px;padding:2px 5px}.lab-group{margin-bottom:19px}.list-end{font-size:10px;padding-bottom:15px}.list-end a{font-size:11px}.page-footer{margin-top:0}}
+/* Keep the dense index comfortable to read and tap. */
+.lab-title{font-size:14px}
+.lab-source,.note-button,.edit-note{font-size:12px;min-height:40px}
+.bookmark-button{height:40px;min-height:40px;min-width:34px}
+.difficulty-tag{font-size:11px}
+.solved-tag,.draft-tag{font-size:10px}
+@media(max-width:1050px){.lab-title{font-size:14px}.lab-source,.note-button,.edit-note{font-size:12px;min-height:40px}.lab-actions{gap:5px}}
+@media(max-width:800px){.lab-actions .note-button,.lab-source,.lab-actions .edit-note{font-size:12px;min-height:40px}.lab-title{font-size:14px}}
+@media(max-width:580px){.hero{padding:17px 0 14px}.hero .eyebrow{display:none}.hero h1{margin:0 0 7px;font-size:26px}.stats-panel{padding:13px 0 10px;margin-bottom:16px}.stat{gap:7px}.stat strong{font-size:24px}.stat:nth-child(2) .snapshot-tag{display:none}.progress-stat{display:block;border:0;margin-top:11px;padding:0 12px}.progress-stat>div:first-child,.progress-stat .progress-track{display:none}.progress-stat small{font-size:9px;line-height:1.5;display:block}.mobile-topic{border:0;padding-bottom:0;margin-bottom:19px}.difficulty-filter{width:auto;margin-bottom:0;gap:6px}.difficulty-filter select{max-width:126px;width:112px;font-size:10px;min-height:34px}.difficulty-filter>span{font-size:10px}.filter-left{gap:6px}.filter-chip{font-size:10px;min-height:34px;padding:6px 9px}.lab-group-heading h3{font-size:14px}.lab-title{font-size:14px;line-height:1.55}.lab-actions .note-button,.lab-source,.lab-actions .edit-note{font-size:12px;min-height:40px}.lab-actions{gap:12px}.bookmark-button{min-height:40px;height:40px;min-width:34px;width:34px}.difficulty-tag{font-size:11px}.solved-tag,.draft-tag{font-size:10px}}
