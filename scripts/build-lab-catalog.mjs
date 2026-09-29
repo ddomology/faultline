@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, cpSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { createRequire } from 'node:module';
 
@@ -52,8 +52,5 @@ function walk(dir) {
 }
 walk(contentRoot);
 mkdirSync(join(output, '_dashboard'), { recursive: true });
-cpSync('site/index.html', join(output, 'index.html'));
-rmSync(join(output, 'practice.html'), { force: true });
-for (const file of ['dashboard.css', 'dashboard.js']) cpSync(join('site', file), join(output, '_dashboard', file));
 writeFileSync(join(output, '_dashboard/catalog.json'), JSON.stringify(catalog));
-console.log('Dashboard: ' + catalog.labs.length + ' labs, ' + catalog.categories.length + ' topics, ' + catalog.labs.filter(l => l.noteUrl).length + ' published notes.');
+console.log('Quartz lab catalog: ' + catalog.labs.length + ' labs, ' + catalog.categories.length + ' topics, ' + catalog.labs.filter(l => l.noteUrl).length + ' published notes.');

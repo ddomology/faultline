@@ -16,8 +16,20 @@ for (const [before, after] of changes) {
   config = config.replace(before, after);
 }
 writeFileSync(path, config);
+// Keep opening a note at its title. The default Explorer scrolls the whole page
+// while trying to reveal the active file; scroll only its file list instead.
+const explorerPath = "_quartz/quartz/components/scripts/explorer.inline.ts";
+let explorer = readFileSync(explorerPath, "utf8");
+explorer = explorer.replace(
+  'activeElement.scrollIntoView({ behavior: "smooth" })',
+  'explorerUl.scrollTop = Math.max(0, (activeElement as HTMLElement).offsetTop - explorerUl.offsetTop - 16)',
+);
+writeFileSync(explorerPath, explorer);
 cpSync("site/quartz.layout.ts", "_quartz/quartz.layout.ts");
 cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");
+cpSync("site/LabExplorer.tsx", "_quartz/quartz/components/LabExplorer.tsx");
+cpSync("site/dashboard.js", "_quartz/quartz/components/scripts/lab-explorer.inline.ts");
+cpSync("site/dashboard.css", "_quartz/quartz/components/styles/lab-explorer.scss");
 writeFileSync("_quartz/quartz/styles/custom.scss", readFileSync("site/reader.scss", "utf8"));
 rmSync("_quartz/content", { recursive: true, force: true });
 cpSync("content", "_quartz/content", { recursive: true });

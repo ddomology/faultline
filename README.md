@@ -1,6 +1,6 @@
 # PortSwigger Lab Notes
 
-옵시디언으로 작성하고 GitHub Pages에서 읽는 PortSwigger 풀이 노트입니다. 첫 화면에서 전체 문제를 주제별로 한 번에 볼 수 있고, **풀이 읽기**를 누르면 Quartz가 렌더링한 본문이 열립니다. **노트 모아보기**에서는 문제와 연결되지 않은 일반 노트도 찾을 수 있습니다.
+옵시디언으로 작성하고 GitHub Pages에서 읽는 PortSwigger 풀이 노트입니다. 문제 목록부터 풀이 본문까지 모든 페이지를 Quartz가 렌더링하며, 같은 테마·메뉴·노트 탐색기를 사용합니다. 첫 화면에서 전체 문제를 주제별로 한 번에 보고 **풀이 읽기**를 누르면 본문이 열립니다. **노트 모아보기**에서는 문제와 연결되지 않은 일반 노트도 찾을 수 있습니다.
 
 `content/` 아래의 모든 공개 `.md` 파일은 문제와 연결되지 않아도 노트 목록에 자동으로 나타납니다. `lab_url`은 문제 목록과 연결할 때만 필요합니다. 일반 노트의 제목·표·코드·이미지·위키링크·콜아웃·수식은 Quartz의 Obsidian Markdown 렌더러가 처리합니다.
 
@@ -41,10 +41,12 @@ Quartz 4.5.2의 고정 커밋을 GitHub Actions에서 가져와 빌드하므로 
 배포 실패 원인은 Actions 실행 로그에서 확인할 수 있습니다.
 
 - `data/labs.json`: 문제 메타데이터와 완료 스냅샷. 원본 계정 HTML은 저장하지 않습니다.
-- `site/`: 대시보드 화면과 스타일.
+- `site/LabExplorer.tsx`: Quartz 첫 화면에 들어가는 문제 목록 컴포넌트.
+- `site/dashboard.js`, `site/dashboard.css`: Quartz 테마를 따르는 검색·필터·작성 기능과 스타일.
+- `site/reader.scss`, `site/quartz.layout.ts`: 모든 페이지에 적용되는 공통 Quartz 테마와 배치.
 - `content/notes.md`: 노트 모아보기 소개. 실제 노트 목록은 배포할 때 자동으로 붙습니다.
 - `scripts/build-note-index.mjs`: 모든 공개 Markdown 노트를 모아 `notes.html`을 생성합니다.
-- `scripts/build-dashboard.mjs`: 실제 렌더링된 노트를 문제와 연결하고 첫 화면을 생성합니다.
+- `scripts/build-lab-catalog.mjs`: 실제 렌더링된 노트를 문제와 연결합니다. Quartz의 첫 화면을 별도 HTML로 덮어쓰지 않습니다.
 - 같은 문제에 여러 노트가 연결되면 빌드가 오류를 내므로 `lab_url`은 대표 풀이 하나에 지정합니다.
 - 새 문제 목록을 반영하려면 저장한 HTML을 로컬에서 변환합니다:
 

@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (!document.querySelector('.lab-explorer')) return;
   const $ = (id) => document.getElementById(id);
   const BOOKMARK_KEY = 'portswigger-lab-notes:bookmarks:v1';
   const DRAFT_PREFIX = 'portswigger-lab-notes:draft:v1:';
@@ -369,6 +370,12 @@
     window.addEventListener('beforeunload', () => { if (activeLab && saveTimer) saveDraft(); });
     window.addEventListener('popstate', () => { state = readUrlState(); render(); });
     document.addEventListener('keydown', (event) => {
+      // Quartz search also handles Escape, so close this native dialog explicitly.
+      if ($('note-dialog').open && event.key === 'Escape') {
+        event.preventDefault();
+        $('note-dialog').close();
+        return;
+      }
       if ($('note-dialog').open && event.key === 'Tab') {
         const focusable = [...$('note-dialog').querySelectorAll('a[href], button:not([disabled]), textarea, input, select')].filter((item) => item.offsetParent !== null);
         const first = focusable[0], last = focusable[focusable.length - 1];

@@ -1,27 +1,48 @@
 @use "./base.scss";
 
-body { background: #f8f7f3; }
-:root { --bodyFont: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif; --headerFont: var(--bodyFont); }
+// Keep Quartz's own fonts, palette and light/dark theme on every page.
+.notebook-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem 1.2rem;
+  padding-bottom: .8rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--lightgray);
+  font-size: .9rem;
+}
+.notebook-nav a { display: inline-flex; align-items: center; min-height: 36px; color: var(--darkgray); }
+.notebook-nav a:hover { color: var(--secondary); }
+.notebook-nav a[aria-current="page"] { color: var(--secondary); font-weight: 700; }
+.notebook-nav a:focus-visible { outline: 2px solid var(--secondary); outline-offset: 4px; border-radius: 3px; }
+.article-title { overflow-wrap: anywhere; }
 article { line-height: 1.85; }
-article h2 { margin-top: 2.4rem; padding-bottom: .65rem; border-bottom: 1px solid var(--lightgray); }
-article pre { border-radius: 12px; }
-article img { border-radius: 10px; }
+article h2 { margin-top: 2.2rem; }
+article pre { border-radius: 8px; }
+article img { border-radius: 6px; }
 article a { text-underline-offset: 3px; }
-.page-title a { font-size: 1.25rem; letter-spacing: -.03em; }
-.notebook-nav { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; align-items: center; padding-bottom: 1.2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--lightgray); font-size: .85rem; }
-.notebook-nav a { display: inline-flex; align-items: center; min-height: 40px; color: var(--secondary); }
-.notebook-nav .notebook-home { font-weight: 700; }
-.notebook-nav a:focus-visible { outline: 2px solid var(--secondary); outline-offset: 4px; border-radius: 4px; }
-:root[saved-theme="dark"] body { background: #161618; }
+article .math.math-display { overflow-x: auto; }
 
+// The home page is still a Quartz content page, with room for its lab catalog.
+body[data-slug="index"] .page > #quartz-body > .sidebar.right { display: none; }
+@media (min-width: 801px) {
+  body[data-slug="index"] .page > #quartz-body {
+    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-areas:
+      "grid-sidebar-left grid-header"
+      "grid-sidebar-left grid-center"
+      "grid-sidebar-left grid-footer";
+    padding-right: 2rem;
+  }
+}
 @media (max-width: 800px) {
   .page > #quartz-body { grid-template-columns: minmax(0, 1fr); }
-  .page > #quartz-body .sidebar.left { width: 100%; min-width: 0; }
+  .page > #quartz-body .sidebar.left { min-width: 0; width: 100%; }
   .sidebar.left .readermode { display: none; }
   .sidebar.left .page-title { min-width: 0; max-width: calc(100% - 150px); flex-shrink: 1; }
   .sidebar.left .page-title a { display: block; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .explorer .explorer-content { width: 100%; max-width: 100%; }
   .article-title { font-size: 1.65rem; line-height: 1.35; }
-  .notebook-nav { margin-bottom: 1.3rem; gap: .25rem 1rem; }
+  .notebook-nav { margin-bottom: 1.15rem; gap: .25rem 1rem; }
   article, .page-header { overflow-wrap: anywhere; }
 }
