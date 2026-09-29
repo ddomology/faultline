@@ -57,9 +57,30 @@ draft: true
 
 **판단:** 주석 형태를 고정했을 때 세 번째 정렬 위치에서만 오류가 시작됐다. 따라서 원래 조회의 반환 열은 **2개**라는 판단이 가장 타당하다. 아직 어느 열이 문자열을 표시하는지는 모른다.
 
-**다음 행동:** 두 열을 맞춘 `UNION SELECT`에서 무해한 시험 문자열을 첫 번째 열, 두 번째 열에 번갈아 넣고 표시 여부를 확인한다. 아래 요청은 아직 실행하지 않았다.
+**다음 행동:** 두 열을 맞춘 `UNION SELECT`에서 시험 문자열을 각 열에 번갈아 넣어 표시 여부를 확인했다.
+
+## 4. 두 열의 문자열 출력 확인
+
+첫 번째 열에 `probe`를 넣었다.
 
 ~~~sql
 ' UNION SELECT 'probe', NULL -- -
+~~~
+
+**관찰:** 화면에 `probe`가 표시됐다.
+
+![첫 번째 열의 probe 출력](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-mysql-microsoft/01-probe-first-column.png)
+
+두 번째 열에 같은 문자열을 넣었다.
+
+~~~sql
 ' UNION SELECT NULL, 'probe' -- -
 ~~~
+
+**관찰:** 이 요청에서도 화면에 `probe`가 표시됐다.
+
+![두 번째 열의 probe 출력](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-mysql-microsoft/02-probe-second-column.png)
+
+**판단:** 두 열 모두 문자열을 받아 화면에 표시할 수 있다. 아직 데이터베이스 종류나 버전은 조회하지 않았다.
+
+**다음 행동:** 두 열 중 하나에 데이터베이스 정보를 읽는 식을 넣어 응답을 비교한다. 실행 결과가 나오기 전까지 데이터베이스 종류와 버전은 추정하지 않는다.
