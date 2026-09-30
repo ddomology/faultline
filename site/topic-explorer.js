@@ -2,21 +2,39 @@
   'use strict';
   const initialized = new WeakSet();
   const key = 'portswigger-lab-notes:last-list:v1';
-  const positionKey = 'portswigger-lab-notes:explorer-position:v1';
-  function readPosition() {
-    try { return JSON.parse(sessionStorage.getItem(positionKey)) || {}; } catch { return {}; }
+  const positionKey = 'portswigger-lab-notes:explorer-position:v2';
+  const legacyPositionKey = 'portswigger-lab-notes:explorer-position:v1';
+  const viewNames = { notes: '풀이 노트', concepts: '개념 노트' };
+  function readPositions() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(positionKey));
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) return saved;
+      const legacy = JSON.parse(sessionStorage.getItem(legacyPositionKey));
+      return legacy && typeof legacy === 'object' && !Array.isArray(legacy) ? { notes: legacy } : {};
+    } catch { return {}; }
+  }
+  function readPosition(browser) {
+    const saved = readPositions()[browser.dataset.explorerMode];
+    return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+  }
+  function activeTree(browser) {
+    return browser.querySelector('.topic-tree:not([hidden])');
   }
   function scrollContainer(browser) {
-    return browser.querySelector(matchMedia('(max-width: 900px)').matches ? '.topic-note-panel' : '.topic-tree');
+    return matchMedia('(max-width: 900px)').matches ? browser.querySelector('.topic-note-panel') : activeTree(browser);
   }
   function savePosition(browser) {
-    const state = readPosition();
-    state.expanded = [...browser.querySelectorAll('.topic-entry')]
+    const tree = activeTree(browser);
+    if (!tree) return;
+    const positions = readPositions();
+    const state = readPosition(browser);
+    state.expanded = [...tree.querySelectorAll('.topic-entry')]
       .filter(entry => entry.querySelector('.topic-expand').getAttribute('aria-expanded') === 'true')
       .map(entry => entry.dataset.topic);
     const container = scrollContainer(browser);
     if (container?.clientHeight) state[matchMedia('(max-width: 900px)').matches ? 'mobile' : 'desktop'] = container.scrollTop;
-    try { sessionStorage.setItem(positionKey, JSON.stringify(state)); } catch {}
+    positions[browser.dataset.explorerMode] = state;
+    try { sessionStorage.setItem(positionKey, JSON.stringify(positions)); } catch {}
   }
   function setExpanded(group, expanded) {
     const button = group.querySelector('.topic-expand');
@@ -25,34 +43,47 @@
     group.querySelector('.topic-children').hidden = !expanded;
   }
   function highlight(view, category) {
-    document.querySelectorAll('[data-explorer-view]').forEach(link => {
-      if (document.body.dataset.slug === 'index' && link.dataset.explorerView === view) link.setAttribute('aria-current', 'page');
-      else link.removeAttribute('aria-current');
-    });
-    document.querySelectorAll('.topic-entry').forEach(entry => {
-      const active = document.body.dataset.slug === 'index'
-        ? view !== 'concepts' && entry.dataset.topic === (category || new URLSearchParams(location.search).get('topic'))
-        : !!entry.querySelector('.topic-children a[aria-current="page"]');
-      entry.classList.toggle('is-current-topic', active);
-      const link = entry.querySelector('.topic-name');
-      if (active && document.body.dataset.slug === 'index') link.setAttribute('aria-current', 'true');
-      else link.removeAttribute('aria-current');
+    const isHome = document.body.dataset.slug === 'index';
+    document.querySelectorAll('.topic-browser').forEach(browser => {
+      const next = isHome ? (view === 'concepts' ? 'concepts' : 'notes') : browser.dataset.explorerMode;
+      const changed = browser.dataset.explorerMode !== next;
+      if (changed && initialized.has(browser)) savePosition(browser);
+      browser.dataset.explorerMode = next;
+      browser.setAttribute('aria-label', `${viewNames[next]} 탐색기`);
+      browser.querySelectorAll('[data-explorer-tree]').forEach(tree => { tree.hidden = tree.dataset.explorerTree !== next; });
+      browser.querySelector('.topic-total').textContent = activeTree(browser)?.dataset.total || '0';
+      browser.querySelectorAll('[data-explorer-view]').forEach(link => {
+        if (link.dataset.explorerView === next) link.setAttribute('aria-current', isHome ? 'page' : 'true');
+        else link.removeAttribute('aria-current');
+      });
+      browser.querySelectorAll('.topic-entry').forEach(entry => {
+        const active = !entry.closest('.topic-tree').hidden && (isHome
+          ? entry.dataset.topic === (category || new URLSearchParams(location.search).get('topic'))
+          : !!entry.querySelector('.topic-children a[aria-current="page"]'));
+        entry.classList.toggle('is-current-topic', active);
+        const link = entry.querySelector('.topic-name');
+        if (active && isHome) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      });
+      if (changed && initialized.has(browser)) revealInitialTopic(browser, true);
     });
   }
   function revealInitialTopic(browser, restore = false) {
-    const activeNote = browser.querySelector('.topic-children a[aria-current="page"]');
+    const tree = activeTree(browser);
+    if (!tree) return;
+    const activeNote = tree.querySelector('.topic-children a[aria-current="page"]');
     const topic = document.body.dataset.slug === 'index' ? new URLSearchParams(location.search).get('topic') : null;
-    const group = activeNote?.closest('.topic-entry') || [...browser.querySelectorAll('.topic-entry')].find(entry => entry.dataset.topic === topic);
-    const state = readPosition();
+    const group = activeNote?.closest('.topic-entry') || [...tree.querySelectorAll('.topic-entry')].find(entry => entry.dataset.topic === topic);
+    const state = readPosition(browser);
     if (restore && Array.isArray(state.expanded)) {
-      browser.querySelectorAll('.topic-entry').forEach(entry => setExpanded(entry, state.expanded.includes(entry.dataset.topic)));
+      tree.querySelectorAll('.topic-entry').forEach(entry => setExpanded(entry, state.expanded.includes(entry.dataset.topic)));
     }
     if (group) setExpanded(group, true);
     // Search controls and fonts can change the panel height after DOMContentLoaded.
     const loaded = document.readyState === 'complete' ? Promise.resolve()
       : new Promise(resolve => window.addEventListener('load', resolve, { once:true }));
     Promise.all([loaded, document.fonts?.ready]).then(() => requestAnimationFrame(() => {
-      if (!browser.isConnected) return;
+      if (!browser.isConnected || activeTree(browser) !== tree) return;
       const container = scrollContainer(browser);
       if (!container?.clientHeight) return;
       const saved = state[matchMedia('(max-width: 900px)').matches ? 'mobile' : 'desktop'];
@@ -71,6 +102,8 @@
     }));
   }
   function setup() {
+    // Apply the URL's view before restoring scroll, without overwriting the other tab.
+    highlight(new URLSearchParams(location.search).get('view') === 'concepts' ? 'concepts' : 'notes');
     document.querySelectorAll('.topic-mobile-toggle,.topic-expand').forEach(button => {
       if (initialized.has(button)) return;
       initialized.add(button);
@@ -97,8 +130,9 @@
       try {
         const stored = sessionStorage.getItem(key); if (!stored) return;
         const home = new URL(link.href), target = new URL(stored, location.origin);
+        const view = url => url.searchParams.get('view') === 'concepts' ? 'concepts' : 'notes';
         const path = url => url.pathname.replace(/index(?:\.html)?$/, '').replace(/\/$/, '');
-        if (target.origin === home.origin && path(target) === path(home)) link.href = target.href;
+        if (target.origin === home.origin && path(target) === path(home) && view(target) === view(home)) link.href = target.href;
       } catch {}
     });
     document.querySelectorAll('.topic-browser').forEach(browser => {
@@ -109,7 +143,6 @@
       }, true);
       revealInitialTopic(browser, true);
     });
-    highlight(new URLSearchParams(location.search).get('view') === 'concepts' ? 'concepts' : 'notes');
   }
   document.addEventListener('notebook:view', event => highlight(event.detail.view, event.detail.category));
   document.addEventListener('nav', setup);

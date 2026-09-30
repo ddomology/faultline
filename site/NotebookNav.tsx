@@ -3,12 +3,15 @@ import { pathToRoot } from "../util/path"
 import Darkmode from "./Darkmode"
 import Icon from "./Icon"
 import brandMark from "./data/brand-mark.json"
+import catalog from "./data/topic-catalog.json"
 
 export default (() => {
   const ThemeToggle = Darkmode()
   const NotebookNav: QuartzComponent = (props: QuartzComponentProps) => {
     const home = `${pathToRoot(props.fileData.slug!)}/`
     const isHome = props.fileData.slug === "index"
+    const isLab = catalog.labs.some(lab => lab.notePath.replace(/\.md$/, "") === props.fileData.slug || lab.url.replace(/\/+$/, "") === String(props.fileData.frontmatter?.lab_url || "").replace(/\/+$/, ""))
+    const returnUrl = isLab ? home : `${home}?view=concepts`
     return (
       <>
         <nav class="notebook-nav" aria-label="기본 탐색">
@@ -21,7 +24,7 @@ export default (() => {
             <span class="notebook-theme"><ThemeToggle {...props} /></span>
           </div>
         </nav>
-        {!isHome && <a class="notebook-return" data-note-return href={home}><Icon name="arrow-left" /> 풀이 목록</a>}
+        {!isHome && <a class="notebook-return" data-note-return href={returnUrl}><Icon name="arrow-left" /> {isLab ? "풀이 목록" : "개념 목록"}</a>}
       </>
     )
   }
