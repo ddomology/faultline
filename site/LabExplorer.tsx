@@ -36,7 +36,7 @@ export default (() => {
         <div id="lab-list" class="note-list" aria-label="검색 결과"><p class="loading-state">목록을 불러오는 중…</p></div>
         <button id="load-more" class="load-more" type="button" hidden>더 보기</button>
         <p id="library-caption" class="library-caption"></p>
-        <noscript><p>검색을 사용하려면 JavaScript를 켜 주세요. <a href="https://github.com/ddomology/portswigger-lab-notes/tree/main/content">GitHub에서 풀이 보기</a></p></noscript>
+        <noscript><p>검색을 사용하려면 JavaScript를 켜 주세요. <a href="https://github.com/ddomology/faultline/tree/main/content">GitHub에서 풀이 보기</a></p></noscript>
       </section>
     )
   }

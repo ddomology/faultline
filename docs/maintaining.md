@@ -1,6 +1,6 @@
 # Faultline 글 작성과 사이트 관리
 
-[← 프로젝트 소개](../README.md) · [노트 읽기](https://ddomology.github.io/portswigger-lab-notes/)
+[← 프로젝트 소개](../README.md) · [노트 읽기](https://ddomology.github.io/faultline/)
 
 ## 노트 메타데이터
 
@@ -135,7 +135,7 @@ python scripts/import-portswigger-labs.py saved-all-practice.html --output data/
 
 블로그 이름은 **Faultline**입니다. `site/brand.json`의 이름과 소개를 사이트 헤더·홈 소개·공유 메타데이터에 사용하고, 홈의 검색 설명은 `content/index.md`에 둡니다. PortSwigger는 풀이 노트에서 다루는 실습 자료의 이름으로 유지합니다.
 
-현재 저장소와 배포 주소는 `ddomology/portswigger-lab-notes`를 사용합니다. 저장소 이름을 변경할 때는 `prepare-quartz.mjs`의 `baseUrl`, `fingerprint-assets.mjs`의 사이트 주소, README·관리 문서·화면 컴포넌트의 GitHub 링크, `build-lab-catalog.mjs`의 이전 주소 이동 링크와 `reader-images.ts`의 raw 이미지 경로도 함께 확인합니다. 기존 첨부 자료의 절대 주소가 있다면 새 주소에 맞춥니다.
+현재 저장소와 배포 주소는 `ddomology/faultline`을 사용합니다. 저장소 이름을 변경할 때는 `prepare-quartz.mjs`의 `baseUrl`, `fingerprint-assets.mjs`의 사이트 주소, README·관리 문서·화면 컴포넌트의 GitHub 링크, `build-lab-catalog.mjs`의 이전 주소 이동 링크와 `reader-images.ts`의 raw 이미지 경로도 함께 확인합니다. 본문 원본의 예전 raw 이미지 주소는 `reader-images.ts`가 현재 사이트의 첨부 경로로 바꿔 렌더링합니다. 과거 GitHub 저장소 링크는 GitHub의 이름 변경 리디렉션을 이용하지만, 예전 GitHub Pages 주소는 자동으로 연결되지 않습니다.
 
 브라우저에 저장하는 `portswigger-lab-notes:*` 키는 기존 사용자의 탐색 상태를 이어 쓰기 위해 유지합니다. 화면에 표시되는 블로그 이름이나 배포 주소가 아닙니다.
 

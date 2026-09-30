@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, copyFileSync, readdirSync, existsSync } fr
 import { resolve, relative, join, sep } from 'node:path';
 
 const output = resolve(process.argv[2] || '_quartz/public');
-const site = new URL('https://ddomology.github.io/portswigger-lab-notes/');
+const site = new URL('https://ddomology.github.io/faultline/');
 const assets = new Map();
 for (const filename of ['index.css', 'prescript.js', 'postscript.js']) {
   const bytes = readFileSync(join(output, filename));
