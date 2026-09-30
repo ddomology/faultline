@@ -9,6 +9,7 @@ html:root {
   --md-code-mark:#e7eef7;
   --md-code-hover:#e0e6ec;
   --md-rule:#e2e7ed;
+  --md-divider-accent:#c33b43;
   --md-note:#426b93;
   --md-tip:#38705c;
   --md-warning:#8b6327;
@@ -24,6 +25,7 @@ html:root[saved-theme="dark"] {
   --md-code-mark:#29394c;
   --md-code-hover:#35404d;
   --md-rule:#343c47;
+  --md-divider-accent:#f0787f;
   --md-note:#91b4d7;
   --md-tip:#8dbba6;
   --md-warning:#d4b47c;
@@ -47,6 +49,12 @@ html:root[saved-theme="dark"] {
     letter-spacing:-.025em;scroll-margin-top:24px;text-wrap:pretty;
   }
   h2 { margin:48px 0 18px;padding:0;border:0;font-size:24px; }
+  // Divide major sections inside the existing gap without moving the content.
+  > h2 ~ h2::before {
+    content:"";position:absolute;inset-inline:0;top:-24px;
+    height:1px;box-sizing:border-box;background:var(--md-rule);
+    border-inline-start:12px solid var(--md-divider-accent);pointer-events:none;
+  }
   h3 { margin:32px 0 14px;font-size:20px; }
   h4 { margin:26px 0 12px;font-size:17px; }
   :is(h5,h6) { margin:24px 0 10px;font-size:16px; }
@@ -233,6 +241,7 @@ html:root[saved-theme="dark"] {
 @media(max-width:900px) {
   .center > article {
     h2 { margin-top:40px;font-size:22px; }
+    > h2 ~ h2::before { top:-20px; }
     h3 { font-size:19px; }
     :is(ul,ol) { padding-left:23px; }
     input[type="checkbox"] { margin-inline-start:-22px; }
