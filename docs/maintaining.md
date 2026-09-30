@@ -36,7 +36,7 @@ HTML 주석은 작성 안내이며 사이트 본문에는 표시되지 않습니
 
 이미지와 자료는 노트 근처에 두고 상대 경로로 연결합니다. 저장소 안의 이미지와 이 저장소를 가리키는 기존 raw GitHub 이미지에는 빌드할 때 가로·세로 크기를 기록합니다. 이미지가 늦게 로드되어도 자리를 확보해 본문 밀림을 줄입니다.
 
-Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합니다. 원문 제목이 첫 제목으로 반복되면 빌드 복사본에서만 중복을 정리하며 원본 Markdown은 유지합니다.
+Markdown·위키링크·콜아웃·표·코드·수식은 빌드에서 검증한 본문 트리를 React로 렌더링합니다. 원문 제목이 첫 제목으로 반복되면 빌드 복사본에서만 중복을 정리하며 원본 Markdown은 유지합니다.
 
 코드블록에는 언어와 복사 버튼이 표시됩니다. 가로로 긴 코드에는 줄바꿈 버튼이 추가됩니다. 줄 번호는 코드 펜스에 `showLineNumbers`를 지정한 경우에만 표시합니다. 코드 제목·캡션·줄 강조도 지원합니다.
 
@@ -78,48 +78,46 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 
 `main`에 커밋을 반영하면 [배포 워크플로](../.github/workflows/publish.yml)가 실행됩니다. GitHub Pages의 배포 소스는 **GitHub Actions**입니다.
 
-워크플로는 Quartz 4.5.2의 커밋 `d25a6eabf96751ffca56f8a8139272def7a65041`을 `_quartz/`에 받아 다음 순서로 빌드합니다.
+Node.js 24.15 이상을 사용합니다. 저장소 루트와 `react-site/`에서 각각 `npm ci --include=dev --ignore-scripts`를 실행한 뒤, `react-site/`에서 다음 명령으로 검사합니다.
 
-1. 저장소 루트에서 `npm ci --ignore-scripts`로 고정된 코드 정렬 의존성을 설치합니다. Node.js 24.15 이상을 사용합니다.
-2. `node scripts/prepare-quartz.mjs`: 설정·컴포넌트·콘텐츠를 Quartz 작업 폴더로 복사합니다. 다시 실행할 수 있습니다.
-3. `_quartz/`에서 `npm ci`를 실행합니다.
-4. `node scripts/build-note-index.mjs`: 공개 노트의 제목·태그·본문 검색어·수정일을 수집합니다.
-5. `_quartz/`에서 `npx quartz build`를 실행합니다.
-6. `node scripts/build-lab-catalog.mjs`: 렌더링 주소를 검증하고 검색 목록 및 이전 주소의 이동 페이지를 만듭니다.
-7. `node scripts/fingerprint-assets.mjs`: CSS·JavaScript의 고정 경로에 `?v=내용해시`를 붙이고 HTML 참조를 검증합니다. GitHub Pages는 배포 시 이전 파일을 교체하므로, 캐시된 HTML이 삭제된 해시 파일을 요청하지 않도록 파일명은 유지합니다. `node scripts/check-asset-versioning.mjs`는 이전 HTML과 새 배포 파일을 섞어도 리소스를 읽을 수 있는지 검증합니다.
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run check:static
+npx playwright install --with-deps chromium webkit
+npm run test:browser
+```
 
-결과물인 `_quartz/public/`을 GitHub Pages에 배포합니다. `_dashboard/catalog.json`에는 전체 실습과 공개 노트 목록이, `_dashboard/notes.json`에는 공개 노트의 검색 메타데이터가 들어갑니다. 일반 개념 노트도 포함됩니다.
+운영 워크플로는 빌드 후 공개 사이트의 직전 두 버전 에셋을 해시 검증해 `dist/`에 추가합니다. 가져오기가 실패하면 기존 배포를 유지합니다. 결과물을 30일짜리 `faultline-site-snapshot` 아티팩트와 Pages 아티팩트로 저장한 뒤 배포합니다. `.generated/`, `build/`, `dist/`, `public/`은 생성물이므로 직접 수정하거나 커밋하지 않습니다.
 
-예전 `notes.html`은 첫 화면으로, `guide.html`은 [README의 작성 안내](../README.md#노트-작성)로 이동합니다. 자동 생성하던 폴더·태그 주소도 첫 화면의 검색·필터로 연결하며, 직접 작성한 Markdown 페이지는 유지합니다.
+기존 `.html` 노트 주소와 확장자 없는 별칭을 유지합니다. `notes.html`은 첫 화면, `guide.html`은 README 작성 안내, 폴더·태그 주소는 검색·필터로 이동합니다. 해당 경로에 직접 작성한 노트가 있으면 그 노트를 우선합니다. 쿼리와 앵커도 보존합니다.
+
+각 글에 canonical·공유 메타데이터·JSON-LD를 넣고 `sitemap.xml`과 작성한 글의 RSS `index.xml`을 생성합니다. 프로젝트 하위의 `robots.txt`는 도메인 루트의 robots 정책을 대신하지 않습니다. Search Console에는 사이트맵 URL을 직접 제출할 수 있으며 등록·검색 순위는 자동 보장하지 않습니다.
+
+## 복구
+
+React 전환 직전 화면으로 긴급 복구하려면 Actions → **Restore Quartz baseline** → **Run workflow**를 실행합니다. 이 워크플로는 전환 직전 커밋 `b8d8821f49ad666e60b7fdd6dce453b03b199654`와 고정된 Quartz 커밋으로 다시 빌드해 Pages에 배포합니다. 저장소의 `main`이나 노트 파일은 되돌리지 않습니다. 이후 추가한 글은 이 화면에 나타나지 않으며, 복구 전에 열려 있던 React 탭은 새로고침이 필요할 수 있습니다.
+
+이후 React 변경 자체를 되돌릴 때는 문제가 된 커밋을 되돌리는 PR을 만들어 검사를 통과시킨 후 병합합니다. 최근 성공 실행의 `faultline-site-snapshot`은 배포 결과 비교·복원 자료로 30일간 보관합니다. Quartz 복구 후 React로 다시 전환하려면 `main`의 **Publish Faultline**을 수동 실행합니다.
 
 ## 화면을 수정할 때
 
 | 파일 | 역할 |
 | --- | --- |
-| `site/brand.json`, `site/tab-title.ts` | Faultline 이름·소개와 브라우저 탭 제목 |
-| `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css` | 주제별 실습 목록·검색·필터·주제 안 정렬 |
-| `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css` | 주제와 실습 탐색기 |
-| `site/navigation.inline.ts` | 공통 화면을 유지하는 탐색·히스토리·페이지 캐시 |
-| `site/search.inline.ts` | 반복 이동에도 중복 초기화되지 않는 Quartz 검색 |
-| `site/NoteTitle.tsx`, `site/explorer-titles.json` | 본문 제목과 탐색기용 짧은 제목 |
-| `site/TopicIcon.tsx`, `site/topic-icons.ts`, `site/assets/icons/topics/` | 주제별 SVG 아이콘 |
-| `site/DifficultyBars.tsx`, `site/difficulty-bars.scss` | 난이도 표시 |
-| `site/LabPagination.tsx`, `site/lab-pagination.scss` | 같은 주제의 이전·다음 실습 |
-| `site/reader.scss`, `site/quartz.layout.ts` | 읽기 화면의 공통 스타일과 배치 |
-| `site/markdown.scss` | 본문·목록·인용·표·콜아웃·코드블록의 스타일 |
-| `site/clipboard.inline.ts`, `site/reader-code.ts` | 코드 원문 보존, 복사와 줄바꿈 조작 |
-| `site/code-format.ts`, `package.json`, `package-lock.json` | 언어별 정렬본 생성과 고정된 빌드 의존성 |
-| `site/code-highlight.ts` | 전체 코드 색상과 PowerShell 문법 강조 보완 |
-| `site/reader-tools.js`, `site/reader-tools.css` | 이미지 캡션과 확대 보기 |
-| `site/reader-images.ts` | 빌드 시 이미지 크기 기록 |
+| `site/brand.json`, `site/assets/` | 브랜드와 공통 이미지·아이콘·서체 |
+| `react-site/app/components/Shell.tsx` | 헤더·Explorer·모바일 탐색 |
+| `react-site/app/components/NavigationState.tsx` | 탐색 상태와 스크롤 복원 |
+| `react-site/app/routes/home.tsx` | 목록·검색·필터 |
+| `react-site/app/routes/note.tsx` | 글 제목·메타데이터·읽기 화면 |
+| `react-site/app/components/ReaderBody.tsx` | 코드 도구·이미지 확대·본문 컴포넌트 |
+| `react-site/app/components/ReaderNavigation.tsx` | 목차와 이전·다음 글 |
+| `react-site/app/styles.scss`, `navigation.scss`, `library.scss`, `reader.scss` | 화면 스타일 |
+| `react-site/scripts/reader-markdown.mjs` | 본문 변환·위키링크·첨부 경로 |
+| `site/code-format.ts`, `site/code-highlight.ts` | 빌드용 코드 정렬과 문법 강조 |
+| `react-site/scripts/retain-assets.mjs` | 이전 배포 에셋 보존·Quartz 호환 |
 
-수정은 `site/`의 원본에서 합니다. `_quartz/`의 복사본을 직접 바꾸면 다음 준비 단계에서 덮어씁니다.
-
-주제 아이콘의 빨간 포인트는 `.topic-icon-accent`의 CSS `stroke`로 적용합니다. 준비 스크립트가 SVG 원본의 포인트 속성을 이 클래스로 바꿉니다. SVG 속성에 CSS 변수를 직접 넣으면 Dark Reader에서 포인트가 회색으로 바뀔 수 있으므로, 색상을 수정할 때는 일반 테마와 Dark Reader를 켠 화면을 함께 확인합니다.
-
-사이트는 각 주소의 HTML을 그대로 제공하며, JavaScript가 활성화된 내부 이동에서는 사이드바와 상단 헤더를 유지하고 본문·목차·푸터만 교체합니다. `prepare-quartz.mjs`가 Quartz의 SPA 라우터를 `site/navigation.inline.ts`로 교체합니다. 스타일과 스크립트는 이동 중 제거하지 않으며, 다른 배포 버전이나 변경된 Explorer 목록을 만나면 새 문서로 이동합니다.
-
-클라이언트 기능은 `nav`에서 초기화하고 `window.addCleanup()` 또는 `prenav`에서 이벤트·관찰자를 정리해야 합니다. 지연된 요청이 이전 화면을 갱신하지 않도록 연결 상태나 취소 신호도 확인합니다. 목록의 URL 변경은 `window.notebookSetRoute()`를 사용하고, 뒤로 가기에 따른 같은 화면의 URL 변경은 `notebook:route-update`에서 반영합니다. 페이지 캐시는 최대 10개·1분으로 제한하고, 링크에 마우스를 올리거나 키보드 초점을 둘 때 다음 화면을 미리 가져옵니다.
+React Router가 이동과 문서 스크롤 복원을 관리합니다. 기존 Quartz의 `nav`, `prenav`, `notebookSetRoute`를 새 화면에 추가하지 않습니다. 이벤트와 관찰자는 React effect의 cleanup에서 해제합니다. 모바일 탐색창과 이미지 확대의 스크롤 잠금도 같은 수명 주기로 정리합니다.
 
 ## 실습 목록 갱신
 
@@ -135,9 +133,7 @@ python scripts/import-portswigger-labs.py saved-all-practice.html --output data/
 
 블로그 이름은 **Faultline**입니다. `site/brand.json`의 이름과 소개를 사이트 헤더·홈 소개·공유 메타데이터에 사용하고, 홈의 검색 설명은 `content/index.md`에 둡니다. PortSwigger는 풀이 노트에서 다루는 실습 자료의 이름으로 유지합니다.
 
-현재 저장소와 배포 주소는 `ddomology/faultline`을 사용합니다. 저장소 이름을 변경할 때는 `prepare-quartz.mjs`의 `baseUrl`, `fingerprint-assets.mjs`의 사이트 주소, README·관리 문서·화면 컴포넌트의 GitHub 링크, `build-lab-catalog.mjs`의 이전 주소 이동 링크와 `reader-images.ts`의 raw 이미지 경로도 함께 확인합니다. 본문 원본의 예전 raw 이미지 주소는 `reader-images.ts`가 현재 사이트의 첨부 경로로 바꿔 렌더링합니다. 과거 GitHub 저장소 링크는 GitHub의 이름 변경 리디렉션을 이용하지만, 예전 GitHub Pages 주소는 자동으로 연결되지 않습니다.
-
-브라우저에 저장하는 `portswigger-lab-notes:*` 키는 기존 사용자의 탐색 상태를 이어 쓰기 위해 유지합니다. 화면에 표시되는 블로그 이름이나 배포 주소가 아닙니다.
+현재 저장소와 배포 주소는 `ddomology/faultline`입니다. 주소 변경은 `react-site/site.config.mjs`의 기본값 또는 `FAULTLINE_BASE_PATH`, `FAULTLINE_SITE_ORIGIN`, `FAULTLINE_REPOSITORY_URL` 환경변수로 관리합니다. 실제 지원 변수명과 예시는 `react-site/README.md`를 확인하고 README·공유 이미지 링크도 함께 갱신합니다. 원본에 남은 예전 raw 이미지 주소는 빌드에서 현재 첨부 경로로 연결합니다. GitHub 저장소 이름 변경과 달리 예전 GitHub Pages 주소는 자동 연결되지 않습니다.
 
 ## README 이미지
 
@@ -147,4 +143,4 @@ python scripts/import-portswigger-labs.py saved-all-practice.html --output data/
 
 Python의 `fonttools`, `brotli`, `cairosvg`와 운영체제의 Cairo 라이브러리가 필요합니다. 저장소 루트에서 `python scripts/build-readme-hero.py`를 실행하면 `site/brand.json`을 바탕으로 README 배너와 공유 이미지 원본 `site/assets/og-image.svg`, 1200×630 PNG `site/assets/og-image.png`를 다시 만듭니다. 함께 생성된 세 파일을 커밋합니다.
 
-공유 이미지는 서비스마다 테마가 달라도 읽히도록 밝은 색상으로 고정합니다. 사이트 준비 단계는 생성된 PNG를 복사하고, 이미지 내용에 따른 버전 값을 공유 URL에 붙입니다. Python 이미지 생성은 사이트 배포 시 실행되는 단계가 아닙니다.
+공유 이미지는 서비스마다 테마가 달라도 읽히도록 밝은 색상으로 고정합니다. 사이트 준비 단계는 생성된 PNG를 복사하고, Python 이미지 생성은 사이트 배포 시 실행되는 단계가 아닙니다.

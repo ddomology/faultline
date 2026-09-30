@@ -1,19 +1,18 @@
-name: Publish Faultline
+name: Check React foundation
 
 on:
-  push:
-    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: react-foundation-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,30 +34,20 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: node scripts/retain-assets.mjs
       - run: npm run check:static
-      - name: Keep deployable snapshot
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:browser
+      - name: Preserve browser failure traces
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: faultline-site-snapshot
-          path: react-site/dist/
-          include-hidden-files: true
-          retention-days: 30
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: react-site/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: react-browser-traces
+          path: react-site/test-results/
+          retention-days: 7
+      - name: Check a renamed repository base
+        env:
+          FAULTLINE_BASE_PATH: /preview/faultline/
+        run: |
+          npm run build
+          npm run check:static
+          npm run test:browser -- --grep "client navigation"
