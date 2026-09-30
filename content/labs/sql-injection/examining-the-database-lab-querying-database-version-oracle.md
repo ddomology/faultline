@@ -30,7 +30,7 @@ note_kind: solution
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' ORDER BY 1 --
 ' ORDER BY 2 --
 ' ORDER BY 3 --
@@ -38,7 +38,7 @@ note_kind: solution
 
 1과 2는 처리됐고 3은 HTTP 500이었다. 두 열을 쓰는 `UNION` 요청을 보내 첫 번째 열에 문자열이 표시되는지도 확인했다. 두 번째 열은 `NULL`로 채워 열 수를 맞췄다.
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT view_name, NULL FROM all_views --
 ~~~
 
@@ -56,7 +56,7 @@ note_kind: solution
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT OWNER || '.' || TABLE_NAME, NULL
 FROM ALL_TAB_COLUMNS
 WHERE TABLE_NAME LIKE '%VERSION%' --
@@ -66,7 +66,7 @@ WHERE TABLE_NAME LIKE '%VERSION%' --
 
 **판단 → 다음 행동:** `OWNER.TABLE_NAME`을 보존한 채 각 객체의 열 이름과 자료형을 확인한다. 이름만 보고 특정 뷰를 정답으로 가정하지 않는다.
 
-~~~sql
+~~~sql nohighlight
 ' UNION ALL SELECT OWNER || '|' || TABLE_NAME || '|' ||
                    COLUMN_NAME || '|' || DATA_TYPE, NULL
 FROM ALL_TAB_COLUMNS
@@ -112,7 +112,7 @@ pwsh -File .\scripts\oracle-version-sweep.ps1 `
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION ALL SELECT "BANNER", NULL FROM "SYS"."V_$VERSION" --
 ~~~
 
@@ -132,7 +132,7 @@ NLSRTL Version 11.2.0.2.0 - Production
 
 처음에는 `PRODUCT_COMPONENT_VERSION`의 `PRODUCT`·`VERSION`·`STATUS`를 합쳐 네 행을 출력했다. 버전 번호는 확인했지만 `CORE` 행이 없고 화면은 **Not solved**였다. 따라서 구분자를 고치는 것만으로는 부족하다고 판단했다.
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT PRODUCT || ' | ' || VERSION || ' | ' || STATUS, NULL
 FROM PRODUCT_COMPONENT_VERSION --
 ~~~

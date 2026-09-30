@@ -41,7 +41,9 @@ document.addEventListener("nav", () => {
     installed.add(pre)
 
     const source = sourceText(code, pre)
-    const language = (code.dataset.language || pre.dataset.language ||
+    const figure = pre.parentElement?.matches("figure[data-rehype-pretty-code-figure]") ? pre.parentElement : null
+    const language = (code.dataset.readerLanguage || pre.dataset.readerLanguage || figure?.dataset.readerLanguage ||
+      code.dataset.language || pre.dataset.language ||
       [...code.classList].find(name => name.startsWith("language-"))?.slice(9) || "text").toLowerCase()
     const languageLabel = languageNames[language] || language
     const toolbar = document.createElement("div")
