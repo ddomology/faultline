@@ -111,6 +111,11 @@ button { color:inherit; }
 .empty-state { padding:16px 0 32px; }
 .empty-state h2 { font-size:18px; }
 .empty-state p { color:var(--gray);font-size:14px;line-height:1.7; }
+.route-failure { padding-block:16px 40px; }
+.route-failure p { color:var(--gray);line-height:1.8; }
+.route-failure > div { display:flex;align-items:center;gap:24px;margin-top:24px; }
+.route-failure button { min-height:44px;padding:8px 16px;border:1px solid var(--lightgray);border-radius:4px;background:var(--highlight); }
+.route-failure a { text-decoration:underline;text-underline-offset:4px; }
 
 @media(min-width:1600px) { html:root { --sidebar-width:520px; } }
 @media(max-width:1279px) and (min-width:1024px) { html:root { --sidebar-width:320px; } }

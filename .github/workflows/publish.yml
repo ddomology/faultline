@@ -15,51 +15,39 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-site
     steps:
-      - name: Checkout notes
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Checkout pinned Quartz 4.5.2
-        uses: actions/checkout@v6
-        with:
-          repository: jackyzha0/quartz
-          ref: d25a6eabf96751ffca56f8a8139272def7a65041
-          path: _quartz
-          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            _quartz/package-lock.json
-      - name: Install code formatters
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Prepare notes and configuration
-        run: node scripts/prepare-quartz.mjs
-      - name: Install Quartz
-        working-directory: _quartz
-        run: npm ci
-      - name: Index Obsidian notes
-        run: node scripts/build-note-index.mjs
-      - name: Check code formatting
-        run: node scripts/check-code-format.mjs
-      - name: Check syntax highlighting
-        run: node scripts/check-code-highlight.mjs
-      - name: Render notes
-        working-directory: _quartz
-        run: npx quartz build
-      - name: Connect labs to rendered notes
-        run: node scripts/build-lab-catalog.mjs
-      - name: Fingerprint assets and verify references
-        run: |
-          node scripts/check-asset-versioning.mjs
-          node scripts/fingerprint-assets.mjs
+            react-site/package-lock.json
+      - run: npm ci --include=dev --ignore-scripts --no-audit --no-fund
+        working-directory: .
+      - run: npm ci --include=dev --ignore-scripts --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/retain-assets.mjs
+      - run: npm run check:static
+      - name: Keep deployable snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: faultline-site-snapshot
+          path: react-site/dist/
+          include-hidden-files: true
+          retention-days: 30
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _quartz/public
+          path: react-site/dist
 
   deploy:
     needs: build

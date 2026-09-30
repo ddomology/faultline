@@ -1,6 +1,6 @@
 # Faultline React migration
 
-React 이전 1–3회차 작업입니다. 현재 운영 사이트와 별개로 실행하며, 운영용 Quartz 워크플로는 유지합니다. 진행 상태와 다음 작업은 [이전 기록](../docs/react-migration.md)에 있습니다.
+Faultline의 운영 프런트엔드입니다. 기존 Markdown을 React로 미리 렌더링해 GitHub Pages에 배포합니다. 이전 과정과 검증 범위는 [이전 기록](../docs/react-migration.md)에 있습니다.
 
 ## 실행
 
@@ -58,7 +58,7 @@ Linux에서 시스템 라이브러리도 필요하면 `npx playwright install --
 - `.generated/`: 생성된 메타데이터와 서버 빌드용 본문. 커밋하지 않습니다.
 - `scripts/prepare-assets.mjs`: 기존 로고·폰트·아이콘·공유 이미지 복사.
 - `scripts/export-static.mjs`: basename 출력 정리, 실제 `.html` 파일과 작은 확장자 없는 이동 페이지 생성.
-- `dist/`: 정적 호스트 배포용 출력. 아직 운영 배포 대상이 아닙니다.
+- `dist/`: GitHub Pages에 배포하는 정적 출력.
 
 React Router만 페이지 이동을 관리합니다. 기존 `navigation.inline.ts`와 Quartz의 `nav`/`prenav` 스크립트는 불러오지 않습니다. Markdown은 빌드에서 sanitization·Shiki·KaTeX를 적용한 본문 트리로 만들고 React 컴포넌트로 정적 HTML을 생성합니다. 현재 글의 트리만 loader로 보내며, 검색 본문과 검사용 HTML은 route data에서 제외합니다. 전체 글·Shiki·포맷터는 브라우저 JS 번들에 넣지 않습니다.
 
@@ -73,4 +73,13 @@ React Router만 페이지 이동을 관리합니다. 기존 `navigation.inline.t
 - 로컬 이미지 크기를 HTML에 넣고, 이미지를 누르면 확대합니다. Escape·닫기·뒤로 가기 때 포커스와 스크롤 잠금을 정리합니다.
 - 코드 버튼 자리를 초기 HTML에도 확보해서 hydration 이후 본문이 밀리지 않게 합니다. JavaScript 없이도 본문·강조·수식·접는 콜아웃·목차·이전/다음 링크가 남습니다.
 
-현재 공개 글에서 사용하지 않는 Mermaid 도표 렌더링과 다른 노트 본문 전체 삽입은 아직 지원하지 않습니다. Mermaid는 읽을 수 있는 코드로, 노트 임베드는 링크로 남기며 `manifest.renderer.pending`에 기록합니다. 실제 휴대폰 확인과 운영 전환은 4회차입니다.
+현재 공개 글에서 사용하지 않는 Mermaid 도표 렌더링과 다른 노트 본문 전체 삽입은 아직 지원하지 않습니다. Mermaid는 읽을 수 있는 코드로, 노트 임베드는 링크로 남기며 `manifest.renderer.pending`에 기록합니다. 모바일 자동 검사는 Chromium과 WebKit 에뮬레이션이며 실제 휴대폰의 앱 전환 동작까지 보장하지 않습니다.
+
+
+## 배포 호환성
+
+`npm run build`가 canonical·Open Graph·JSON-LD, `sitemap.xml`, `index.xml`과 배포 버전 목록을 함께 만듭니다. 기존 `.html`과 확장자 없는 노트 주소, 폴더·태그·작성 안내 주소를 지원합니다. 404는 실제 HTTP 404를 반환하는 정적 문서이며 앱을 재초기화하지 않습니다.
+
+운영 배포는 `node scripts/retain-assets.mjs`로 공개 사이트의 직전 두 버전 에셋을 해시 검증해 추가합니다. 가져오기에 실패하면 배포를 중단합니다. Quartz의 기존 CSS와 새 문서로 이동하는 짧은 호환 스크립트도 보존합니다. React의 경로 데이터가 다른 버전이면 목적 주소를 유지한 채 새 문서를 한 번 불러옵니다. 세 버전보다 오래 열린 탭은 직접 새로고침이 필요할 수 있습니다.
+
+네트워크 문제로 글 이동에 실패하면 Explorer를 유지한 상태에서 다시 시도할 수 있습니다. 브라우저의 저장된 테마는 앱 초기화 전에 적용합니다. 운영 복구 방법은 [관리 문서](../docs/maintaining.md#복구)를 참고하세요.

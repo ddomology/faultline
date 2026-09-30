@@ -5,7 +5,7 @@ import { resolve, extname, join, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { basePath } from '../site.config.mjs'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css', '.js':'text/javascript', '.json':'application/json', '.data':'text/x-script', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon', '.woff2':'font/woff2', '.csv':'text/csv' }
+const mime = { '.html':'text/html; charset=utf-8', '.css':'text/css', '.js':'text/javascript', '.json':'application/json', '.data':'text/x-script', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon', '.woff2':'font/woff2', '.csv':'text/csv', '.xml':'application/xml; charset=utf-8', '.txt':'text/plain; charset=utf-8' }
 export function staticServer({ directory = join(root, 'dist'), base = basePath } = {}) {
   return createServer(async (req, res) => {
     try {

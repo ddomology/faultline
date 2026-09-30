@@ -85,7 +85,7 @@ test('late initial fonts do not take the page away from user scrolling', async (
     await expect(page.locator('html')).not.toHaveAttribute('data-initial-scroll', 'pending')
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     expect(await page.evaluate(() => scrollY)).toBe(800)
-    expect(await page.locator('html').evaluate(element => getComputedStyle(element).overflowAnchor)).toBe('auto')
+    if (await page.evaluate(() => CSS.supports('overflow-anchor', 'auto'))) expect(await page.locator('html').evaluate(element => getComputedStyle(element).overflowAnchor)).toBe('auto')
   } finally { release() }
 })
 

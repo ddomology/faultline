@@ -9,6 +9,7 @@ mkdirSync(join(publicDir, 'static'), { recursive: true })
 for (const name of ['favicon.svg', 'favicon.ico', 'favicon-32.png', 'apple-touch-icon.png']) {
   cpSync(join(repo, 'site/assets/favicon', name), join(publicDir, 'static', name))
 }
+cpSync(join(repo, 'site/assets/favicon/favicon.ico'), join(publicDir, 'favicon.ico'))
 cpSync(join(repo, 'site/assets/og-image.png'), join(publicDir, 'static/og-image.png'))
 cpSync(join(repo, 'site/assets/fonts'), join(publicDir, 'static/fonts'), { recursive: true })
 cpSync(join(repo, 'site/assets/icons'), join(publicDir, 'static/icons'), { recursive: true })

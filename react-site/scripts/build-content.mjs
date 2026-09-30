@@ -18,6 +18,7 @@ import { imageSize } from 'image-size';
 import { readerCode } from './reader-code.mjs';
 import { remarkNotebook, rehypeReaderStructure, rehypeReaderFootnotes, compactTree } from './reader-markdown.mjs';
 import { basePath, repositoryUrl } from '../site.config.mjs';
+import { legacyRedirects } from './site-metadata.mjs';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(appRoot, '..');
@@ -186,6 +187,12 @@ export function searchableText(markdown) {
   return values.join(' ').replace(/\s+/g, ' ').trim();
 }
 
+export function descriptionText(markdown) {
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(markdown);
+  const paragraph = tree.children.find(node => node.type === 'paragraph');
+  return textOf(paragraph || { children: [] }).replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+
 export function validUpdatedAt(value) {
   if (!value) return null;
   const date = new Date(value);
@@ -270,7 +277,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
     const body = markdown.replace(/^\s*# ([^\r\n]+)(?:\r?\n|$)/, (heading, text) =>
       [data.title, originalTitle, title].some(value => value && text.trim() === String(value).trim()) ? '' : heading);
     const renderedNote = await renderMarkdown(body, { sourcePath, knownNotes, assets });
-    rendered[metadata.routePath] = { ...metadata, html: renderedNote.html, body: renderedNote.body, toc: renderedNote.toc };
+    rendered[metadata.routePath] = { ...metadata, description: descriptionText(body) || title, html: renderedNote.html, body: renderedNote.body, toc: renderedNote.toc };
     notes.push(metadata);
     byCategory.get(category).count++;
     const features = compatibilityNotes(body);
@@ -293,6 +300,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
     schemaVersion: 1, routes: notes.map(note => note.routePath), assets: assetPaths, counts,
     sourceHashes, assetHashes,
     contentHash: sha256(JSON.stringify({ sourceHashes, assetHashes })),
+    legacyRedirects: legacyRedirects(sources, notes),
     renderer: { stage: 3, features: ['commonmark', 'gfm', 'heading-anchors', 'safe-raw-html', 'local-attachments', 'canonical-markdown-links', 'syntax-highlighting', 'code-format-and-copy', 'obsidian-callouts', 'wikilinks-and-image-embeds', 'math', 'image-dimensions', 'reader-interactions'], pending: ['mermaid-diagrams', 'note-transclusion'] },
     compatibility, unresolvedLinks,
   };

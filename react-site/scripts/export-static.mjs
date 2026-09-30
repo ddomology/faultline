@@ -30,6 +30,7 @@ export async function exportStatic({
   outDir = path.join(projectRoot, "dist"),
   basePath = "/",
   aliasRoutes = [],
+  redirects = [],
 } = {}) {
   const source = path.resolve(sourceDir)
   const destination = path.resolve(outDir)
@@ -81,6 +82,14 @@ export async function exportStatic({
     generated.set(target, `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Faultline · 페이지 이동</title><link rel="canonical" href="${escaped}"><meta name="robots" content="noindex"><script>const target=new URL(${literal},location.origin);target.search=location.search;target.hash=location.hash;location.replace(target.href)</script><meta http-equiv="refresh" content="0;url=${escaped}"></head><body><a href="${escaped}">노트로 이동</a></body></html>`)
     files.set(target, null)
   }
+  const { redirectHtml } = await import('./site-metadata.mjs')
+  for (const { path: target, target: route } of redirects) {
+    if (typeof target !== 'string' || !target.endsWith('.html') || target.startsWith('/') || target.includes('\\') || target.split('/').some(part => !part || part === '.' || part === '..')) throw new Error('Invalid legacy redirect path')
+    if (files.has(target)) continue
+    generated.set(target, redirectHtml(route, { preserveLocation: route.startsWith('/'), base: base ? '/' + base + '/' : '/' }))
+    files.set(target, null)
+  }
+
   for (const target of files.keys()) {
     let ancestor = path.posix.dirname(target)
     while (ancestor !== ".") {
@@ -116,6 +125,6 @@ export async function exportStatic({
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const { basePath } = await import("../site.config.mjs")
   const manifest = JSON.parse(await fs.readFile(path.join(projectRoot, ".generated/manifest.json"), "utf8"))
-  const result = await exportStatic({ basePath, aliasRoutes: manifest.routes })
+  const result = await exportStatic({ basePath, aliasRoutes: manifest.routes, redirects: manifest.legacyRedirects })
   console.log(`Static export: ${result.html} HTML pages, ${result.data} data files -> ${result.outDir}`)
 }

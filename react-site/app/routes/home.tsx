@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'
+import type { ShouldRevalidateFunctionArgs } from 'react-router'
 import type { loader as rootLoader } from '../root'
 import { useCatalog } from '../lib/catalog-context'
 import { useHydrated } from '../lib/use-hydrated'
@@ -10,17 +11,22 @@ import LibraryControls from '../components/LibraryControls'
 import { TopicIcon } from '../components/Shell'
 import type { Route } from './+types/home'
 import '../library.scss'
+import { buildId } from '../../build-version.server.mjs'
+import { loadCurrentVersion } from '../lib/route-version'
+import { socialMeta } from '../lib/seo'
+import RouteFailure from '../components/RouteFailure'
+
+export function loader() { return { buildId } }
+export function clientLoader({ serverLoader, request }: Route.ClientLoaderArgs) { return loadCurrentVersion(serverLoader, request) }
+export function shouldRevalidate({ currentUrl, nextUrl, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) { return currentUrl.pathname === nextUrl.pathname && currentUrl.search !== nextUrl.search ? false : defaultShouldRevalidate }
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) { return <RouteFailure error={error} /> }
 
 export const meta: Route.MetaFunction = ({ matches }) => {
   const root = matches[0]?.loaderData as ReturnType<typeof rootLoader> | undefined
   const name = root?.brand.name || 'Faultline'
   return [
-    { title: `${name} · 웹 보안 노트` },
-    { name: 'description', content: root?.brand.description || '' },
-    { property: 'og:title', content: name },
-    { property: 'og:site_name', content: name },
-    { property: 'og:image', content: `${root?.deployment.siteUrl}static/og-image.png` },
-    { tagName: 'link', rel: 'canonical', href: root?.deployment.siteUrl },
+    ...socialMeta({ title: `${name} · 웹 보안 노트`, description: root?.brand.description || '', url: root?.deployment.siteUrl || '', image: `${root?.deployment.siteUrl}static/og-image.png`, brand: name }),
+    { 'script:ld+json': { '@context': 'https://schema.org', '@type': 'WebSite', name, url: root?.deployment.siteUrl, description: root?.brand.description, inLanguage: 'ko' } },
   ]
 }
 

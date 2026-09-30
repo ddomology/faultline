@@ -1,4 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { buildId } from '../build-version.server.mjs'
 import { gzipSync } from 'node:zlib'
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -14,6 +16,17 @@ for (const route of ['/', '/404.html', ...manifest.routes]) {
   assert.ok(existsSync(file) && statSync(file).isFile(), `Missing exact HTML file: ${route}`)
   const html=readFileSync(file,'utf8')
   assert.match(html,/<title>[^<]*Faultline/)
+  assert.ok(html.includes(`name="faultline-build" content="${buildId}"`), `Mixed HTML release: ${route}`)
+  if (route === '/404.html') {
+    assert.match(html, /name="robots" content="noindex"/)
+    assert.ok(!html.includes('window.__reactRouterContext'), 'Static 404 must not hydrate against an unknown URL')
+  } else {
+    const canonical = siteOrigin + basePath + route.slice(1)
+    assert.ok(html.includes(`rel="canonical" href="${canonical}"`), `Missing canonical: ${route}`)
+    assert.ok(html.includes(`property="og:url" content="${canonical}"`), `Missing sharing URL: ${route}`)
+    assert.match(html, /name="description" content="[^"]+"/)
+    assert.match(html, /type="application\/ld\+json"/)
+  }
   assert.ok(!html.includes('postscript.js') && !html.includes('notebookSetRoute'), 'Legacy navigation leaked into React')
   if (route.startsWith('/labs/')) {
     assert.match(html,/<article\b/)
@@ -53,3 +66,26 @@ assert.equal([...home.matchAll(/class="note-row"/g)].length, Math.min(24, manife
 const sampleData = readFileSync(join(dist, 'labs/sql-injection/lab-retrieve-hidden-data.html.data'), 'utf8')
 assert.ok(!sampleData.includes('"searchText"'), 'Shared search metadata leaked into a route payload')
 console.log(`Static size: ${totalBytes} bytes; representative HTML ${sample.length} bytes (${gzipSync(sample).length} gzip).`)
+
+const sitemap = readFileSync(join(dist, 'sitemap.xml'), 'utf8')
+assert.equal([...sitemap.matchAll(/<loc>/g)].length, manifest.routes.length + 1)
+for (const route of ['/', ...manifest.routes]) assert.ok(sitemap.includes(`<loc>${siteOrigin + basePath + route.slice(1)}</loc>`))
+for (const redirect of manifest.legacyRedirects) {
+  const html = readFileSync(join(dist, redirect.path), 'utf8')
+  assert.match(html, /name="robots" content="noindex"/)
+  assert.match(html, /location.replace/)
+}
+const release = JSON.parse(readFileSync(join(dist, '_deployment.json'), 'utf8'))
+assert.equal(release.buildId, buildId)
+assert.equal(release.releases[0].id, buildId)
+assert.ok(release.releases.length >= 1 && release.releases.length <= 3)
+for (const item of release.releases.flatMap(release => release.assets)) {
+  const bytes = readFileSync(join(dist, item.path))
+  assert.equal(bytes.length, item.bytes)
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), item.sha256)
+}
+if (release.legacy) {
+  assert.equal(createHash('sha256').update(readFileSync(join(dist, 'index.css'))).digest('hex'), release.legacy.css.sha256)
+  for (const file of ['prescript.js', 'postscript.js', ...release.legacy.scripts]) assert.ok(readFileSync(join(dist, file), 'utf8').includes(buildId))
+}
+console.log(`SEO and release check: ${manifest.legacyRedirects.length} legacy redirects; ${release.releases.length} retained release(s).`)

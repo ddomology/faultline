@@ -7,6 +7,10 @@ import ReaderBody from '../components/ReaderBody'
 import { ReaderPagination, ReaderToc } from '../components/ReaderNavigation'
 import readerStyleHref from '../reader.scss?url'
 import katexStyleHref from 'katex/dist/katex.min.css?url'
+import { buildId } from '../../build-version.server.mjs'
+import { loadCurrentVersion } from '../lib/route-version'
+import { socialMeta } from '../lib/seo'
+import RouteFailure from '../components/RouteFailure'
 
 export const links: Route.LinksFunction = () => [
   { rel: 'stylesheet', href: readerStyleHref },
@@ -17,19 +21,18 @@ export function loader({ params }: Route.LoaderArgs) {
   const source = getNote('/' + (params['*'] || ''))
   if (!source) throw new Response('Not found', { status: 404 })
   const { searchText: _searchText, html: _html, ...note } = source
-  return { note, canonical: canonicalUrl(note.routePath), sourceUrl: repositoryUrl + '/blob/main/content/' + note.sourcePath.split('/').map(encodeURIComponent).join('/') }
+  return { note, buildId, canonical: canonicalUrl(note.routePath), sourceUrl: repositoryUrl + '/blob/main/content/' + note.sourcePath.split('/').map(encodeURIComponent).join('/') }
 }
+export function clientLoader({ serverLoader, request }: Route.ClientLoaderArgs) { return loadCurrentVersion(serverLoader, request) }
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) { return <RouteFailure error={error} /> }
 export const meta: Route.MetaFunction = ({ loaderData: data, matches }) => {
   const parent = matches[0]?.loaderData as { brand: { name: string }, deployment: { siteUrl: string } } | undefined
   const brand = parent?.brand.name || 'Faultline'
-  if (!data) return [{ title: `페이지 없음 · ${brand}` }]
+  if (!data) return [{ title: `페이지 없음 · ${brand}` }, { name: 'robots', content: 'noindex' }]
   return [
-    { title: `${data.note.title} · ${brand}` },
-    { name: 'description', content: `${data.note.categoryTitle} — ${data.note.title}` },
-    { property: 'og:title', content: data.note.title },
-    { property: 'og:site_name', content: brand },
-    { property: 'og:image', content: `${parent?.deployment.siteUrl}static/og-image.png` },
-    { tagName: 'link', rel: 'canonical', href: data.canonical },
+    ...socialMeta({ title: `${data.note.title} · ${brand}`, description: data.note.description, url: data.canonical, image: `${parent?.deployment.siteUrl}static/og-image.png`, brand, article: true }),
+    ...(data.note.updatedAt ? [{ property: 'article:modified_time', content: data.note.updatedAt }] : []),
+    { 'script:ld+json': { '@context': 'https://schema.org', '@type': 'BlogPosting', headline: data.note.title, description: data.note.description, url: data.canonical, mainEntityOfPage: data.canonical, inLanguage: 'ko', image: `${parent?.deployment.siteUrl}static/og-image.png`, ...(data.note.updatedAt ? { dateModified: data.note.updatedAt } : {}) } },
   ]
 }
 export default function Note({ loaderData }: Route.ComponentProps) {
