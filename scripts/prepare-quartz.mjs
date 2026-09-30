@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync, readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 
 const path = "_quartz/quartz.config.ts";
 let config = readFileSync(path, "utf8");
@@ -58,6 +59,26 @@ mkdirSync("_quartz/quartz/static/fonts", { recursive: true });
 cpSync("site/assets/fonts/pretendard", "_quartz/quartz/static/fonts/pretendard", { recursive: true });
 mkdirSync("_quartz/quartz/static/icons", { recursive: true });
 cpSync(iconDirectory, "_quartz/quartz/static/icons/lucide", { recursive: true });
+// Install the approved split-shield favicon, including non-SVG browser fallbacks.
+const faviconDirectory = "site/assets/favicon";
+for (const name of ["favicon.svg", "favicon-32.png", "favicon.ico", "apple-touch-icon.png"]) {
+  cpSync(`${faviconDirectory}/${name}`, `_quartz/quartz/static/${name}`);
+}
+cpSync(`${faviconDirectory}/favicon-32.png`, "_quartz/quartz/static/icon.png");
+const faviconVersion = createHash("sha256").update(readFileSync(`${faviconDirectory}/favicon.svg`)).digest("hex").slice(0, 12);
+const headPath = "_quartz/quartz/components/Head.tsx";
+let head = readFileSync(headPath, "utf8");
+const iconPathPattern = /const iconPath = [^\n]+/;
+const iconLinksPattern = /        \{\/\* Notebook favicon \*\/\}[\s\S]*?\{\/\* End notebook favicon \*\/\}|        <link rel="icon" href=\{iconPath\} \/>/;
+if (!iconPathPattern.test(head) || !iconLinksPattern.test(head)) throw new Error("Quartz favicon markup changed");
+head = head.replace(iconPathPattern, `const iconPath = joinSegments(baseDir, "static/favicon.svg") + "?v=${faviconVersion}"`);
+head = head.replace(iconLinksPattern, `        {/* Notebook favicon */}
+        <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href={joinSegments(baseDir, "static/favicon.ico?v=${faviconVersion}")} />
+        <link rel="icon" type="image/png" sizes="32x32" href={joinSegments(baseDir, "static/favicon-32.png?v=${faviconVersion}")} />
+        <link rel="icon" type="image/svg+xml" sizes="any" href={iconPath} />
+        <link rel="apple-touch-icon" sizes="180x180" href={joinSegments(baseDir, "static/apple-touch-icon.png?v=${faviconVersion}")} />
+        {/* End notebook favicon */}`);
+writeFileSync(headPath, head);
 // Keep Quartz's search, TOC and clipboard behavior; use the same SVG set throughout.
 const searchPath = "_quartz/quartz/components/Search.tsx";
 let search = readFileSync(searchPath, "utf8");
