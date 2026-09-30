@@ -130,9 +130,21 @@ a { transition:color .12s ease,background-color .12s ease; }
 .reader-meta { display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:16px;color:var(--gray);font-size:12px;line-height:1.7; }
 .reader-meta > span + span { padding-left:14px;border-left:1px solid var(--lightgray); }
 .reader-number { font-family:var(--codeFont);font-variant-numeric:tabular-nums;color:var(--accent); }
-.note-heading { position:relative;margin-bottom:32px;padding-bottom:28px;border-bottom:2px solid var(--md-divider-strong); }
-.note-heading .article-title { letter-spacing:-.035em;line-height:1.45; }
-.note-heading .article-subtitle { max-width:72ch; }
+.note-heading { margin-bottom:40px; }
+.note-title-group { position:relative;padding:24px; }
+.note-title-group::before,.note-title-group::after {
+  content:"";position:absolute;box-sizing:border-box;width:32px;height:24px;pointer-events:none;
+}
+.note-title-group::before {
+  inset-block-start:0;inset-inline-start:0;
+  border-block-start:3px solid var(--md-divider-accent);border-inline-start:3px solid var(--md-divider-accent);
+}
+.note-title-group::after {
+  inset-block-end:0;inset-inline-end:0;
+  border-block-end:2px solid var(--md-divider-strong);border-inline-end:2px solid var(--md-divider-strong);
+}
+.note-heading .article-title { font-size:32px;font-weight:700;letter-spacing:-.035em;line-height:1.4; }
+.note-heading .article-subtitle { max-width:72ch;margin-top:14px;line-height:1.65; }
 .sidebar.left .search-button { background:var(--light);border-radius:4px; }
 .skip-to-content { position:fixed;left:16px;top:12px;z-index:10000;padding:10px 16px;border:2px solid var(--accent);border-radius:4px;background:var(--light);color:var(--dark);transform:translateY(-160%); }
 .skip-to-content:focus { transform:translateY(0); }
@@ -148,7 +160,11 @@ a { transition:color .12s ease,background-color .12s ease; }
  .sidebar.left .search-button p { display:none; }
  .sidebar.left:has(.search) .topic-mobile-toggle { padding-right:56px; }
  .notebook-nav { min-height:60px; }
- .note-heading { padding-bottom:24px; }
+ .note-heading { margin-bottom:32px; }
+ .note-title-group { padding:20px 18px; }
+ .note-title-group::before,.note-title-group::after { width:26px;height:20px; }
+ .note-heading .article-title { font-size:26px;line-height:1.45; }
+ .note-heading .article-subtitle { margin-top:12px; }
  .reader-meta { gap:6px 10px;margin-bottom:12px; }
  .reader-meta > span + span { padding-left:10px; }
  .reader-meta > span:nth-child(2) { max-width:calc(100% - 64px); }

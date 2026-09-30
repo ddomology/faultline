@@ -17,10 +17,12 @@ export default (() => {
     return (
       <div id="main-content" tabIndex={-1} class={classNames(displayClass, "note-heading")}>
         {lab && category && <div class="reader-meta" aria-label="실습 정보"><span class="reader-number">{number}</span><span class="reader-topic"><TopicIcon category={category.id} /><span>{category.title}</span></span><span class="reader-level"><DifficultyBars difficulty={lab.difficulty} /><span>{levels[lab.difficulty] || lab.difficulty}</span></span></div>}
-        <h1 class="article-title">{title}</h1>
-        {typeof englishTitle === "string" && englishTitle !== title && (
-          <p class="article-subtitle" lang="en">{englishTitle}</p>
-        )}
+        <div class="note-title-group">
+          <h1 class="article-title">{title}</h1>
+          {typeof englishTitle === "string" && englishTitle !== title && (
+            <p class="article-subtitle" lang="en">{englishTitle}</p>
+          )}
+        </div>
       </div>
     )
   }
