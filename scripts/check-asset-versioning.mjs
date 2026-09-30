@@ -39,14 +39,14 @@ try {
     } catch { res.writeHead(404); res.end(); }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const base = `http://127.0.0.1:${server.address().port}/portswigger-lab-notes/`;
+  const base = `http://127.0.0.1:${server.address().port}/faultline/`;
   const urls = [...old.html.matchAll(/(?:href|src)="([^"]+)"/g)]
     .map(match => new URL(match[1].replaceAll('&amp;', '&'), base + 'labs/example/note.html'));
   assert.equal(urls.length, 3);
   assert.equal(urls[0].searchParams.get('theme'), 'reader');
   assert.equal(urls[0].hash, '#main');
   for (const [index, url] of urls.entries()) {
-    assert.equal(url.pathname, `/portswigger-lab-notes/${files[index]}`);
+    assert.equal(url.pathname, `/faultline/${files[index]}`);
     assert.match(url.searchParams.get('v'), /^[a-f0-9]{12}$/);
     const response = await fetch(url);
     assert.equal(response.status, 200);

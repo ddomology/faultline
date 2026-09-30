@@ -13,6 +13,8 @@ export interface NoteMeta {
   labUrl: string
   view: View
   sourcePath: string
+  updatedAt: string | null
+  searchText: string
 }
 export interface Note extends NoteMeta {
   html: string

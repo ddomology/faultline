@@ -21,7 +21,7 @@ export default (() => {
             {brand.name}
           </a>
           <div class="notebook-nav-actions">
-            <a class="notebook-github" href="https://github.com/ddomology/portswigger-lab-notes" target="_blank" rel="noopener noreferrer">GitHub <Icon name="arrow-up-right" /></a>
+            <a class="notebook-github" href="https://github.com/ddomology/faultline" target="_blank" rel="noopener noreferrer">GitHub <Icon name="arrow-up-right" /></a>
             <span class="notebook-theme"><ThemeToggle {...props} /></span>
           </div>
         </nav>

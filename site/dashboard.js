@@ -331,7 +331,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
       const retry = node('button', 'empty-action', '다시 불러오기'); retry.type = 'button'; retry.addEventListener('click', () => {
         retry.disabled = true; $('result-count').textContent = '풀이를 불러오는 중…'; init();
       }, { signal }); box.append(retry);
-      const fallback = node('a', 'empty-action secondary', 'GitHub에서 풀이 보기'); fallback.href = 'https://github.com/ddomology/portswigger-lab-notes/tree/main/content'; box.append(fallback);
+      const fallback = node('a', 'empty-action secondary', 'GitHub에서 풀이 보기'); fallback.href = 'https://github.com/ddomology/faultline/tree/main/content'; box.append(fallback);
       $('lab-list').replaceChildren(box);
       console.error('Notebook catalog:', error);
     }

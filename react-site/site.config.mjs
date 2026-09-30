@@ -1,6 +1,6 @@
 // One deployment path for build output, navigation, assets and canonical URLs.
 // Change these environment variables when the repository/domain is renamed.
-export function normalizeBasePath(value = '/portswigger-lab-notes/') {
+export function normalizeBasePath(value = '/faultline/') {
   if (!value.startsWith('/') || value.startsWith('//') || /[?#\\\\]/.test(value)
     || value.split('/').some(segment => segment === '.' || segment === '..')) {
     throw new Error(`Invalid FAULTLINE_BASE_PATH: ${value}`)
@@ -14,6 +14,6 @@ if (!['https:', 'http:'].includes(originUrl.protocol) || originUrl.username || o
 }
 export const siteOrigin = originUrl.origin
 export const siteUrl = new URL(basePath, siteOrigin).href
-export const repositoryUrl = process.env.FAULTLINE_REPOSITORY_URL || 'https://github.com/ddomology/portswigger-lab-notes'
+export const repositoryUrl = process.env.FAULTLINE_REPOSITORY_URL || 'https://github.com/ddomology/faultline'
 export function assetUrl(path) { return basePath + path.replace(/^\/+/, '') }
 export function canonicalUrl(routePath) { return new URL(basePath + routePath.replace(/^\/+/, ''), siteOrigin).href }

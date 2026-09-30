@@ -3,6 +3,7 @@ import fs from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import test from "node:test"
+import vm from "node:vm"
 import { exportStatic } from "../scripts/export-static.mjs"
 
 async function fixture(t, entries) {
@@ -88,4 +89,25 @@ test("overlapping source/output and unsafe basename are rejected", async (t) => 
   const f = await fixture(t, { "index.html": "home" })
   await assert.rejects(exportStatic({ ...f, outDir: path.join(f.sourceDir, "dist") }), /must not overlap/)
   await assert.rejects(exportStatic({ ...f, basePath: "/../site/" }), /traversal/)
+})
+
+test("compact extensionless aliases replace the URL while preserving query and fragment", async (t) => {
+  const f = await fixture(t, {
+    "site/index.html": "home",
+    "site/labs/topic/note.html/index.html": "complete article body",
+    "site/labs/topic/note.html.data": "article data",
+  })
+  await exportStatic({ ...f, basePath: "/site/", aliasRoutes: ["/labs/topic/note.html"] })
+  const alias = await f.read("labs/topic/note/index.html")
+  assert.ok(alias.length < 1500)
+  assert.ok(!alias.includes("complete article body"))
+  assert.ok(alias.includes('rel="canonical" href="/site/labs/topic/note.html"'))
+  let replaced
+  vm.runInNewContext(alias.match(/<script>(.*?)<\/script>/s)[1], {
+    URL, location: { origin: "https://example.test", search: "?q=notes", hash: "#section", replace(value) { replaced = value } },
+  })
+  assert.equal(replaced, "https://example.test/site/labs/topic/note.html?q=notes#section")
+  await assert.rejects(f.read("labs/topic/note.data"), { code: "ENOENT" })
+  await assert.rejects(exportStatic({ ...f, basePath: "/site/", aliasRoutes: ["/missing.html"] }), /target missing/)
+  assert.equal(await f.read("index.html"), "home")
 })

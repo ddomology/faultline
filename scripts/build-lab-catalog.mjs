@@ -116,7 +116,7 @@ function legacyRedirect(filename, destination, title) {
   writeFileSync(join(output, filename), `<!doctype html>\n<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=${escape(destination)}"><meta name="robots" content="noindex"><link rel="canonical" href="${escape(destination)}"><title>${escape(title)}</title></head><body><p><a href="${escape(destination)}">${escape(title)} →</a></p></body></html>\n`);
 }
 legacyRedirect('notes.html', './', '풀이 노트');
-legacyRedirect('guide.html', 'https://github.com/ddomology/portswigger-lab-notes#노트-작성', '노트 작성 안내');
+legacyRedirect('guide.html', 'https://github.com/ddomology/faultline#노트-작성', '노트 작성 안내');
 
 const folderCategories = new Map();
 const legacyTags = new Map();

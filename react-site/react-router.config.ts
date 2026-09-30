@@ -6,7 +6,7 @@ export default {
   ssr: false,
   basename: basePath,
   prerender: {
-    paths: ['/', '/404.html', ...manifest.routes.flatMap(path => [path, path.replace(/\.html$/, '')])],
+    paths: ['/', '/404.html', ...manifest.routes],
     concurrency: 4,
   },
 } satisfies Config

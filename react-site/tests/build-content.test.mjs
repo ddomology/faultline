@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, test } from 'node:test';
-import { buildContent, renderMarkdown } from '../scripts/build-content.mjs';
+import { buildContent, renderMarkdown, searchableText, validUpdatedAt } from '../scripts/build-content.mjs';
 import { basePath } from '../site.config.mjs';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -86,4 +86,15 @@ test('enhanced syntax still pending is recorded instead of claiming Quartz featu
   assert.ok(manifest.renderer.pending.includes('syntax-highlighting'));
   assert.ok(manifest.renderer.pending.includes('code-format-and-copy'));
   assert.deepEqual(manifest.unresolvedLinks, []);
+});
+
+test('search metadata indexes readable Markdown and records genuine modification dates', () => {
+  assert.equal(searchableText('# Heading\n\nA **word** and `code`.\n\n<!-- hidden guidance -->'), 'Heading A word and code .');
+  assert.equal(validUpdatedAt('invalid date'), null);
+  assert.equal(validUpdatedAt(undefined), null);
+  assert.equal(validUpdatedAt('2026-09-30T10:00:00+09:00'), '2026-09-30T01:00:00.000Z');
+  for (const note of Object.values(notes)) {
+    assert.ok(note.searchText.length > 0);
+    if (note.updatedAt) assert.equal(validUpdatedAt(note.updatedAt), note.updatedAt);
+  }
 });

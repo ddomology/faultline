@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { normalizeBasePath } from '../site.config.mjs'
 test('one base path supports the current repo, a renamed repo and a custom domain root', () => {
-  assert.equal(normalizeBasePath(), '/portswigger-lab-notes/')
+  assert.equal(normalizeBasePath(), '/faultline/')
   assert.equal(normalizeBasePath('/faultline'), '/faultline/')
   assert.equal(normalizeBasePath('/preview/faultline/'), '/preview/faultline/')
   assert.equal(normalizeBasePath('/'), '/')

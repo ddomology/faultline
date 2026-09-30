@@ -6,9 +6,10 @@ let config = readFileSync(path, "utf8");
 const brand = JSON.parse(readFileSync("site/brand.json", "utf8"));
 // Accept an already prepared checkout from before the Faultline rename.
 config = config.replace('pageTitle: "PortSwigger Lab Notes"', 'pageTitle: "Quartz 4"');
+config = config.replace('baseUrl: "ddomology.github.io/portswigger-lab-notes"', 'baseUrl: "ddomology.github.io/faultline"');
 const changes = [
   ['pageTitle: "Quartz 4"', `pageTitle: ${JSON.stringify(brand.name)}`],
-  ['baseUrl: "quartz.jzhao.xyz"', 'baseUrl: "ddomology.github.io/portswigger-lab-notes"'],
+  ['baseUrl: "quartz.jzhao.xyz"', 'baseUrl: "ddomology.github.io/faultline"'],
   ['locale: "en-US"', 'locale: "ko-KR"'],
   ['fontOrigin: "googleFonts"', 'fontOrigin: "local"'],
   ['enableSPA: false', 'enableSPA: true'],

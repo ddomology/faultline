@@ -9,7 +9,7 @@
     "content": "node scripts/build-content.mjs && node scripts/prepare-assets.mjs",
     "dev": "npm run content && react-router dev",
     "typecheck": "npm run content && react-router typegen && tsc --noEmit",
-    "build": "npm run content && react-router build && node scripts/export-static.mjs",
+    "build": "npm run content && node scripts/clean-build.mjs && react-router build && node scripts/export-static.mjs",
     "preview": "node scripts/serve-static.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test",

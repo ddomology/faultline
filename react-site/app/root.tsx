@@ -4,10 +4,11 @@ import type { Route } from './+types/root'
 import { catalog } from './lib/content.server'
 import { basePath, siteUrl, repositoryUrl } from '../site.config.mjs'
 import Shell from './components/Shell'
+import { CatalogProvider, useCatalog } from './lib/catalog-context'
 import styleHref from './styles.scss?url'
 
 export function loader() {
-  return { catalog, deployment: { basePath, siteUrl, repositoryUrl } }
+  return { brand: catalog.brand, deployment: { basePath, siteUrl, repositoryUrl } }
 }
 export function shouldRevalidate() { return false }
 const assetBase = import.meta.env.BASE_URL
@@ -18,9 +19,9 @@ export const links: Route.LinksFunction = () => [
   { rel: 'apple-touch-icon', href: `${assetBase}static/apple-touch-icon.png` },
 ]
 export const meta: Route.MetaFunction = ({ loaderData: data }) => [
-  { title: `${data?.catalog.brand.name || 'Faultline'} · 웹 보안 노트` },
-  { name: 'description', content: data?.catalog.brand.description || '' },
-  { property: 'og:site_name', content: data?.catalog.brand.name || 'Faultline' },
+  { title: `${data?.brand.name || 'Faultline'} · 웹 보안 노트` },
+  { name: 'description', content: data?.brand.description || '' },
+  { property: 'og:site_name', content: data?.brand.name || 'Faultline' },
   { property: 'og:image', content: `${data?.deployment.siteUrl || assetBase}static/og-image.png` },
   { name: 'twitter:card', content: 'summary_large_image' },
 ]
@@ -30,10 +31,12 @@ export function Layout({ children }: { children: ReactNode }) {
     <body>{children}<ScrollRestoration /><Scripts /></body>
   </html>
 }
-export default function App() {
-  const { catalog, deployment } = useLoaderData<typeof loader>()
+function AppShell() {
+  const { deployment } = useLoaderData<typeof loader>()
+  const catalog = useCatalog()
   return <Shell catalog={catalog} deployment={deployment}><Outlet /></Shell>
 }
+export default function App() { return <CatalogProvider><AppShell /></CatalogProvider> }
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const missing = isRouteErrorResponse(error) && error.status === 404
   return <main className="error-page"><h1>{missing ? '페이지를 찾을 수 없습니다.' : '페이지를 불러오지 못했습니다.'}</h1><p><a href={assetBase}>Faultline으로 돌아가기</a></p></main>

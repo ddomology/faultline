@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -144,11 +145,44 @@ function compatibilityNotes(markdown) {
   return features;
 }
 
+export function searchableText(markdown) {
+  const values = [];
+  walkTree(unified().use(remarkParse).use(remarkGfm).parse(markdown), node => {
+    if (['text', 'inlineCode', 'code'].includes(node.type)) values.push(node.value);
+    else if (node.type === 'image') values.push(node.alt || '');
+  });
+  return values.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+export function validUpdatedAt(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+function contentDates() {
+  const dates = new Map();
+  try {
+    // Full history in CI avoids treating every note as updated at checkout time.
+    const history = execFileSync('git', ['-c', 'core.quotepath=false', 'log', '--format=%x1e%cI', '--name-only', '--', 'content'], {
+      cwd: repoRoot, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
+    });
+    for (const commit of history.split('\x1e').slice(1)) {
+      const [date, ...paths] = commit.trim().split('\n');
+      for (const path of paths) {
+        if (path.startsWith('content/') && !dates.has(path.slice(8))) dates.set(path.slice(8), validUpdatedAt(date));
+      }
+    }
+  } catch { /* A source archive can omit Git; dates then remain explicitly unknown. */ }
+  return dates;
+}
+
 export async function buildContent({ outputDir = join(appRoot, '.generated') } = {}) {
   const labCatalog = readJson('data/labs.json');
   const titles = readJson('site/lab-titles.json');
   const explorerTitles = readJson('site/explorer-titles.json');
   const brand = readJson('site/brand.json');
+  const dates = contentDates();
   const byLabUrl = new Map(labCatalog.labs.map(lab => [normalizeLabUrl(lab.url), lab]));
   const byLabPath = new Map(labCatalog.labs.map(lab => [lab.notePath, lab]));
   const categories = labCatalog.categories.map((category, index) => ({ id: category.id, title: category.title, number: pad(index + 1), count: 0 }));
@@ -197,6 +231,8 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
       number: lab ? labNumbers.get(lab.id) : '', category, categoryTitle,
       difficulty: String(data.difficulty || lab?.difficulty || ''), noteKind,
       labUrl: String(data.lab_url || lab?.url || ''), view: lab ? 'notes' : 'concepts', sourcePath,
+      updatedAt: validUpdatedAt(data.updated || data.modified) || dates.get(sourcePath) || null,
+      searchText: searchableText(markdown),
     };
     if (Object.hasOwn(rendered, metadata.routePath)) throw new Error(`Duplicate route: ${metadata.routePath}`);
     const body = markdown.replace(/^\s*# ([^\r\n]+)(?:\r?\n|$)/, (heading, text) =>

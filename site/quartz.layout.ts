@@ -21,7 +21,7 @@ export const sharedPageComponents: SharedLayout = {
   afterBody: [LabPagination(), ReaderTools()],
   footer: Component.Footer({
     links: {
-      GitHub: "https://github.com/ddomology/portswigger-lab-notes",
+      GitHub: "https://github.com/ddomology/faultline",
       "Web Security Academy": "https://portswigger.net/web-security",
     },
   }),

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://ddomology.github.io/portswigger-lab-notes/">
+  <a href="https://ddomology.github.io/faultline/">
     <img src="site/assets/favicon/favicon.svg" alt="Faultline 방패 로고" width="64" height="64">
   </a>
 </p>
@@ -11,14 +11,14 @@
 </p>
 
 <p align="center">
-  <a href="https://ddomology.github.io/portswigger-lab-notes/"><strong>블로그 읽기 ↗</strong></a>
+  <a href="https://ddomology.github.io/faultline/"><strong>블로그 읽기 ↗</strong></a>
   &nbsp; · &nbsp;
-  <a href="https://ddomology.github.io/portswigger-lab-notes/?view=concepts">개념 노트</a>
+  <a href="https://ddomology.github.io/faultline/?view=concepts">개념 노트</a>
   &nbsp; · &nbsp;
   <a href="#노트-작성">작성 안내</a>
 </p>
 
-<a href="https://ddomology.github.io/portswigger-lab-notes/">
+<a href="https://ddomology.github.io/faultline/">
   <img src="docs/assets/readme-hero.svg" alt="Faultline — 웹 보안 개념과 실습, 그 과정의 기록. 붉은 사선이 가로지르는 방패." width="100%">
 </a>
 

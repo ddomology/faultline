@@ -29,6 +29,7 @@ export async function exportStatic({
   sourceDir = path.join(projectRoot, "build/client"),
   outDir = path.join(projectRoot, "dist"),
   basePath = "/",
+  aliasRoutes = [],
 } = {}) {
   const source = path.resolve(sourceDir)
   const destination = path.resolve(outDir)
@@ -38,6 +39,7 @@ export async function exportStatic({
   if (!(await fs.stat(source)).isDirectory()) throw new Error("Static source must be a directory")
   const base = normalizeBase(basePath)
   const files = new Map()
+  const generated = new Map()
 
   async function collect(directory, prefix = "") {
     for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
@@ -65,6 +67,20 @@ export async function exportStatic({
 
   await collect(source)
   if (!files.has("index.html")) throw new Error("A prerendered homepage is required; SPA fallback cannot be deployed")
+  for (const route of aliasRoutes) {
+    if (typeof route !== "string" || !route.startsWith("/") || !route.endsWith(".html") || /[?#\\]/.test(route) || route.split("/").some(part => part === ".." || part === ".")) {
+      throw new Error(`Invalid canonical alias route: ${route}`)
+    }
+    const canonical = route.slice(1)
+    if (!files.has(canonical)) throw new Error(`Alias target missing: ${route}`)
+    const target = canonical.slice(0, -5) + "/index.html"
+    if (files.has(target)) throw new Error(`Static export collision: ${target}`)
+    const url = `/${base ? base + "/" : ""}${canonical}`
+    const escaped = url.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;")
+    const literal = JSON.stringify(url).replaceAll("<", "\\u003c")
+    generated.set(target, `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Faultline · 페이지 이동</title><link rel="canonical" href="${escaped}"><meta name="robots" content="noindex"><script>const target=new URL(${literal},location.origin);target.search=location.search;target.hash=location.hash;location.replace(target.href)</script><meta http-equiv="refresh" content="0;url=${escaped}"></head><body><a href="${escaped}">노트로 이동</a></body></html>`)
+    files.set(target, null)
+  }
   for (const target of files.keys()) {
     let ancestor = path.posix.dirname(target)
     while (ancestor !== ".") {
@@ -80,7 +96,8 @@ export async function exportStatic({
     for (const [relative, sourceFile] of files) {
       const target = path.join(temporary, relative)
       await fs.mkdir(path.dirname(target), { recursive: true })
-      await fs.copyFile(sourceFile, target)
+      if (generated.has(relative)) await fs.writeFile(target, generated.get(relative))
+      else await fs.copyFile(sourceFile, target)
     }
     await fs.writeFile(path.join(temporary, ".nojekyll"), "")
     await fs.rm(destination, { recursive: true, force: true })
@@ -98,6 +115,7 @@ export async function exportStatic({
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const { basePath } = await import("../site.config.mjs")
-  const result = await exportStatic({ basePath })
+  const manifest = JSON.parse(await fs.readFile(path.join(projectRoot, ".generated/manifest.json"), "utf8"))
+  const result = await exportStatic({ basePath, aliasRoutes: manifest.routes })
   console.log(`Static export: ${result.html} HTML pages, ${result.data} data files -> ${result.outDir}`)
 }
