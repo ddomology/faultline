@@ -7,6 +7,7 @@ import LabExplorer from "./quartz/components/LabExplorer"
 import TopicExplorer from "./quartz/components/TopicExplorer"
 import NoteTitle from "./quartz/components/NoteTitle"
 import ReaderTools from "./quartz/components/ReaderTools"
+import LabPagination from "./quartz/components/LabPagination"
 
 const isHome = (page: QuartzComponentProps) => page.fileData.slug === "index"
 const onReader = (component: QuartzComponent) => Component.ConditionalRender({
@@ -17,7 +18,7 @@ const onReader = (component: QuartzComponent) => Component.ConditionalRender({
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
-  afterBody: [ReaderTools()],
+  afterBody: [LabPagination(), ReaderTools()],
   footer: Component.Footer({
     links: {
       GitHub: "https://github.com/ddomology/portswigger-lab-notes",

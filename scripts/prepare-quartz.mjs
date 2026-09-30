@@ -36,6 +36,8 @@ cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");
 cpSync("site/LabExplorer.tsx", "_quartz/quartz/components/LabExplorer.tsx");
 cpSync("site/TopicExplorer.tsx", "_quartz/quartz/components/TopicExplorer.tsx");
 cpSync("site/NoteTitle.tsx", "_quartz/quartz/components/NoteTitle.tsx");
+cpSync("site/LabPagination.tsx", "_quartz/quartz/components/LabPagination.tsx");
+cpSync("site/lab-pagination.scss", "_quartz/quartz/components/styles/lab-pagination.scss");
 cpSync("site/ReaderTools.tsx", "_quartz/quartz/components/ReaderTools.tsx");
 cpSync("site/reader-tools.js", "_quartz/quartz/components/scripts/reader-tools.inline.js");
 cpSync("site/reader-tools.css", "_quartz/quartz/components/styles/reader-tools.scss");
