@@ -11,6 +11,8 @@ html:root {
   --md-rule:#e2e7ed;
   --md-divider-accent:#c33b43;
   --md-divider-strong:#b8c1cc;
+  --md-section-surface:#eef1f4;
+  --md-section-accent:#c33b43;
   --md-note:#426b93;
   --md-tip:#38705c;
   --md-warning:#8b6327;
@@ -28,6 +30,8 @@ html:root[saved-theme="dark"] {
   --md-rule:#343c47;
   --md-divider-accent:#f0787f;
   --md-divider-strong:#596371;
+  --md-section-surface:#272c33;
+  --md-section-accent:#b83d46;
   --md-note:#91b4d7;
   --md-tip:#8dbba6;
   --md-warning:#d4b47c;
@@ -51,13 +55,29 @@ html:root[saved-theme="dark"] {
     letter-spacing:-.025em;scroll-margin-top:24px;text-wrap:pretty;
   }
   h2 { margin:48px 0 18px;padding:0;border:0;font-size:24px; }
-  // Give major sections a clear break, with a short accent over the fine rule.
-  > h2 ~ h2 { margin-top:64px;scroll-margin-top:32px; }
-  > h2 ~ h2::before {
-    content:"";position:absolute;inset-inline:0;top:-26px;
-    height:3px;box-sizing:border-box;border-inline-start:32px solid var(--md-divider-accent);
-    background:linear-gradient(var(--md-rule),var(--md-rule)) 0 center / 100% 1px no-repeat;
-    pointer-events:none;
+  // Fixed note sections share a numbered ribbon; IDs and Markdown stay stable.
+  > h2:is(#문제-조건과-설명,#탐색-및-풀이-기록,#최종-결과,#배운-점) {
+    box-sizing:border-box;min-height:64px;margin:56px 0 24px;
+    padding:14px 28px 14px 92px;background:var(--md-section-surface);
+    scroll-margin-top:24px;
+    &::before {
+      position:absolute;inset-block:0;inset-inline-start:0;width:72px;
+      display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+      padding-inline-end:10px;background:var(--md-section-accent);color:#fff;
+      clip-path:polygon(0 0,100% 0,calc(100% - 12px) 100%,0 100%);
+      font-family:var(--codeFont);font-size:36px;font-weight:700;
+      font-variant-numeric:tabular-nums;letter-spacing:-.06em;line-height:1;
+      pointer-events:none;
+    }
+    &::after {
+      content:"";position:absolute;inset-block-start:0;inset-inline-end:0;
+      width:10px;height:10px;background:var(--light);
+      clip-path:polygon(0 0,100% 0,100% 100%);pointer-events:none;
+    }
+    &:first-child { margin-top:0; }
+  }
+  @each $id, $number in ("문제-조건과-설명":"01","탐색-및-풀이-기록":"02","최종-결과":"03","배운-점":"04") {
+    > h2[id="#{$id}"]::before { content:$number; }
   }
   h3 { margin:32px 0 14px;font-size:20px; }
   h4 { margin:26px 0 12px;font-size:17px; }
@@ -245,7 +265,11 @@ html:root[saved-theme="dark"] {
 @media(max-width:900px) {
   .center > article {
     h2 { margin-top:40px;font-size:22px; }
-    > h2 ~ h2 { margin-top:56px; }
+    > h2:is(#문제-조건과-설명,#탐색-및-풀이-기록,#최종-결과,#배운-점) {
+      min-height:58px;margin-top:44px;padding:14px 20px 14px 78px;font-size:20px;
+      &::before { width:62px;font-size:32px; }
+      &:first-child { margin-top:0; }
+    }
     h3 { font-size:19px; }
     :is(ul,ol) { padding-left:23px; }
     input[type="checkbox"] { margin-inline-start:-22px; }
