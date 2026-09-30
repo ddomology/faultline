@@ -1,78 +1,70 @@
-# PortSwigger Lab Notes
+<p align="center">
+  <a href="https://ddomology.github.io/portswigger-lab-notes/">
+    <img src="site/assets/favicon/favicon.svg" alt="PortSwigger Lab Notes 방패 로고" width="64" height="64">
+  </a>
+</p>
 
-PortSwigger 실습 풀이와 학습 기록을 빠르게 찾아 읽는 개인 노트입니다.
+<h1 align="center">PortSwigger Lab Notes</h1>
 
-[풀이 노트 열기](https://ddomology.github.io/portswigger-lab-notes/)
+<p align="center">
+  PortSwigger Web Security Academy를 공부하며 남기는 한국어 실습 노트.
+</p>
 
-## 노트 찾기
+<p align="center">
+  <a href="https://ddomology.github.io/portswigger-lab-notes/"><strong>노트 읽기 ↗</strong></a>
+  &nbsp; · &nbsp;
+  <a href="content/labs/">원본 노트</a>
+  &nbsp; · &nbsp;
+  <a href="#노트-작성">작성 안내</a>
+</p>
 
-- 첫 화면의 **풀이 노트**는 실제 탐색·해결 과정을 작성한 기록을 보여 줍니다.
-- 제목, 본문, 태그, 주제의 한국어 이름이나 약어로 검색합니다.
-- `01.02` 같은 번호는 주제와 그 안의 문제 순서를 나타내며, 검색·정렬해도 유지됩니다.
-- **전체 실습**에서 273개 문제를 검색하고 주제·난이도로 좁힐 수 있습니다. 각 실습에는 노트 파일이 하나씩 있으며, 맨 앞에 문제 조건과 설명을 적고 그 아래에 탐색·풀이를 이어 씁니다.
-- **즐겨찾기**에 자주 찾는 항목을 모을 수 있습니다. 즐겨찾기는 현재 브라우저에 저장됩니다.
-- 기존 풀이 주소와 첨부 이미지는 유지합니다. 예전 `notes.html` 주소는 첫 화면으로, `guide.html`은 이 문서의 작성 안내로 이동합니다.
-- 각 실습의 본문 끝에서 같은 주제의 이전·다음 실습으로 이동합니다. 탐색기와 같은 번호순이며, 첫 실습과 마지막 실습에서는 이동할 수 있는 방향만 표시합니다.
+<a href="https://ddomology.github.io/portswigger-lab-notes/">
+  <img src="docs/assets/readme-hero.svg" alt="PortSwigger Lab Notes — 31개 주제, 273개 실습. 문제 조건, 탐색 과정, 풀이와 배운 점을 기록합니다." width="100%">
+</a>
 
-전체 실습의 해결 여부는 저장한 계정 상태를 바탕으로 필요할 때 수동 갱신하며 실시간으로 동기화되지 않습니다. 문제 설명 페이지가 있다는 사실과 실습을 해결했다는 사실은 별개입니다. 노트의 수정일은 해당 파일의 최근 Git 커밋을 기준으로 표시합니다.
+## 어떤 기록인가요
+
+문제에서 주어진 조건, 직접 확인한 사실, 시도한 이유와 결과를 한 노트에 쌓습니다. 해결에 이른 과정과 실패한 시도도 함께 남겨 다음 실습에서 다시 찾아볼 수 있게 합니다.
+
+현재 목록에는 **31개 주제, 273개 실습**이 있습니다. 각 실습의 문제 설명을 먼저 정리하고, 진행하면서 같은 문서에 탐색과 풀이를 이어 씁니다. 전체 개수는 풀이를 끝낸 문제 수를 뜻하지 않습니다.
+
+## 노트 둘러보기
+
+| 찾고 싶은 것 | 사이트에서 보는 곳 |
+| --- | --- |
+| 직접 탐색하고 풀이한 기록 | 첫 화면의 **풀이 노트** |
+| 공부할 주제와 문제 | **전체 실습**에서 주제·난이도로 필터 |
+| 기억나는 개념이나 키워드 | 제목·본문·태그 검색. 한국어 주제명과 약어도 지원 |
+| 같은 주제의 다른 실습 | 왼쪽 **Explorer**, 본문 끝의 **이전·다음 실습** |
+| 다시 읽을 노트 | 별표로 **즐겨찾기**에 저장 |
+
+주제별 SVG 아이콘과 고정 번호로 위치를 구분하고, 난이도는 이름과 3칸 표시를 함께 보여 줍니다. 한국어 제목 아래에는 원문 영어 제목을 표시합니다.
+
+본문은 목차, 코드 복사, 이미지 확대, 다크 모드를 지원합니다. 즐겨찾기는 현재 브라우저에 저장되며, 해결 여부는 저장한 계정 상태를 필요할 때 수동 갱신합니다.
 
 ## 노트 작성
 
-GPT에 원하는 기록·수정을 요청하거나, GitHub와 옵시디언에서 Markdown 파일을 직접 편집합니다. 사이트는 풀이를 찾아 읽는 데 사용합니다.
+1. `content/`를 Obsidian 보관함으로 열거나 GitHub에서 Markdown 파일을 편집합니다.
+2. 기존 실습 노트에 **문제 조건 → 직접 확인한 조건 → 시도와 결과 → 풀이·배운 점**을 이어 적습니다. 새 기록은 [노트 템플릿](content/templates/lab.md)을 복사해 시작할 수 있습니다.
+3. `main`에 반영하면 GitHub Actions가 사이트를 갱신합니다.
 
-1. `content/` 아래에 Markdown 파일을 저장합니다. 옵시디언에서는 이 폴더를 보관함으로 엽니다.
-2. 새 실습 기록은 `content/templates/lab.md`를 복사해 시작할 수 있습니다.
-3. 실습과 연결하려면 `lab_url`에 PortSwigger 원문 주소를 넣습니다. 문제와 관계없는 개념 노트도 자동으로 목록에 들어갑니다.
-   풀이 전 상태는 `note_kind: problem`, 실제 탐색·풀이를 기록한 상태는 `note_kind: solution`입니다. 새 페이지를 만드는 대신 같은 파일 아래에 풀이를 추가하고 상태를 바꿉니다.
-4. `main`에 commit/push하면 GitHub Actions가 사이트를 갱신합니다.
+실제 탐색·풀이를 적은 노트에는 `note_kind: solution`, 문제 설명만 정리한 노트에는 `note_kind: problem`을 사용합니다. 첨부 자료는 노트 가까이에 두고 상대 경로로 연결합니다.
 
-```yaml
+→ [메타데이터, 공개 범위, 빌드·배포 안내](docs/maintaining.md)
+
+## 저장소 구성
+
+| 경로 | 내용 |
+| --- | --- |
+| [`content/`](content/) | 실습 노트와 첨부 자료의 원본 |
+| [`data/labs.json`](data/labs.json) | 실습 목록, 주제, 해결 상태 스냅샷 |
+| [`site/`](site/) | 검색 화면, 탐색기, 읽기 화면과 스타일 |
+| [`site/assets/`](site/assets/) | 메인 로고, 주제별 SVG 아이콘, 서체 |
+| [`scripts/`](scripts/) | 노트 인덱싱, 사이트 구성, 빌드 후처리 |
+| [`publish.yml`](.github/workflows/publish.yml) | GitHub Pages 빌드·배포 |
+
+사이트는 **Quartz 4.5.2**와 **GitHub Pages**로 만들었습니다. 본문과 이미지의 원본은 저장소에 남기고, 읽기 화면과 검색 목록은 빌드할 때 생성합니다.
+
 ---
-title: 내 풀이 제목
-lab_url: https://portswigger.net/web-security/주제/lab-문제명
-tags:
-  - portswigger
-  - 주제
-note_kind: solution
----
-```
 
-실습과 연결하지 않은 일반 노트는 `lab_url`을 생략합니다. 선택적으로 `category`와 `category_title`을 지정하면 해당 분류에서 찾을 수 있습니다. 같은 실습의 대표 풀이 하나에만 `lab_url`을 지정합니다.
-
-이미지와 자료는 노트 근처에 두고 상대 경로로 연결합니다. 저장소 안의 이미지는 빌드할 때 원본 크기를 읽어 로딩 전에도 자리를 확보하므로, 제목의 `#` 링크로 이동할 때 본문이 밀리는 현상을 줄입니다. 기존 Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합니다. 원본과 같은 첫 제목이 반복되는 경우 빌드 복사본에서만 중복 제목을 정리하며 원본 파일은 바꾸지 않습니다.
-
-## 공개 범위
-
-`content/`의 일반 노트는 모두 공개됩니다. `draft` 값으로 숨기는 기능과 브라우저 초안 작성 기능은 사용하지 않습니다. `private`, `templates`, `.obsidian`, `.trash` 폴더는 사이트 빌드에서 제외합니다.
-
-저장소 자체가 공개이므로 사이트에서 제외한 파일도 GitHub에는 공개됩니다. 쿠키·토큰·API 키 등은 커밋하지 마세요.
-
-## 빌드와 배포
-
-GitHub Pages의 배포 소스는 **GitHub Actions**입니다. `.github/workflows/publish.yml`은 고정된 Quartz 4.5.2 커밋을 받아 다음 순서로 빌드합니다.
-
-1. `scripts/prepare-quartz.mjs`: 설정·컴포넌트·콘텐츠를 Quartz 작업 폴더로 복사합니다. 다시 실행할 수 있습니다.
-2. Quartz에서 `npm ci`를 실행합니다.
-3. `scripts/build-note-index.mjs`: 공개 노트의 제목·태그·본문 검색어·수정일을 수집합니다.
-4. Quartz에서 `npx quartz build`를 실행합니다.
-5. `scripts/build-lab-catalog.mjs`: 실제 렌더링 주소를 검증하고 검색 목록 및 이전 주소의 이동 페이지를 만듭니다.
-6. `scripts/fingerprint-assets.mjs`: CSS·JavaScript 파일명에 내용 해시를 붙이고 HTML 참조를 검증해 이전 디자인의 캐시가 재사용되지 않도록 합니다.
-
-주요 파일:
-
-- `content/`: 273개 실습의 통합 노트와 첨부 자료의 원본.
-- `data/labs.json`: 273개 실습과 31개 주제, 해결 상태 스냅샷.
-- `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css`: 검색·필터·북마크 화면.
-- `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css`: 노트 주제 탐색.
-- `site/topic-aliases.json`: 한국어·약어 검색어.
-- `site/assets/icons/topics/`, `site/TopicIcon.tsx`, `site/topic-icons.ts`: 31개 주제의 SVG 원본과 탐색기·검색 목록·노트 제목의 공통 아이콘. 기본은 단색이며 현재 주제에는 파비콘과 같은 빨간 포인트를 표시합니다.
-- `site/reader.scss`, `site/quartz.layout.ts`: 공통 읽기 화면과 배치.
-- `site/reader-images.ts`: 첨부 이미지의 가로·세로 크기를 HTML에 미리 기록하는 Quartz 변환기.
-
-빌드 결과의 `_dashboard/catalog.json`에 전체 실습과 공개 노트 목록이, `_dashboard/notes.json`에 공개 노트의 검색 메타데이터가 들어갑니다. 일반 개념 노트도 포함됩니다. `notes.html`과 `guide.html`은 이전 링크를 위한 이동 페이지이며 검색에 중복으로 표시되지 않습니다. 자동 생성하던 폴더·태그 목록도 없애고 기존 주소를 첫 화면의 검색·주제 필터로 연결합니다. 직접 작성한 Markdown 페이지는 유지합니다.
-
-새 실습 목록은 저장한 HTML을 로컬에서 변환한 뒤 `data/labs.json`만 커밋합니다.
-
-```bash
-python scripts/import-portswigger-labs.py saved-all-practice.html --output data/labs.json --snapshot-date YYYY-MM-DD
-```
+학습 자료: [PortSwigger Web Security Academy](https://portswigger.net/web-security) · 사이트 엔진: [Quartz](https://github.com/jackyzha0/quartz) · 서체: [Pretendard](site/assets/fonts/pretendard/README.md) · 기본 UI 아이콘: [Lucide](site/assets/icons/lucide/README.md)
