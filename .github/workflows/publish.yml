@@ -53,7 +53,9 @@ jobs:
       - name: Connect labs to rendered notes
         run: node scripts/build-lab-catalog.mjs
       - name: Fingerprint assets and verify references
-        run: node scripts/fingerprint-assets.mjs
+        run: |
+          node scripts/check-asset-versioning.mjs
+          node scripts/fingerprint-assets.mjs
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:

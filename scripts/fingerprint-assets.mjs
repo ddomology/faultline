@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, copyFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, relative, join, sep } from 'node:path';
 
-const output = resolve('_quartz/public');
+const output = resolve(process.argv[2] || '_quartz/public');
 const site = new URL('https://ddomology.github.io/portswigger-lab-notes/');
 const assets = new Map();
 for (const filename of ['index.css', 'prescript.js', 'postscript.js']) {
@@ -10,8 +10,11 @@ for (const filename of ['index.css', 'prescript.js', 'postscript.js']) {
   const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 12);
   const dot = filename.lastIndexOf('.');
   const versioned = `${filename.slice(0, dot)}.${hash}${filename.slice(dot)}`;
+  // Keep this build's old-style URL working during migration. New HTML uses a
+  // stable path: GitHub Pages replaces the whole deployment, so old hashed
+  // filenames disappear while cached HTML can still refer to them.
   copyFileSync(join(output, filename), join(output, versioned));
-  assets.set(filename, versioned);
+  assets.set(filename, hash);
 }
 
 function* htmlFiles(dir) {
@@ -40,8 +43,9 @@ for (const file of htmlFiles(output)) {
     if (!match) return attribute;
     const originalName = match[1] ? 'index.css' : `${match[2]}.js`;
     const [path] = value.split(/[?#]/, 1);
-    const next = path.slice(0, path.lastIndexOf('/') + 1) + assets.get(originalName) + value.slice(path.length);
-    return `${name}=${quote}${next}${quote}`;
+    url.searchParams.set('v', assets.get(originalName));
+    const next = path.slice(0, path.lastIndexOf('/') + 1) + originalName + url.search + url.hash;
+    return `${name}=${quote}${next.replaceAll('&', '&amp;')}${quote}`;
   });
   if (html !== original) writeFileSync(file, html);
   count++;
@@ -58,5 +62,5 @@ for (const file of htmlFiles(output)) {
   }
 }
 if (missing.size) throw new Error('Missing local HTML assets:\n' + [...missing].join('\n'));
-console.log(`Fingerprinted ${assets.size} assets across ${count} HTML pages; local asset references verified.`);
-console.log(JSON.stringify(Object.fromEntries(assets)));
+console.log(`Versioned ${assets.size} stable asset URLs across ${count} HTML pages; local asset references verified.`);
+console.log(JSON.stringify(Object.fromEntries([...assets].map(([name, hash]) => [name, `${name}?v=${hash}`]))));

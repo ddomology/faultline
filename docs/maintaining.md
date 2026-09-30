@@ -84,7 +84,7 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 4. `node scripts/build-note-index.mjs`: 공개 노트의 제목·태그·본문 검색어·수정일을 수집합니다.
 5. `_quartz/`에서 `npx quartz build`를 실행합니다.
 6. `node scripts/build-lab-catalog.mjs`: 렌더링 주소를 검증하고 검색 목록 및 이전 주소의 이동 페이지를 만듭니다.
-7. `node scripts/fingerprint-assets.mjs`: CSS·JavaScript 파일명에 내용 해시를 붙이고 HTML 참조를 검증합니다.
+7. `node scripts/fingerprint-assets.mjs`: CSS·JavaScript의 고정 경로에 `?v=내용해시`를 붙이고 HTML 참조를 검증합니다. GitHub Pages는 배포 시 이전 파일을 교체하므로, 캐시된 HTML이 삭제된 해시 파일을 요청하지 않도록 파일명은 유지합니다. `node scripts/check-asset-versioning.mjs`는 이전 HTML과 새 배포 파일을 섞어도 리소스를 읽을 수 있는지 검증합니다.
 
 결과물인 `_quartz/public/`을 GitHub Pages에 배포합니다. `_dashboard/catalog.json`에는 전체 실습과 공개 노트 목록이, `_dashboard/notes.json`에는 공개 노트의 검색 메타데이터가 들어갑니다. 일반 개념 노트도 포함됩니다.
 
