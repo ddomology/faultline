@@ -31,7 +31,7 @@
     });
     document.querySelectorAll('.topic-entry').forEach(entry => {
       const active = document.body.dataset.slug === 'index'
-        ? entry.dataset.topic === (category || new URLSearchParams(location.search).get('topic'))
+        ? view !== 'concepts' && entry.dataset.topic === (category || new URLSearchParams(location.search).get('topic'))
         : !!entry.querySelector('.topic-children a[aria-current="page"]');
       entry.classList.toggle('is-current-topic', active);
       const link = entry.querySelector('.topic-name');

@@ -13,6 +13,7 @@ export default (() => {
         <nav class="view-switch" aria-label="목록 선택">
           <button type="button" data-view="notes" aria-pressed="true">풀이 노트 <span id="notes-count">—</span></button>
           <button type="button" data-view="all" aria-pressed="false">전체 실습 <span id="labs-count">—</span></button>
+          <button type="button" data-view="concepts" aria-pressed="false">개념 노트 <span id="concepts-count">0</span></button>
         </nav>
         <div class="library-toolbar">
           <div class="note-search">

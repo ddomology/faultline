@@ -9,6 +9,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
   const $ = (id) => document.getElementById(id);
   const RETURN_KEY = 'portswigger-lab-notes:last-list:v1';
   const PAGE_SIZE = 24;
+  const viewNames = { notes: '풀이 노트', all: '전체 실습', concepts: '개념 노트' };
   const levels = { Apprentice: 0, Practitioner: 1, Expert: 2 };
   const levelNames = { Apprentice: '입문', Practitioner: '실전', Expert: '심화' };
   let catalog, entries = [], limit = PAGE_SIZE, timer;
@@ -28,7 +29,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
     const view = params.get('view') || (params.get('saved') === '1' ? 'saved' : 'notes');
     const sort = params.get('sort');
     return {
-      view: view === 'all' || view === 'saved' ? 'all' : 'notes',
+      view: view === 'saved' ? 'all' : Object.hasOwn(viewNames, view) ? view : 'notes',
       query: params.get('q') || '', category: params.get('topic') || 'all',
       difficulty: Object.hasOwn(levels, params.get('level')) ? params.get('level') : 'all',
       sort: ['number', 'recent', 'title', 'difficulty'].includes(sort) ? sort : 'number',
@@ -45,8 +46,10 @@ import { difficultyBarsSvg } from './difficulty-bars';
     if (location.pathname + location.search !== next) history.replaceState(null, '', next);
   }
   function baseEntries() {
-    return entries.filter((entry) => state.view === 'all' || (entry.noteUrl && entry.noteKind !== 'problem'));
+    if (state.view === 'concepts') return entries.filter(isConceptNote);
+    return entries.filter((entry) => !isConceptNote(entry) && (state.view === 'all' || (entry.noteUrl && entry.noteKind !== 'problem')));
   }
+  function isConceptNote(entry) { return !!entry.noteUrl && !entry.labId; }
   function filteredEntries() {
     const tokens = normalize(state.query).trim().split(/\s+/).filter(Boolean);
     return baseEntries().filter((entry) =>
@@ -166,6 +169,11 @@ import { difficultyBarsSvg } from './difficulty-bars';
   }
   function renderEmpty() {
     const box = node('div', 'empty-state');
+    if (state.view === 'concepts' && !baseEntries().length) {
+      box.append(node('h2', '', '아직 개념 노트가 없습니다.'));
+      box.append(node('p', '', '개념을 정리한 글이 이곳에 표시됩니다.'));
+      return box;
+    }
     const hasFilter = state.query || state.category !== 'all' || state.difficulty !== 'all';
 
     box.append(node('h2', '', hasFilter ? '검색 결과 없음' : '등록된 풀이 없음'));
@@ -180,16 +188,20 @@ import { difficultyBarsSvg } from './difficulty-bars';
     return box;
   }
   function render() {
-    categoryOptions();
-    root.querySelector('.library-title').textContent = state.view === 'all' ? '전체 실습' : '풀이 노트';
+    const emptyConcepts = state.view === 'concepts' && !baseEntries().length;
+    if (!emptyConcepts) categoryOptions();
+    root.querySelector('.library-title').textContent = viewNames[state.view];
+    root.setAttribute('aria-label', `${viewNames[state.view]} 목록`);
+    root.querySelector('.library-toolbar').hidden = emptyConcepts;
     if (!composing && $('search').value !== state.query) $('search').value = state.query;
     $('difficulty').value = state.difficulty; $('sort').value = state.sort;
     root.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
-    $('notes-count').textContent = entries.filter((entry) => entry.noteUrl && entry.noteKind !== 'problem').length;
+    $('notes-count').textContent = entries.filter((entry) => !isConceptNote(entry) && entry.noteUrl && entry.noteKind !== 'problem').length;
     $('labs-count').textContent = catalog.labs.length;
-    $('reset-filters').hidden = !state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'number';
+    $('concepts-count').textContent = entries.filter(isConceptNote).length;
+    $('reset-filters').hidden = emptyConcepts || (!state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'number');
     const matches = filteredEntries();
-    $('result-count').textContent = `${state.view === 'notes' ? '풀이 노트' : '전체 실습'} ${matches.length}개${state.query ? ` · “${state.query}” 검색 결과` : ''}`;
+    $('result-count').textContent = `${viewNames[state.view]} ${matches.length}개${state.query && !emptyConcepts ? ` · “${state.query}” 검색 결과` : ''}`;
     $('lab-list').replaceChildren(renderGroups(matches));
     $('load-more').hidden = matches.length <= limit;
     $('load-more').textContent = `더 보기 · ${Math.min(limit, matches.length)} / ${matches.length}`;
@@ -215,6 +227,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
     $('load-more').addEventListener('click', () => { const start = limit; limit += PAGE_SIZE; render(); $('lab-list').querySelectorAll('.note-title a')[start]?.focus({ preventScroll: true }); });
     window.addEventListener('popstate', () => { clearTimeout(timer); state = readState(); limit = PAGE_SIZE; render(); });
     document.addEventListener('keydown', (event) => {
+      if (root.querySelector('.library-toolbar').hidden) return;
       const target = document.activeElement;
       if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) && !target.isContentEditable) { event.preventDefault(); $('search').focus(); }
     });
