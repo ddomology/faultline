@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-가입 과정에서 허용되지 않은 도메인의 이메일 주소를 막지만, 검증 로직과 이메일 파서의 해석이 다르다.
+가입 기능은 허용되지 않은 도메인의 이메일 주소를 차단하지만, 검증 로직과 이메일 주소를 해석하는 라이브러리가 서로 다른 결과를 낸다. 공식 문제는 PortSwigger Research의 Gareth Heyes가 쓴 ‘Splitting the Email Atom: Exploiting Parsers to Bypass Access Controls’ 백서의 기법을 이해해야 한다고 명시한다. 여기서는 특정 주소 형식을 아직 검증된 답으로 전제하지 않는다.
 
 **완료 조건**
 
-이 차이를 이용해 계정을 등록하고 carlos를 삭제한다.
+해석 차이를 이용해 계정을 등록하고 `carlos`를 삭제한다. 가입 폼의 검사를 통과하는 것과 서버가 그 계정을 관리 권한이 있는 주소로 인식하는 것은 다른 단계다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-같은 이메일 주소를 서로 다르게 해석할 때 도메인 기반 접근 제어가 무너지는지 확인하는 문제다.
+정상 이메일 주소의 가입 요청과 검증 오류를 먼저 비교해 허용 도메인 규칙을 파악한다. 이후 하나의 주소를 검증 코드와 이메일 파서가 다르게 분해할 수 있는지 응답과 계정 정보로 확인해야 한다. 어떤 계층이 도메인을 판단하고 어떤 계층이 최종 계정 주소를 저장하는지 분리하면 권한 차이가 생기는 위치를 찾을 수 있다.
+
+등록 성공 뒤 관리자 기능 접근과 `carlos` 삭제를 각각 검증한다. 입력 주소, 검증 결과, 저장된 계정 해석을 아래에 순서대로 기록한다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-bypassing-access-controls-using-email-address-parsing-discrepancies)
 
