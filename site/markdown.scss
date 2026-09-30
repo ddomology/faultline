@@ -162,13 +162,13 @@ html:root[saved-theme="dark"] {
   }
   pre > code:not(.mermaid) {
     display:grid;grid-template-columns:minmax(max-content,1fr);max-width:100%;min-width:0;
-    box-sizing:border-box;margin:0;padding:18px 0;border:0;border-radius:0;
+    box-sizing:border-box;margin:0;padding:16px 0;border:0;border-radius:0;
     overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:var(--md-code-muted) transparent;
-    color:var(--md-code-text);background:transparent;font-size:14px;line-height:1.8;
+    color:var(--md-code-text);background:transparent;font-size:14px;line-height:1.65;
     font-family:var(--codeFont);font-weight:400;font-variant-ligatures:none;
     tab-size:2;white-space:pre;word-break:normal;overflow-wrap:normal;text-wrap:nowrap;
     &:focus-visible { outline:2px solid var(--accent);outline-offset:-3px; }
-    &:not(:has(> [data-line])) { display:block;padding:18px 20px; }
+    &:not(:has(> [data-line])) { display:block;padding:16px 20px; }
     span { font-size:inherit;line-height:inherit; }
     > [data-line] {
       position:relative;min-width:100%;padding:0 20px 0 18px;
@@ -178,7 +178,7 @@ html:root[saved-theme="dark"] {
     &[data-line-numbers] > [data-line] { padding-left:52px; }
     &[data-line-numbers] > [data-line]::before {
       position:absolute;left:16px;top:0;width:20px;margin:0;color:var(--md-code-muted);
-      font-size:12px;line-height:2.1;opacity:1;font-variant-numeric:tabular-nums;user-select:none;
+      font-size:12px;line-height:23.1px;opacity:1;font-variant-numeric:tabular-nums;user-select:none;
     }
     &[data-line-numbers-max-digits="2"] > [data-line] { padding-left:60px; }
     &[data-line-numbers-max-digits="2"] > [data-line]::before { width:28px; }
@@ -244,7 +244,7 @@ html:root[saved-theme="dark"] {
     pre > code:not(.mermaid)[data-line-numbers] > [data-line] { padding-left:44px; }
     pre > code:not(.mermaid)[data-line-numbers-max-digits="2"] > [data-line] { padding-left:52px; }
     pre > code:not(.mermaid)[data-line-numbers-max-digits="3"] > [data-line] { padding-left:60px; }
-    pre > code:not(.mermaid)[data-line-numbers] > [data-line]::before { left:10px;line-height:1.95; }
+    pre > code:not(.mermaid)[data-line-numbers] > [data-line]::before { left:10px;line-height:21.45px; }
     .code-toolbar { padding-left:12px;gap:6px; }
     figure[data-rehype-pretty-code-figure] > [data-rehype-pretty-code-title] { padding-inline:14px; }
   }

@@ -92,6 +92,62 @@ const prettierOptions: Options = {
   trailingComma: "none",
 }
 
+// Keep clause bodies and short lists next to their keyword. Long lists and
+// nested expressions still follow the formatter's structural indentation.
+function compactSql(formatted: string, format: (source: string) => string): string {
+  const lines = formatted.split("\n")
+  const compact: string[] = []
+  const clause = /^( *)(SELECT(?: ALL| DISTINCT)?|WITH(?: RECURSIVE)?|FROM|WHERE|HAVING|GROUP BY|ORDER BY|LIMIT|OFFSET|RETURNING|SET|VALUES)$/i
+  const continuation = /^(?:AND|OR|JOIN|(?:(?:LEFT|RIGHT|FULL)(?: OUTER)?|INNER|CROSS|NATURAL) JOIN)\b/i
+  for (let index = 0; index < lines.length; index++) {
+    const heading = lines[index].match(clause)
+    if (!heading) {
+      compact.push(lines[index])
+      continue
+    }
+    const indent = heading[1]
+    const bodyIndent = indent + "  "
+    const parts: string[] = []
+    for (let next = index + 1; next < lines.length; next++) {
+      const body = lines[next].startsWith(bodyIndent) ? lines[next].slice(bodyIndent.length) : ""
+      if (!body || /^\s|^(?:--|#|\/\*)/.test(body)) break
+      parts.push(body)
+      if (!body.endsWith(",")) break
+    }
+    const body = parts.join(" ")
+    const following = lines[index + parts.length + 1] ?? ""
+    const opensBlock = body.endsWith("(")
+    const continues = following.startsWith(bodyIndent) &&
+      !continuation.test(following.slice(bodyIndent.length))
+    const joined = `${lines[index]} ${body}`
+    if (body && !body.endsWith(",") && (!continues || opensBlock) && joined.length <= 88) {
+      compact.push(joined)
+      index += parts.length
+      if (opensBlock) {
+        // Moving an opening parenthesis up removes one indentation level from
+        // its contents and closing line, but not from later AND/JOIN clauses.
+        for (let next = index + 1; next < lines.length && lines[next].startsWith(bodyIndent); next++) {
+          const closesBlock = lines[next].slice(bodyIndent.length).startsWith(")")
+          lines[next] = lines[next].slice(2)
+          if (closesBlock) break
+        }
+      }
+    } else {
+      compact.push(lines[index])
+    }
+  }
+  const candidate = compact.join("\n")
+  if (candidate === formatted) return formatted
+  // A line that looks like a clause can be inside a multiline string/comment.
+  // Accept compaction only when the same dialect reproduces the exact original
+  // formatter output, including literal contents and comment boundaries.
+  try {
+    return format(candidate) === formatted ? candidate : formatted
+  } catch {
+    return formatted
+  }
+}
+
 async function loadPlugin(name: PluginName): Promise<Plugin> {
   // Some plugins expose a namespace at runtime despite declaring a default.
   const plugin = (module: unknown) => {
@@ -139,7 +195,7 @@ async function loadFormatter(language: CodeFormatLanguage): Promise<Formatter> {
     }
     case "sql": {
       const sql = await import("sql-formatter")
-      return (source) => sql.format(source, {
+      const format = (source: string) => sql.format(source, {
         language: language.id as SqlLanguage,
         tabWidth: 2,
         keywordCase: "preserve",
@@ -149,6 +205,7 @@ async function loadFormatter(language: CodeFormatLanguage): Promise<Formatter> {
         expressionWidth: 88,
         linesBetweenQueries: 1,
       })
+      return (source) => compactSql(format(source), format)
     }
     case "ruff": {
       const ruff = await import("@wasm-fmt/ruff_fmt")

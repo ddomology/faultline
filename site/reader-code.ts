@@ -116,6 +116,15 @@ export const ReaderCodeViews: QuartzTransformerPlugin = () => ({
   htmlPlugins() {
     return [
       () => (tree: HtmlRoot) => {
+        // Shiki makes every outer pre focusable, but our horizontal scroll area
+        // is the inner code. The toolbar adds a tab stop there only on overflow.
+        visit(tree, "element", (node) => {
+          if (node.tagName === "pre" && directCode(node) &&
+            Object.hasOwn(node.properties, "data-theme")) {
+            delete node.properties.tabIndex
+            delete node.properties.tabindex
+          }
+        })
         const originals = new Map<string, Element>()
         visit(tree, "element", (node) => {
           const pair = node.properties[pairAttribute]
