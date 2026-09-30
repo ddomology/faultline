@@ -4,17 +4,61 @@ import { difficultyBarsSvg } from './difficulty-bars';
 
 (() => {
   'use strict';
+  let catalogPromise;
+  let mounted;
+
+  function loadCatalog(homeUrl) {
+    if (!catalogPromise) {
+      catalogPromise = fetch(new URL('_dashboard/catalog.json', homeUrl), { cache: 'no-cache' })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Catalog ${response.status}`);
+          const catalog = await response.json();
+          if (!Array.isArray(catalog.labs) || !Array.isArray(catalog.notes) || !Array.isArray(catalog.categories)) throw new Error('Invalid catalog');
+          return catalog;
+        }).catch((error) => { catalogPromise = undefined; throw error; });
+    }
+    return catalogPromise;
+  }
+
+  function mount() {
   const root = document.querySelector('.lab-explorer');
+  if (mounted?.root === root && root?.isConnected) {
+    // The router can be the final postscript block on the initial page load.
+    window.addCleanup?.(mounted.dispose);
+    return;
+  }
+  mounted?.dispose();
   if (!root) return;
-  const $ = (id) => document.getElementById(id);
+  const controller = new AbortController();
+  const { signal } = controller;
+  const $ = (id) => root.querySelector(`#${id}`);
+  const isActive = () => !signal.aborted && root.isConnected && root === document.querySelector('.lab-explorer');
+  // The sidebar's home link stays valid while readers and lists share one shell.
+  const homeUrl = new URL(document.querySelector('[data-explorer-view="notes"]')?.href || location.href);
   const RETURN_KEY = 'portswigger-lab-notes:last-list:v1';
   const PAGE_SIZE = 24;
   const viewNames = { notes: '풀이 노트', concepts: '개념 노트' };
   const levels = { Apprentice: 0, Practitioner: 1, Expert: 2 };
   const levelNames = { Apprentice: '입문', Practitioner: '실전', Expert: '심화' };
-  let catalog, entries = [], limit = PAGE_SIZE, timer;
+  let catalog, entries = [], limit = readLimit(), timer;
   let composing = false;
   let state = readState();
+  function dispose() {
+    clearTimeout(timer);
+    controller.abort();
+    if (mounted?.root === root) mounted = undefined;
+  }
+  mounted = { root, dispose };
+  window.addCleanup?.(dispose);
+
+  function readLimit() {
+    const value = history.state?.__notebookList?.limit;
+    return Number.isSafeInteger(value) && value >= PAGE_SIZE ? value : PAGE_SIZE;
+  }
+  function saveLimit() {
+    if (history.state?.__notebookList?.limit === limit) return;
+    history.replaceState({ ...history.state, __notebookList: { ...history.state?.__notebookList, limit } }, '', location.href);
+  }
 
   function node(tag, className, text) {
     const result = document.createElement(tag);
@@ -35,7 +79,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
       sort: ['number', 'recent', 'title', 'difficulty'].includes(sort) ? sort : 'number',
     };
   }
-  function syncUrl() {
+  function syncUrl(replace) {
     const params = new URLSearchParams();
     if (state.view !== 'notes') params.set('view', state.view);
     if (state.query) params.set('q', state.query);
@@ -43,7 +87,11 @@ import { difficultyBarsSvg } from './difficulty-bars';
     if (state.difficulty !== 'all') params.set('level', state.difficulty);
     if (state.sort !== 'number') params.set('sort', state.sort);
     const next = `${location.pathname}${params.size ? '?' + params.toString() : ''}`;
-    if (location.pathname + location.search !== next) history.replaceState(null, '', next);
+    if (location.pathname + location.search !== next) {
+      if (typeof window.notebookSetRoute === 'function') window.notebookSetRoute(next, { replace });
+      else history[replace ? 'replaceState' : 'pushState']({ ...history.state }, '', next);
+    }
+    saveLimit();
   }
   function baseEntries() {
     if (state.view === 'concepts') return entries.filter(isConceptNote);
@@ -84,7 +132,6 @@ import { difficultyBarsSvg } from './difficulty-bars';
     if (state.category !== 'all' && !groups.has(state.category)) {
       const known = catalog.categories.find((item) => item.id === state.category);
       if (known) groups.set(known.id, { title: known.title, count: 0 });
-      else state.category = 'all';
     }
     const all = node('option', '', '모든 주제'); all.value = 'all';
     $('category').replaceChildren(all);
@@ -104,7 +151,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
     const link = node('a', '', entry.title);
     link.href = entry.noteUrl || entry.url;
     if (entry.noteUrl) {
-      link.addEventListener('click', () => { try { sessionStorage.setItem(RETURN_KEY, location.pathname + location.search); } catch {} });
+      link.dataset.noteLink = '';
     } else { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
     heading.append(link);
     if (!isConceptNote(entry) && (!entry.noteUrl || entry.noteKind === 'problem')) {
@@ -187,13 +234,20 @@ import { difficultyBarsSvg } from './difficulty-bars';
     box.append(node('p', '', hasFilter ? '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.' : 'GitHub에 기록한 노트가 이곳에 표시됩니다.'));
     if (hasFilter) {
       const button = node('button', 'empty-action', '필터 초기화'); button.type = 'button';
-      button.addEventListener('click', reset);
+      button.addEventListener('click', reset, { signal });
       box.append(button);
     }
     return box;
   }
-  function render() {
+  function render({ replace = false } = {}) {
+    if (!isActive()) return;
+    clearTimeout(timer);
     const emptyConcepts = state.view === 'concepts' && !baseEntries().length;
+    if (!emptyConcepts && state.category !== 'all'
+      && !baseEntries().some((entry) => entry.category === state.category)
+      && !catalog.categories.some((category) => category.id === state.category)) state.category = 'all';
+    // Commit before changing list height so the router records the outgoing scroll.
+    syncUrl(replace);
     if (!emptyConcepts) categoryOptions();
     root.querySelector('.library-title').textContent = viewNames[state.view];
     root.setAttribute('aria-label', `${viewNames[state.view]} 목록`);
@@ -211,40 +265,50 @@ import { difficultyBarsSvg } from './difficulty-bars';
     $('load-more').textContent = `더 보기 · ${Math.min(limit, matches.length)} / ${matches.length}`;
     $('library-caption').textContent = state.view === 'notes' ? '‘작성 중’은 문제 조건을 먼저 정리하고 풀이 기록을 준비하는 노트입니다.' : '';
     $('library-caption').hidden = !$('library-caption').textContent;
-    syncUrl();
     document.dispatchEvent(new CustomEvent('notebook:view', { detail: { view: state.view, category: state.category } }));
   }
+  function restoreRoute() {
+    if (!isActive() || !catalog) return;
+    clearTimeout(timer); composing = false;
+    state = readState(); limit = readLimit();
+    render({ replace: true });
+  }
   function bind() {
+    root.addEventListener('click', (event) => {
+      if (event.target.closest?.('.note-title a[data-note-link]')) {
+        try { sessionStorage.setItem(RETURN_KEY, location.pathname + location.search); } catch {}
+      }
+    }, { signal });
     root.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
       state.view = button.dataset.view; limit = PAGE_SIZE; render();
-    }));
-    $('search').addEventListener('compositionstart', () => { composing = true; clearTimeout(timer); });
-    $('search').addEventListener('compositionend', () => { composing = false; state.query = $('search').value; limit = PAGE_SIZE; clearTimeout(timer); timer = setTimeout(render, 100); });
+    }, { signal }));
+    $('search').addEventListener('compositionstart', () => { composing = true; clearTimeout(timer); }, { signal });
+    $('search').addEventListener('compositionend', () => { composing = false; state.query = $('search').value; limit = PAGE_SIZE; clearTimeout(timer); timer = setTimeout(() => render({ replace: true }), 100); }, { signal });
     $('search').addEventListener('input', () => {
       state.query = $('search').value; limit = PAGE_SIZE;
-      clearTimeout(timer); if (!composing) timer = setTimeout(render, 100);
-    });
+      clearTimeout(timer); if (!composing) timer = setTimeout(() => render({ replace: true }), 100);
+    }, { signal });
     [['category', 'category'], ['difficulty', 'difficulty'], ['sort', 'sort']].forEach(([id, key]) => {
-      $(id).addEventListener('change', () => { state[key] = $(id).value; limit = PAGE_SIZE; render(); });
+      $(id).addEventListener('change', () => { state[key] = $(id).value; limit = PAGE_SIZE; render(); }, { signal });
     });
-    $('reset-filters').addEventListener('click', reset);
-    $('load-more').addEventListener('click', () => { const start = limit; limit += PAGE_SIZE; render(); $('lab-list').querySelectorAll('.note-title a')[start]?.focus({ preventScroll: true }); });
-    window.addEventListener('popstate', () => { clearTimeout(timer); state = readState(); limit = PAGE_SIZE; render(); });
+    $('reset-filters').addEventListener('click', reset, { signal });
+    $('load-more').addEventListener('click', () => { const start = limit; limit += PAGE_SIZE; render({ replace: true }); $('lab-list').querySelectorAll('.note-title a')[start]?.focus({ preventScroll: true }); }, { signal });
+    document.addEventListener('notebook:route-update', restoreRoute, { signal });
+    window.addEventListener('popstate', () => { if (typeof window.notebookSetRoute !== 'function') restoreRoute(); }, { signal });
     document.addEventListener('keydown', (event) => {
       if (root.querySelector('.library-toolbar').hidden) return;
       const target = document.activeElement;
-      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) && !target.isContentEditable) { event.preventDefault(); $('search').focus(); }
-    });
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName) && !target?.isContentEditable) { event.preventDefault(); $('search').focus(); }
+    }, { signal });
   }
   async function init() {
     try {
-      const response = await fetch('./_dashboard/catalog.json', { cache: 'no-cache' });
-      if (!response.ok) throw new Error(`Catalog ${response.status}`);
-      catalog = await response.json();
-      if (!Array.isArray(catalog.labs) || !Array.isArray(catalog.notes) || !Array.isArray(catalog.categories)) throw new Error('Invalid catalog');
+      catalog = await loadCatalog(homeUrl);
+      if (!isActive()) return;
+      state = readState(); limit = readLimit();
       const byLab = new Map(catalog.notes.filter((note) => note.labId).map((note) => [note.labId, note]));
       entries = catalog.labs.map((lab) => ({ ...lab, ...byLab.get(lab.id), id: lab.id }));
-      entries.push(...catalog.notes.filter((note) => !note.labId));
+      entries.push(...catalog.notes.filter((note) => !note.labId).map((note) => ({ ...note })));
       for (const entry of entries) {
         entry.categoryTitle ||= '일반 노트'; entry.category ||= 'notes';
         entry.updatedAt ||= entry.noteUpdatedAt || '';
@@ -258,16 +322,22 @@ import { difficultyBarsSvg } from './difficulty-bars';
         if (/hidden/i.test(titleTerms)) extras.push('숨김 숨겨진');
         entry.search = normalize([entry.number, titleTerms, entry.categoryTitle, entry.category, entry.difficulty, levelNames[entry.difficulty], entry.searchText || entry.noteSearchText, ...(entry.tags || []), ...(catalog.aliases?.[entry.category] || []), ...extras].join(' '));
       }
-      bind(); render(); root.dataset.ready = 'true';
+      bind(); render({ replace: true }); root.dataset.ready = 'true';
     } catch (error) {
+      if (!isActive()) return;
       $('result-count').textContent = '목록을 불러오지 못했어요.';
       const box = node('div', 'empty-state');
       box.append(node('h2', '', '잠시 후 다시 불러와 주세요.'));
-      const retry = node('button', 'empty-action', '다시 불러오기'); retry.type = 'button'; retry.addEventListener('click', () => location.reload()); box.append(retry);
+      const retry = node('button', 'empty-action', '다시 불러오기'); retry.type = 'button'; retry.addEventListener('click', () => {
+        retry.disabled = true; $('result-count').textContent = '풀이를 불러오는 중…'; init();
+      }, { signal }); box.append(retry);
       const fallback = node('a', 'empty-action secondary', 'GitHub에서 풀이 보기'); fallback.href = 'https://github.com/ddomology/portswigger-lab-notes/tree/main/content'; box.append(fallback);
       $('lab-list').replaceChildren(box);
       console.error('Notebook catalog:', error);
     }
   }
   init();
+  }
+  document.addEventListener('nav', mount);
+  mount();
 })();

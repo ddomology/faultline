@@ -8,7 +8,7 @@ const changes = [
   ['baseUrl: "quartz.jzhao.xyz"', 'baseUrl: "ddomology.github.io/portswigger-lab-notes"'],
   ['locale: "en-US"', 'locale: "ko-KR"'],
   ['fontOrigin: "googleFonts"', 'fontOrigin: "local"'],
-  ['enableSPA: true', 'enableSPA: false'],
+  ['enableSPA: false', 'enableSPA: true'],
   ['ignorePatterns: ["private", "templates", ".obsidian"]', 'ignorePatterns: ["**/private/**", "**/templates/**", "**/.obsidian/**", "**/.trash/**"]'],
   ['analytics: {\n      provider: "plausible",\n    }', 'analytics: null'],
   ['Plugin.CustomOgImages(),', ''],
@@ -21,6 +21,8 @@ for (const [before, after] of changes) {
   else if (after && !config.includes(after)) throw new Error("Quartz configuration changed: " + before);
 }
 cpSync("site/reader-code.ts", "_quartz/quartz/plugins/transformers/reader-code.ts");
+cpSync("site/navigation.inline.ts", "_quartz/quartz/components/scripts/spa.inline.ts");
+cpSync("site/search.inline.ts", "_quartz/quartz/components/scripts/search.inline.ts");
 cpSync("site/code-format.ts", "_quartz/quartz/plugins/transformers/code-format.ts");
 config = config.replace('import { ReaderCode }', 'import { ReaderCode, ReaderCodeViews }');
 if (!config.includes('import { ReaderCode, ReaderCodeViews }')) config = 'import { ReaderCode, ReaderCodeViews } from "./quartz/plugins/transformers/reader-code"\n' + config;

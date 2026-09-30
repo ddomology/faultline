@@ -45,7 +45,15 @@
   function highlight(view, category) {
     const isHome = document.body.dataset.slug === 'index';
     document.querySelectorAll('.topic-browser').forEach(browser => {
-      const next = isHome ? (view === 'concepts' ? 'concepts' : 'notes') : browser.dataset.explorerMode;
+      let activeNote;
+      browser.querySelectorAll('.topic-children a').forEach(link => {
+        const path = value => new URL(value, location.href).pathname.replace(/\.html$/, '').replace(/\/$/, '');
+        const active = !isHome && path(link.href) === path(location.href);
+        if (active) { link.setAttribute('aria-current', 'page'); activeNote = link; }
+        else link.removeAttribute('aria-current');
+      });
+      const next = isHome ? (view === 'concepts' ? 'concepts' : 'notes')
+        : activeNote?.closest('.topic-tree').dataset.explorerTree || browser.dataset.explorerMode;
       const changed = browser.dataset.explorerMode !== next;
       if (changed && initialized.has(browser)) savePosition(browser);
       browser.dataset.explorerMode = next;
@@ -75,6 +83,7 @@
     const topic = document.body.dataset.slug === 'index' ? new URLSearchParams(location.search).get('topic') : null;
     const group = activeNote?.closest('.topic-entry') || [...tree.querySelectorAll('.topic-entry')].find(entry => entry.dataset.topic === topic);
     const state = readPosition(browser);
+    const slug = document.body.dataset.slug;
     if (restore && Array.isArray(state.expanded)) {
       tree.querySelectorAll('.topic-entry').forEach(entry => setExpanded(entry, state.expanded.includes(entry.dataset.topic)));
     }
@@ -83,7 +92,7 @@
     const loaded = document.readyState === 'complete' ? Promise.resolve()
       : new Promise(resolve => window.addEventListener('load', resolve, { once:true }));
     Promise.all([loaded, document.fonts?.ready]).then(() => requestAnimationFrame(() => {
-      if (!browser.isConnected || activeTree(browser) !== tree) return;
+      if (!browser.isConnected || activeTree(browser) !== tree || document.body.dataset.slug !== slug) return;
       const container = scrollContainer(browser);
       if (!container?.clientHeight) return;
       const saved = state[matchMedia('(max-width: 900px)').matches ? 'mobile' : 'desktop'];
@@ -95,7 +104,7 @@
       const top = bounds.top + container.clientTop + 8;
       const bottom = bounds.top + container.clientTop + container.clientHeight - 8;
       const outside = item.top < top || item.bottom > bottom;
-      const delta = !outside ? 0 : restore && Number.isFinite(saved)
+      const delta = !outside ? 0 : !restore || Number.isFinite(saved)
         ? item.top < top ? item.top - top : item.bottom - bottom
         : item.top - top - (container.clientHeight - item.height) / 3;
       if (delta) container.scrollTop += delta;
@@ -136,7 +145,12 @@
       } catch {}
     });
     document.querySelectorAll('.topic-browser').forEach(browser => {
-      if (initialized.has(browser)) return;
+      if (initialized.has(browser)) {
+        // A client-side navigation keeps this exact tree and its scroll container.
+        // Only reveal an off-screen destination; never restore an older position.
+        revealInitialTopic(browser);
+        return;
+      }
       initialized.add(browser);
       browser.addEventListener('click', event => {
         if (event.target.closest('a[href]')) savePosition(browser);
@@ -145,6 +159,7 @@
     });
   }
   document.addEventListener('notebook:view', event => highlight(event.detail.view, event.detail.category));
+  document.addEventListener('prenav', () => document.querySelectorAll('.topic-browser').forEach(savePosition));
   document.addEventListener('nav', setup);
   window.addEventListener('pagehide', () => document.querySelectorAll('.topic-browser').forEach(savePosition));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup, { once:true }); else setup();

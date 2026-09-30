@@ -4,7 +4,7 @@
 
   const enhanced = new WeakSet();
   const enhancedCallouts = new WeakSet();
-  const enhancedTables = new WeakSet();
+  let enhancedTables = new WeakSet();
   const updateTable = (container) => {
     if (!container?.isConnected) return;
     const overflowing = container.scrollWidth > container.clientWidth + 1;
@@ -196,10 +196,17 @@
     });
   }
 
-  document.addEventListener('nav', () => {
-    if (dialog?.open) dialog.close();
-    setup();
+  document.addEventListener('prenav', () => {
+    tableObserver?.disconnect();
+    enhancedTables = new WeakSet();
+    if (dialog?.open) {
+      // Navigation owns focus now; do not return it to the outgoing image.
+      returnFocus = null;
+      document.documentElement.style.overflow = previousOverflow;
+      dialog.close();
+    }
   });
+  document.addEventListener('nav', setup);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup, { once: true });
   else setup();
 })();

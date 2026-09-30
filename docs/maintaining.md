@@ -98,6 +98,8 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 | --- | --- |
 | `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css` | 주제별 실습 목록·검색·필터·주제 안 정렬 |
 | `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css` | 주제와 실습 탐색기 |
+| `site/navigation.inline.ts` | 공통 화면을 유지하는 탐색·히스토리·페이지 캐시 |
+| `site/search.inline.ts` | 반복 이동에도 중복 초기화되지 않는 Quartz 검색 |
 | `site/NoteTitle.tsx`, `site/explorer-titles.json` | 본문 제목과 탐색기용 짧은 제목 |
 | `site/TopicIcon.tsx`, `site/topic-icons.ts`, `site/assets/icons/topics/` | 주제별 SVG 아이콘 |
 | `site/DifficultyBars.tsx`, `site/difficulty-bars.scss` | 난이도 표시 |
@@ -113,6 +115,10 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 수정은 `site/`의 원본에서 합니다. `_quartz/`의 복사본을 직접 바꾸면 다음 준비 단계에서 덮어씁니다.
 
 주제 아이콘의 빨간 포인트는 `.topic-icon-accent`의 CSS `stroke`로 적용합니다. 준비 스크립트가 SVG 원본의 포인트 속성을 이 클래스로 바꿉니다. SVG 속성에 CSS 변수를 직접 넣으면 Dark Reader에서 포인트가 회색으로 바뀔 수 있으므로, 색상을 수정할 때는 일반 테마와 Dark Reader를 켠 화면을 함께 확인합니다.
+
+사이트는 각 주소의 HTML을 그대로 제공하며, JavaScript가 활성화된 내부 이동에서는 사이드바와 상단 헤더를 유지하고 본문·목차·푸터만 교체합니다. `prepare-quartz.mjs`가 Quartz의 SPA 라우터를 `site/navigation.inline.ts`로 교체합니다. 스타일과 스크립트는 이동 중 제거하지 않으며, 다른 배포 버전이나 변경된 Explorer 목록을 만나면 새 문서로 이동합니다.
+
+클라이언트 기능은 `nav`에서 초기화하고 `window.addCleanup()` 또는 `prenav`에서 이벤트·관찰자를 정리해야 합니다. 지연된 요청이 이전 화면을 갱신하지 않도록 연결 상태나 취소 신호도 확인합니다. 목록의 URL 변경은 `window.notebookSetRoute()`를 사용하고, 뒤로 가기에 따른 같은 화면의 URL 변경은 `notebook:route-update`에서 반영합니다. 페이지 캐시는 최대 10개·1분으로 제한하고, 링크에 마우스를 올리거나 키보드 초점을 둘 때 다음 화면을 미리 가져옵니다.
 
 ## 실습 목록 갱신
 
