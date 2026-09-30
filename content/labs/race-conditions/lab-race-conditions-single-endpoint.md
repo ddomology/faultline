@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-이메일 변경 기능에 경쟁 상태가 있어 소유하지 않은 주소를 계정에 연결할 수 있다. carlos@ginandjuice.shop에는 아직 가입하지 않은 관리자 초대가 걸려 있다. 개인 계정은 wiener:peter로 로그인하며 Burp Suite 2023.9 이상이 필요하다.
+이메일 변경 기능의 경쟁 조건으로 임의 주소를 자신의 계정에 연결할 수 있다. `carlos@ginandjuice.shop`에는 사이트 관리자 초대가 대기 중이며, 해당 주소를 차지한 사용자는 관리자 권한을 받는다. 계정 `wiener:peter`와 실습용 이메일 클라이언트가 제공되고 Burp Suite 2023.9 이상이 필요하다.
 
 **완료 조건**
 
-이메일을 carlos@ginandjuice.shop으로 바꿔 관리자 권한을 얻고 관리자 패널에서 carlos를 삭제한다.
+경쟁 조건을 이용해 자신의 이메일을 `carlos@ginandjuice.shop`으로 변경하고 관리자 패널에서 `carlos`를 삭제한다. 이메일 변경 요청의 접수와 관리자 권한 획득은 별도로 확인해야 한다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-이메일 확인과 계정 변경의 처리 순서를 살피는 문제다. @exploit-<YOUR-EXPLOIT-SERVER-ID>.exploit-server.net 주소의 메일을 확인할 수 있다.
+정상 이메일 변경에서 주소의 소유 확인과 계정 정보 갱신이 어느 시점에 이루어지는지 살핀다. 실습용 `@exploit-<YOUR-EXPLOIT-SERVER-ID>.exploit-server.net` 주소로 받은 메일은 확인 절차를 관찰하는 기준이 된다. 겹치는 요청으로 확인 단계와 최종 연결 주소가 달라질 가능성을 검증하되, 화면 표시만 보지 말고 계정에 저장된 주소를 확인한다.
+
+주소 연결, 권한 변화, `carlos` 삭제 결과를 순서대로 아래에 기록한다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/race-conditions/lab-race-conditions-single-endpoint)
 
