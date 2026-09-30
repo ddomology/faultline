@@ -1,3 +1,5 @@
+import { iconSvg } from './ui-icons';
+
 (() => {
   'use strict';
   const root = document.querySelector('.lab-explorer');
@@ -9,7 +11,7 @@
   const levels = { Apprentice: 0, Practitioner: 1, Expert: 2 };
   const levelNames = { Apprentice: '입문', Practitioner: '실전', Expert: '심화' };
   let catalog, entries = [], bookmarks = new Set(), limit = PAGE_SIZE, timer;
-  let storageAvailable = true;
+  let storageAvailable = true, composing = false;
   let state = readState();
   try {
     const saved = JSON.parse(localStorage.getItem(BOOKMARK_KEY) || '[]');
@@ -97,7 +99,8 @@
     return value && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date) : '';
   }
   function bookmarkButton(entry) {
-    const button = node('button', 'note-bookmark', bookmarks.has(entry.id) ? '★' : '☆');
+    const button = node('button', 'note-bookmark');
+    button.innerHTML = iconSvg('star');
     button.type = 'button';
     button.setAttribute('aria-pressed', String(bookmarks.has(entry.id)));
     button.setAttribute('aria-label', `${entry.title} 즐겨찾기 ${bookmarks.has(entry.id) ? '해제' : '추가'}`);
@@ -135,11 +138,16 @@
       const formatted = dateLabel(entry.updatedAt);
       if (formatted) { const time = node('time', '', `${formatted} 수정`); time.dateTime = entry.updatedAt; footer.append(time); }
       if (entry.url) {
-        const source = node('a', 'note-source', '공식 문제 ↗');
+        const source = node('a', 'note-source', '공식 문제');
+        source.insertAdjacentHTML('beforeend', iconSvg('arrow-up-right'));
         source.href = entry.url; source.target = '_blank'; source.rel = 'noopener noreferrer';
         footer.append(source);
       }
-    } else footer.append(node('span', '', '기록 없음'), node('span', 'note-source', '원본 실습 열기 ↗'));
+    } else {
+      const source = node('span', 'note-source', '원본 실습 열기');
+      source.insertAdjacentHTML('beforeend', iconSvg('arrow-up-right'));
+      footer.append(node('span', '', '기록 없음'), source);
+    }
     content.append(meta, heading);
     if (entry.originalTitle && entry.originalTitle !== entry.title) {
       const subtitle = node('p', 'note-subtitle', entry.originalTitle);
@@ -172,7 +180,8 @@
   function render() {
     categoryOptions();
     root.querySelector('.library-title').textContent = state.view === 'all' ? '전체 실습' : state.view === 'saved' ? '즐겨찾기' : '풀이 노트';
-    $('search').value = state.query; $('difficulty').value = state.difficulty; $('sort').value = state.sort;
+    if (!composing && $('search').value !== state.query) $('search').value = state.query;
+    $('difficulty').value = state.difficulty; $('sort').value = state.sort;
     root.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
     $('notes-count').textContent = entries.filter((entry) => entry.noteUrl && entry.noteKind !== 'problem').length;
     $('labs-count').textContent = catalog.labs.length;
@@ -197,9 +206,11 @@
     root.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
       state.view = button.dataset.view; limit = PAGE_SIZE; render();
     }));
+    $('search').addEventListener('compositionstart', () => { composing = true; clearTimeout(timer); });
+    $('search').addEventListener('compositionend', () => { composing = false; state.query = $('search').value; limit = PAGE_SIZE; clearTimeout(timer); timer = setTimeout(render, 100); });
     $('search').addEventListener('input', () => {
       state.query = $('search').value; limit = PAGE_SIZE;
-      clearTimeout(timer); timer = setTimeout(render, 100);
+      clearTimeout(timer); if (!composing) timer = setTimeout(render, 100);
     });
     [['category', 'category'], ['difficulty', 'difficulty'], ['sort', 'sort']].forEach(([id, key]) => {
       $(id).addEventListener('change', () => { state[key] = $(id).value; limit = PAGE_SIZE; render(); });

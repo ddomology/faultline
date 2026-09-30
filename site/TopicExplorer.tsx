@@ -2,6 +2,7 @@ import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } fro
 import { pathToRoot } from "../util/path"
 import catalog from "./data/topic-catalog.json"
 import style from "./styles/topic-explorer.scss"
+import Icon from "./Icon"
 // @ts-ignore
 import script from "./scripts/topic-explorer.inline"
 
@@ -44,7 +45,8 @@ export default (() => {
     const total = visible.reduce((sum,group) => sum + group.notes.length, 0)
     return (
       <section class="topic-browser" aria-label="실습과 노트 탐색기">
-        <button class="topic-mobile-toggle" type="button" aria-expanded="true" aria-controls="topic-note-panel"><span>Explorer <small>탐색기</small></span><span class="topic-toggle-arrow" aria-hidden="true">⌄</span></button>
+        <a class="skip-to-content" href="#main-content">본문 바로가기</a>
+        <button class="topic-mobile-toggle" type="button" aria-expanded="false" aria-controls="topic-note-panel"><span>Explorer <small>탐색기</small></span><Icon name="chevron-down" className="topic-toggle-arrow" /></button>
         <div class="topic-note-panel" id="topic-note-panel">
           <div class="topic-heading"><span>Explorer <small>탐색기</small></span><span class="topic-total">{total}</span></div>
           <nav class="explorer-shortcuts" aria-label="목록 선택">
@@ -57,8 +59,9 @@ export default (() => {
               return (
               <li class="topic-entry" data-topic={group.id}>
                 <div class="topic-row">
-                  <button class="topic-expand" type="button" aria-expanded={expanded} aria-controls={`topic-${group.id}`} aria-label={`${group.title} ${expanded ? "접기" : "펼치기"}`}><span aria-hidden="true">⌄</span></button>
+                  <button class="topic-expand" type="button" aria-expanded={expanded} aria-controls={`topic-${group.id}`} aria-label={`${group.title} ${expanded ? "접기" : "펼치기"}`}><Icon name="chevron-down" /></button>
                   <a class="topic-name" href={`${root}/?view=all&topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><span>{group.title}</span></a>
+                  <span class="topic-count" aria-label={`${group.notes.length}개 노트`}>{group.notes.length}</span>
                 </div>
                 <ul class="topic-children" id={`topic-${group.id}`} hidden={!expanded}>
                   {group.notes.map(note => <li><a href={`${root}/${note.slug.split("/").map(encodeURIComponent).join("/")}.html`} title={[...new Set([note.title, note.originalTitle].filter(Boolean))].join("\n")} aria-current={note.slug === fileData.slug ? "page" : undefined}><span class="topic-note-number">{note.number}</span><span class="topic-note-title">{note.title}</span></a></li>)}

@@ -2,9 +2,18 @@
   'use strict';
   const initialized = new WeakSet();
   const key = 'portswigger-lab-notes:last-list:v1';
-  function highlight(view) {
+  function highlight(view, category) {
     document.querySelectorAll('[data-explorer-view]').forEach(link => {
       if (document.body.dataset.slug === 'index' && link.dataset.explorerView === view) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.topic-entry').forEach(entry => {
+      const active = document.body.dataset.slug === 'index'
+        ? entry.dataset.topic === (category || new URLSearchParams(location.search).get('topic'))
+        : !!entry.querySelector('.topic-children a[aria-current="page"]');
+      entry.classList.toggle('is-current-topic', active);
+      const link = entry.querySelector('.topic-name');
+      if (active && document.body.dataset.slug === 'index') link.setAttribute('aria-current', 'true');
       else link.removeAttribute('aria-current');
     });
   }
@@ -19,7 +28,7 @@
     button.setAttribute('aria-label', button.getAttribute('aria-label').replace(/접기|펼치기$/, '접기'));
     children.hidden = false;
     requestAnimationFrame(() => {
-      const container = browser.querySelector(matchMedia('(max-width: 640px)').matches ? '.topic-note-panel' : '.topic-tree');
+      const container = browser.querySelector(matchMedia('(max-width: 900px)').matches ? '.topic-note-panel' : '.topic-tree');
       const target = activeNote || group.querySelector('.topic-name');
       if (!container || !target || !container.clientHeight || container.scrollHeight <= container.clientHeight) return;
       const bounds = container.getBoundingClientRect();
@@ -40,7 +49,7 @@
         if (button.classList.contains('topic-expand')) {
           document.getElementById(button.getAttribute('aria-controls')).hidden = !expanded;
           button.setAttribute('aria-label', button.getAttribute('aria-label').replace(/접기|펼치기$/, expanded ? '접기' : '펼치기'));
-        }
+        } else if (expanded) revealInitialTopic(button.closest('.topic-browser'));
       });
     });
     document.querySelectorAll('.topic-children a').forEach(link => {
@@ -65,7 +74,7 @@
     });
     highlight(new URLSearchParams(location.search).get('view') || 'notes');
   }
-  document.addEventListener('notebook:view', event => highlight(event.detail.view));
+  document.addEventListener('notebook:view', event => highlight(event.detail.view, event.detail.category));
   document.addEventListener('nav', setup);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup, { once:true }); else setup();
 })();

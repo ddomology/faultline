@@ -1,6 +1,7 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { pathToRoot } from "../util/path"
 import Darkmode from "./Darkmode"
+import Icon from "./Icon"
 
 export default (() => {
   const ThemeToggle = Darkmode()
@@ -14,11 +15,11 @@ export default (() => {
             PortSwigger <span aria-hidden="true">/</span> Notes
           </a>
           <div class="notebook-nav-actions">
-            <a class="notebook-github" href="https://github.com/ddomology/portswigger-lab-notes" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+            <a class="notebook-github" href="https://github.com/ddomology/portswigger-lab-notes" target="_blank" rel="noopener noreferrer">GitHub <Icon name="arrow-up-right" /></a>
             <span class="notebook-theme"><ThemeToggle {...props} /></span>
           </div>
         </nav>
-        {!isHome && <a class="notebook-return" data-note-return href={home}><span aria-hidden="true">←</span> 풀이 목록</a>}
+        {!isHome && <a class="notebook-return" data-note-return href={home}><Icon name="arrow-left" /> 풀이 목록</a>}
       </>
     )
   }

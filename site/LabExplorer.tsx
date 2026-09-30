@@ -1,5 +1,6 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import style from "./styles/lab-explorer.scss"
+import Icon from "./Icon"
 // @ts-ignore
 import script from "./scripts/lab-explorer.inline"
 
@@ -7,10 +8,10 @@ export default (() => {
   const LabExplorer: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
     if (fileData.slug !== "index") return null
     return (
-      <section class="lab-explorer" aria-label="풀이 노트 검색">
+      <section id="main-content" tabIndex={-1} class="lab-explorer" aria-label="풀이 노트 검색">
         <h1 class="library-title">풀이 노트</h1>
         <div class="note-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+          <Icon name="search" />
           <label class="lab-sr-only" for="search">풀이 제목, 주제, 본문 검색</label>
           <input id="search" type="search" placeholder="제목, 본문, 번호 검색" autoComplete="off" />
           <kbd aria-hidden="true">/</kbd>
@@ -29,7 +30,7 @@ export default (() => {
         </div>
         <div class="results-heading">
           <p id="result-count" role="status" aria-live="polite">풀이를 불러오는 중…</p>
-          <button id="reset-filters" type="button" hidden>필터 초기화 <span aria-hidden="true">↺</span></button>
+          <button id="reset-filters" type="button" hidden>필터 초기화 <Icon name="rotate-ccw" /></button>
         </div>
         <div id="lab-list" class="note-list" aria-label="검색 결과"><p class="loading-state">목록을 불러오는 중…</p></div>
         <button id="load-more" class="load-more" type="button" hidden>더 보기</button>

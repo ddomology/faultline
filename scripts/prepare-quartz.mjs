@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync, readdirSync } from "node:fs";
 
 const path = "_quartz/quartz.config.ts";
 let config = readFileSync(path, "utf8");
@@ -6,6 +6,7 @@ const changes = [
   ['pageTitle: "Quartz 4"', 'pageTitle: "PortSwigger Lab Notes"'],
   ['baseUrl: "quartz.jzhao.xyz"', 'baseUrl: "ddomology.github.io/portswigger-lab-notes"'],
   ['locale: "en-US"', 'locale: "ko-KR"'],
+  ['fontOrigin: "googleFonts"', 'fontOrigin: "local"'],
   ['enableSPA: true', 'enableSPA: false'],
   ['ignorePatterns: ["private", "templates", ".obsidian"]', 'ignorePatterns: ["**/private/**", "**/templates/**", "**/.obsidian/**", "**/.trash/**"]'],
   ['analytics: {\n      provider: "plausible",\n    }', 'analytics: null'],
@@ -18,10 +19,10 @@ for (const [before, after] of changes) {
   if (config.includes(before)) config = config.replace(before, after);
   else if (after && !config.includes(after)) throw new Error("Quartz configuration changed: " + before);
 }
-// Set Quartz's base palette too, so first paint and generated styles stay monochrome.
+// Match the reader palette so the initial paint and generated styles agree.
 const palettes = {
-  lightMode: { light: "#ffffff", lightgray: "#dedede", gray: "#666666", darkgray: "#303030", dark: "#111111", secondary: "#111111", tertiary: "#555555", highlight: "#f5f5f5", textHighlight: "#dedede" },
-  darkMode: { light: "#111111", lightgray: "#3a3a3a", gray: "#aaaaaa", darkgray: "#dddddd", dark: "#f1f1f1", secondary: "#f1f1f1", tertiary: "#bbbbbb", highlight: "#202020", textHighlight: "#444444" },
+  lightMode: { light: "#ffffff", lightgray: "#e2e5e9", gray: "#68717c", darkgray: "#343b43", dark: "#20252b", secondary: "#315d8e", tertiary: "#244b76", highlight: "#f3f5f7", textHighlight: "#dce9f8" },
+  darkMode: { light: "#17191c", lightgray: "#34393f", gray: "#a1a9b3", darkgray: "#cbd0d7", dark: "#edf0f3", secondary: "#a1c3ea", tertiary: "#c1d8f3", highlight: "#22262c", textHighlight: "#334c68" },
 };
 for (const [mode, colors] of Object.entries(palettes)) {
   const block = new RegExp(`${mode}: \\{[^}]*\\}`);
@@ -34,10 +35,42 @@ cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");
 cpSync("site/LabExplorer.tsx", "_quartz/quartz/components/LabExplorer.tsx");
 cpSync("site/TopicExplorer.tsx", "_quartz/quartz/components/TopicExplorer.tsx");
 cpSync("site/NoteTitle.tsx", "_quartz/quartz/components/NoteTitle.tsx");
+cpSync("site/ReaderTools.tsx", "_quartz/quartz/components/ReaderTools.tsx");
+cpSync("site/reader-tools.js", "_quartz/quartz/components/scripts/reader-tools.inline.js");
+cpSync("site/reader-tools.css", "_quartz/quartz/components/styles/reader-tools.scss");
+cpSync("site/Icon.tsx", "_quartz/quartz/components/Icon.tsx");
+cpSync("site/Darkmode.tsx", "_quartz/quartz/components/Darkmode.tsx");
+cpSync("site/ui-icons.ts", "_quartz/quartz/components/scripts/ui-icons.ts");
+cpSync("site/ui-icons.scss", "_quartz/quartz/styles/ui-icons.scss");
 rmSync("_quartz/quartz/components/scripts/topic-explorer.inline.ts", { force: true });
 cpSync("site/topic-explorer.js", "_quartz/quartz/components/scripts/topic-explorer.inline.js");
 cpSync("site/topic-explorer.css", "_quartz/quartz/components/styles/topic-explorer.scss");
 mkdirSync("_quartz/quartz/components/data", { recursive: true });
+const iconDirectory = "site/assets/icons/lucide";
+const iconPaths = Object.fromEntries(readdirSync(iconDirectory).filter(name => name.endsWith(".svg")).sort().map(name => {
+  const svg = readFileSync(`${iconDirectory}/${name}`, "utf8");
+  const body = svg.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1].trim();
+  if (!body || /<(?:script|foreignObject)|\bon\w+=/i.test(body)) throw new Error(`Invalid UI icon: ${name}`);
+  return [name.slice(0, -4), body];
+}));
+writeFileSync("_quartz/quartz/components/data/icon-paths.json", JSON.stringify(iconPaths));
+mkdirSync("_quartz/quartz/static/fonts", { recursive: true });
+cpSync("site/assets/fonts/pretendard", "_quartz/quartz/static/fonts/pretendard", { recursive: true });
+mkdirSync("_quartz/quartz/static/icons", { recursive: true });
+cpSync(iconDirectory, "_quartz/quartz/static/icons/lucide", { recursive: true });
+// Keep Quartz's search, TOC and clipboard behavior; use the same SVG set throughout.
+const searchPath = "_quartz/quartz/components/Search.tsx";
+let search = readFileSync(searchPath, "utf8");
+if (!search.includes('import Icon from "./Icon"')) search = 'import Icon from "./Icon"\n' + search;
+search = search.replace(/<svg\b[\s\S]*?<\/svg>/, '<Icon name="search" />');
+writeFileSync(searchPath, search);
+const tocPath = "_quartz/quartz/components/TableOfContents.tsx";
+let toc = readFileSync(tocPath, "utf8");
+if (!toc.includes('import Icon from "./Icon"')) toc = 'import Icon from "./Icon"\n' + toc;
+toc = toc.replace(/<svg\b[\s\S]*?<\/svg>/, '<Icon name="chevron-down" className="fold" />');
+writeFileSync(tocPath, toc);
+const clipboardPath = "_quartz/quartz/components/scripts/clipboard.inline.ts";
+cpSync("site/clipboard.inline.ts", clipboardPath);
 cpSync("data/labs.json", "_quartz/quartz/components/data/topic-catalog.json");
 cpSync("site/explorer-titles.json", "_quartz/quartz/components/data/explorer-titles.json");
 cpSync("site/topic-aliases.json", "_quartz/quartz/components/data/topic-aliases.json");
