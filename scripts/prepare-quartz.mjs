@@ -9,6 +9,7 @@ const changes = [
   ['locale: "en-US"', 'locale: "ko-KR"'],
   ['fontOrigin: "googleFonts"', 'fontOrigin: "local"'],
   ['enableSPA: true', 'enableSPA: false'],
+  ['dark: "github-dark"', 'dark: "github-dark-default"'],
   ['ignorePatterns: ["private", "templates", ".obsidian"]', 'ignorePatterns: ["**/private/**", "**/templates/**", "**/.obsidian/**", "**/.trash/**"]'],
   ['analytics: {\n      provider: "plausible",\n    }', 'analytics: null'],
   ['Plugin.CustomOgImages(),', ''],
@@ -19,6 +20,13 @@ const changes = [
 for (const [before, after] of changes) {
   if (config.includes(before)) config = config.replace(before, after);
   else if (after && !config.includes(after)) throw new Error("Quartz configuration changed: " + before);
+}
+cpSync("site/reader-code.ts", "_quartz/quartz/plugins/transformers/reader-code.ts");
+if (!config.includes('import { ReaderCode }')) config = 'import { ReaderCode } from "./quartz/plugins/transformers/reader-code"\n' + config;
+if (!config.includes("ReaderCode(),")) {
+  const before = "      Plugin.SyntaxHighlighting({";
+  if (!config.includes(before)) throw new Error("Quartz code transformer placement changed");
+  config = config.replace(before, "      ReaderCode(),\n" + before);
 }
 cpSync("site/reader-images.ts", "_quartz/quartz/plugins/transformers/reader-images.ts");
 if (!config.includes('import { ReaderImages }')) config = 'import { ReaderImages } from "./quartz/plugins/transformers/reader-images"\n' + config;
@@ -143,6 +151,7 @@ rmSync("_quartz/quartz/components/scripts/lab-explorer.inline.ts", { force: true
 cpSync("site/dashboard.js", "_quartz/quartz/components/scripts/lab-explorer.inline.js");
 cpSync("site/dashboard.css", "_quartz/quartz/components/styles/lab-explorer.scss");
 writeFileSync("_quartz/quartz/styles/custom.scss", readFileSync("site/reader.scss", "utf8"));
+cpSync("site/markdown.scss", "_quartz/quartz/styles/markdown.scss");
 rmSync("_quartz/content", { recursive: true, force: true });
 cpSync("content", "_quartz/content", { recursive: true });
 // These legacy addresses become redirects after rendering, not searchable notes.

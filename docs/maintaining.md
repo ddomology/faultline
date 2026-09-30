@@ -30,6 +30,10 @@ note_kind: solution
 
 Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합니다. 원문 제목이 첫 제목으로 반복되면 빌드 복사본에서만 중복을 정리하며 원본 Markdown은 유지합니다.
 
+코드블록에는 언어와 복사 버튼이 표시됩니다. 가로로 긴 코드에는 줄바꿈 버튼이 추가되며, 줄바꿈 표시 여부와 관계없이 원문의 탭·공백·빈 줄을 복사합니다. 줄 번호는 코드 펜스에 `showLineNumbers`를 지정한 경우에만 표시합니다. 코드 제목·캡션·줄 강조도 지원합니다.
+
+제목 링크, 가로로 넘치는 코드·표, 접을 수 있는 콜아웃은 키보드로도 조작할 수 있습니다.
+
 ## 공개 범위
 
 `content/`의 일반 노트는 모두 공개됩니다. `draft` 값으로 숨기는 기능과 브라우저 초안 작성 기능은 사용하지 않습니다. `private`, `templates`, `.obsidian`, `.trash` 폴더는 사이트 빌드에서 제외합니다.
@@ -64,6 +68,8 @@ Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합
 | `site/DifficultyBars.tsx`, `site/difficulty-bars.scss` | 난이도 표시 |
 | `site/LabPagination.tsx`, `site/lab-pagination.scss` | 같은 주제의 이전·다음 실습 |
 | `site/reader.scss`, `site/quartz.layout.ts` | 읽기 화면의 공통 스타일과 배치 |
+| `site/markdown.scss` | 본문·목록·인용·표·콜아웃·코드블록의 스타일 |
+| `site/clipboard.inline.ts`, `site/reader-code.ts` | 코드 원문 보존, 복사와 줄바꿈 조작 |
 | `site/reader-tools.js`, `site/reader-tools.css` | 이미지 캡션과 확대 보기 |
 | `site/reader-images.ts` | 빌드 시 이미지 크기 기록 |
 

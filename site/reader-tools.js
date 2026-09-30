@@ -3,6 +3,24 @@
   const supportsDialog = typeof HTMLDialogElement !== 'undefined' && typeof HTMLDialogElement.prototype.showModal === 'function';
 
   const enhanced = new WeakSet();
+  const enhancedCallouts = new WeakSet();
+  const enhancedTables = new WeakSet();
+  const updateTable = (container) => {
+    if (!container?.isConnected) return;
+    const overflowing = container.scrollWidth > container.clientWidth + 1;
+    if (overflowing) {
+      container.tabIndex = 0;
+      container.setAttribute('role', 'region');
+      container.setAttribute('aria-label', '표, 가로로 스크롤 가능');
+    } else {
+      container.removeAttribute('tabindex');
+      container.removeAttribute('role');
+      container.removeAttribute('aria-label');
+    }
+  };
+  const tableObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(entries => {
+    entries.forEach(({ target }) => updateTable(target.closest('.table-container')));
+  });
   let dialog, enlargedImage, caption, returnFocus, previousOverflow;
 
   function makeDialog() {
@@ -112,7 +130,55 @@
       const article = document.querySelector('.center > article');
       if (article) { article.id = 'main-content'; article.tabIndex = -1; }
     }
-    document.querySelectorAll('.center article img').forEach(frameScreenshot);
+    document.querySelectorAll('.center article .footnotes > h2').forEach(heading => {
+      if (heading.textContent.trim() === 'Footnotes') heading.textContent = '각주';
+    });
+    document.querySelectorAll('.center article a[role="anchor"]').forEach(link => {
+      link.tabIndex = 0;
+      link.removeAttribute('aria-hidden');
+      link.setAttribute('aria-label', `${link.parentElement.textContent.trim()} 제목 링크`);
+    });
+    document.querySelectorAll('.center article .callout.is-collapsible > .callout-title').forEach(title => {
+      if (enhancedCallouts.has(title)) return;
+      enhancedCallouts.add(title);
+      title.tabIndex = 0;
+      title.setAttribute('role', 'button');
+      const update = () => {
+        const collapsed = title.parentElement.classList.contains('is-collapsed');
+        title.setAttribute('aria-expanded', String(!collapsed));
+        const content = title.parentElement.querySelector('.callout-content');
+        if (content) content.inert = collapsed;
+      };
+      update();
+      title.addEventListener('click', () => requestAnimationFrame(update));
+      title.addEventListener('keydown', event => {
+        if (event.target !== title) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        title.click();
+      });
+    });
+    document.querySelectorAll('.center article .table-container').forEach(container => {
+      if (enhancedTables.has(container)) return;
+      enhancedTables.add(container);
+      updateTable(container);
+      tableObserver?.observe(container);
+      const table = container.querySelector('table');
+      if (table) tableObserver?.observe(table);
+    });
+    document.querySelectorAll('.center article img').forEach(image => {
+      // Images from the repository already have build-time dimensions. For
+      // other images, preserve intrinsic size inside the shrink-to-fit frame.
+      const sizeImage = () => {
+        if (!image.hasAttribute('width') && !image.hasAttribute('height') && image.naturalWidth && image.naturalHeight) {
+          image.width = image.naturalWidth;
+          image.height = image.naturalHeight;
+        }
+      };
+      if (image.complete) sizeImage();
+      else image.addEventListener('load', sizeImage, { once: true });
+      frameScreenshot(image);
+    });
     if (!supportsDialog) return;
     document.querySelectorAll('.center article img').forEach((image) => {
       if (enhanced.has(image) || image.closest('a,button,[data-no-lightbox]') || image.getAttribute('role') === 'presentation') return;
