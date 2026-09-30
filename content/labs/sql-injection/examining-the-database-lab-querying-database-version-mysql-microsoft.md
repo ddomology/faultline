@@ -26,7 +26,11 @@ note_kind: solution
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-mysql-microsoft)
 
-## 1. 첫 `ORDER BY` 요청에서 500
+## 탐색 및 풀이 기록
+
+### 초기 관찰
+
+#### 1. 첫 `ORDER BY` 요청에서 500
 
 **질문:** `category` 입력으로 원래 조회의 열 개수를 알아낼 수 있을까?
 
@@ -42,7 +46,9 @@ note_kind: solution
 
 **다음 행동:** `ORDER BY`를 빼고 따옴표와 주석만 시험한 다음, 같은 주석 형태로 `ORDER BY 1`을 다시 보낸다.
 
-## 2. 주석 형태를 고정해 대조
+### 실행 과정
+
+#### 2. 주석 형태를 고정해 대조
 
 **실행:**
 
@@ -57,7 +63,7 @@ note_kind: solution
 
 **다음 행동:** 같은 주석 형태로 정렬 번호를 늘려, 처음 500이 나는 지점을 확인했다.
 
-## 3. 정렬 번호의 경계 확인
+#### 3. 정렬 번호의 경계 확인
 
 **실행:**
 
@@ -73,7 +79,7 @@ note_kind: solution
 
 **다음 행동:** 두 열을 맞춘 `UNION SELECT`에서 시험 문자열을 각 열에 번갈아 넣어 표시 여부를 확인했다.
 
-## 4. 두 열의 문자열 출력 확인
+#### 4. 두 열의 문자열 출력 확인
 
 첫 번째 열에 `probe`를 넣었다.
 
@@ -99,7 +105,7 @@ note_kind: solution
 
 **다음 행동:** 첫 번째 열에 서버 버전 정보를 반환하는 식을 넣어 확인한다.
 
-## 5. 버전 정보 조회와 완료
+#### 5. 버전 정보 조회와 완료
 
 **질문:** 문자열을 표시할 수 있는 첫 번째 열에 서버 버전 정보를 넣으면 랩의 목표를 충족할까?
 
@@ -111,10 +117,14 @@ note_kind: solution
 
 `@@version`은 MySQL에서는 서버의 `version` 시스템 변수이고, SQL Server에서는 버전 정보를 반환하는 내장 함수다. 앞서 확인한 두 열의 형태를 유지하면서 첫 번째 열에 이 값을 넣었다.
 
+## 최종 결과
+
 **관찰:** 화면에 `8.0.42-0ubuntu0.20.04.1`이 표시됐다. 사용자가 이 요청 이후 랩의 **Solved** 상태를 확인했다.
 
 ![@@version 조회 결과](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-mysql-microsoft/03-version-output.png)
 
 **해석:** 출력된 문자열은 MySQL 8.0.42의 Ubuntu 빌드 버전을 가리킨다.
+
+## 배운 점
 
 **판단:** `ORDER BY`로 열 수를 확인하고, `probe`로 문자열 출력 위치를 검증한 뒤, 같은 위치에 `@@version`을 넣는 순서로 목표에 도달했다.

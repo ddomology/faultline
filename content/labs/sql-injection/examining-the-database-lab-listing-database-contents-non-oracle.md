@@ -30,7 +30,11 @@ draft: false
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-non-oracle)
 
 
-## 1. 주입 가능성 확인
+## 탐색 및 풀이 기록
+
+### 초기 관찰
+
+#### 1. 주입 가능성 확인
 
 **실행:**
 
@@ -44,7 +48,9 @@ draft: false
 
 **다음 행동:** 성공한 주석 형태를 유지하고 `ORDER BY`의 위치 번호를 바꾸어 반환 열 수를 확인한다.
 
-## 2. 반환 열 수 확인
+### 실행 과정
+
+#### 2. 반환 열 수 확인
 
 **실행:**
 
@@ -60,7 +66,7 @@ draft: false
 
 **다음 행동:** 두 열을 맞춘 `UNION SELECT`에서 시험 문자열을 각 열에 번갈아 넣었다.
 
-## 3. 문자열 출력 위치 확인
+#### 3. 문자열 출력 위치 확인
 
 **실행:**
 
@@ -75,7 +81,7 @@ draft: false
 
 **다음 행동:** 접근 가능한 메타데이터에서 테이블 이름을 조회한 뒤, 목표와 관련된 테이블의 열 이름을 확인한다.
 
-## 4. `ALL_VIEWS` 조회 시도
+#### 4. `ALL_VIEWS` 조회 시도
 
 **실행:**
 
@@ -89,7 +95,7 @@ draft: false
 
 **다음 행동:** 앞서 성공한 두 열의 `UNION` 형태를 유지하면서, 다른 메타데이터 조회가 가능한지 별도로 확인한다.
 
-## 5. `information_schema.tables`로 테이블 목록 확인
+#### 5. `information_schema.tables`로 테이블 목록 확인
 
 **실행:**
 
@@ -108,7 +114,7 @@ public  products
 
 **다음 행동:** `public.users_ntqhfo`의 열 이름과 자료형을 확인했다.
 
-## 6. 계정 테이블의 열 확인
+#### 6. 계정 테이블의 열 확인
 
 **실행:**
 
@@ -127,7 +133,7 @@ WHERE table_schema = 'public'
 
 **다음 행동:** 확인한 두 열을 `UNION SELECT`의 두 출력 위치에 넣어 실제 행을 조회했다.
 
-## 7. 계정 행 출력
+#### 7. 계정 행 출력
 
 **실행:**
 
@@ -143,10 +149,12 @@ WHERE table_schema = 'public'
 
 **다음 행동:** 출력된 `administrator` 계정 값으로 로그인했다.
 
-## 8. `administrator` 로그인 및 완료
+## 최종 결과
 
 **실행:** 앞 단계에서 화면에 출력된 `administrator` 계정 정보로 로그인했다.
 
 **관찰:** `administrator` 계정으로 로그인에 성공했고, 랩이 **Solved**로 표시됐다.
+
+## 배운 점
 
 **판단:** 테이블과 열을 메타데이터에서 찾고, 실제 계정 행을 조회해 로그인하는 순서로 문제의 완료 조건을 충족했다.

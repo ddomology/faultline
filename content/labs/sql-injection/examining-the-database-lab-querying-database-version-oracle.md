@@ -24,7 +24,11 @@ note_kind: solution
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle)
 
-## 1. 반환 열 수와 문자열 출력 위치 확인
+## 탐색 및 풀이 기록
+
+### 초기 관찰
+
+#### 1. 반환 열 수와 문자열 출력 위치 확인
 
 **질문:** `UNION`에 열을 몇 개 맞춰야 하며, 버전 문자열을 어느 열에 출력할 수 있을까?
 
@@ -48,7 +52,9 @@ note_kind: solution
 
 ![뷰 이름을 출력한 화면](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-querying-database-version-oracle/01-union-select-view-names.png)
 
-## 2. 버전 관련 객체를 소유자와 함께 수집
+### 실행 과정
+
+#### 2. 버전 관련 객체를 소유자와 함께 수집
 
 **질문:** 버전 문자열이 들어 있을 만한 객체는 무엇인가?
 
@@ -77,7 +83,7 @@ WHERE TABLE_NAME LIKE '%VERSION%' --
 
 **판단 → 다음 행동:** 아홉 객체 모두의 행 수를 확인한 뒤, 값이 있는 객체의 열을 표식으로 검색한다.
 
-## 3. 9개 객체의 값을 스크립트로 검사
+#### 3. 9개 객체의 값을 스크립트로 검사
 
 **질문:** 48개 열 중 목표 문자열을 실제로 담은 열은 무엇인가?
 
@@ -108,13 +114,15 @@ pwsh -File .\scripts\oracle-version-sweep.ps1 `
 
 **판단 → 다음 행동:** 제품 버전 번호만 있는 열보다 전체 문구가 있는 `BANNER`가 목표에 맞다. 후보 하나를 직접 출력하고 실습 판정을 확인한다.
 
-## 4. 찾은 열을 직접 출력해 판정 확인
+#### 4. 찾은 열을 직접 출력해 판정 확인
 
 **실행:**
 
 ~~~sql fragment
 ' UNION ALL SELECT "BANNER", NULL FROM "SYS"."V_$VERSION" --
 ~~~
+
+## 최종 결과
 
 **관찰:** HTTP 200으로 다음 다섯 행이 출력됐고, 실습 상태가 **LAB Solved**로 바뀌었다.
 
@@ -128,7 +136,7 @@ NLSRTL Version 11.2.0.2.0 - Production
 
 **판단:** 메타데이터에서 출발해 9개 후보를 검사한 결과와 실제 `Solved` 판정이 일치했다.
 
-## 초기 시도와 HTTP 500에서 배운 점
+## 배운 점
 
 처음에는 `PRODUCT_COMPONENT_VERSION`의 `PRODUCT`·`VERSION`·`STATUS`를 합쳐 네 행을 출력했다. 버전 번호는 확인했지만 `CORE` 행이 없고 화면은 **Not solved**였다. 따라서 구분자를 고치는 것만으로는 부족하다고 판단했다.
 
@@ -141,6 +149,6 @@ FROM PRODUCT_COMPONENT_VERSION --
 
 초기 반복 조회에서는 `OWNER`를 저장하지 않아 `FROM "V_$VERSION"`처럼 참조했고, 문자열 조회와 `COUNT(*)`가 모두 HTTP 500이었다. 같은 객체를 `FROM "SYS"."V_$VERSION"`으로 조회하면 행 수 5와 `BANNER`가 정상 반환됐다. **소유자 포함 이름으로 재시도해 문제를 해결했지만**, 응답이 Oracle 오류 번호를 숨겼으므로 정확한 `ORA-` 코드는 알 수 없다. 위의 9개 객체 전수 조회는 이 시행착오 후에 같은 방식으로 재검증한 결과다.
 
-## 참고
+### 참고
 
 - [Oracle: ALL_TAB_COLUMNS의 OWNER 열](https://docs.oracle.com/cd/E18283_01/server.112/e17110/statviews_2103.htm)

@@ -26,9 +26,11 @@ note_kind: solution
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/lab-login-bypass)
 
-## 탐색 과정
+## 탐색 및 풀이 기록
 
-### 1. 기본 로그인 시도 및 요청 확인
+### 초기 관찰
+
+#### 1. 기본 로그인 시도 및 요청 확인
 
 먼저 사용자 이름과 비밀번호에 각각 `test`를 입력하여 로그인을 시도하고, 개발자 도구에서 로그인 요청을 확인했다.
 
@@ -49,7 +51,9 @@ HTTP 응답은 `200 OK`였지만, 화면에는 `Invalid username or password.`�
 
 ![csrf 항목과 username=test, password=test 전송 데이터](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/02-login-request-payload.png)
 
-### 2. 사용자 이름에 작은따옴표 추가 — 첫 번째 입력 변경 시도
+### 실행 과정
+
+#### 2. 사용자 이름에 작은따옴표 추가 — 첫 번째 입력 변경 시도
 
 기본 로그인 실패 응답과 비교하기 위해 비밀번호는 `test`로 유지하고, 사용자 이름에 작은따옴표 하나를 추가하여 로그인을 시도했다.
 
@@ -67,7 +71,7 @@ password: test
 
 ![사용자 이름에 작은따옴표를 추가한 첫 시도에서 표시된 ERR_HTTP2_PROTOCOL_ERROR](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/03-username-quote-error.png)
 
-### 3. 참인 조건과 주석을 입력하여 로그인 성공
+#### 3. 참인 조건과 주석을 입력하여 로그인 성공
 
 이전 입력 변경 시도에 이어 사용자 이름에 다음 값을 입력하고 로그인을 시도했다.
 
@@ -88,7 +92,7 @@ username: test' OR 1=1 --
 
 ![My Account 화면의 Your username is: administrator 표시](https://raw.githubusercontent.com/ddomology/portswigger-lab-notes/main/content/labs/sql-injection/images/lab-login-bypass/05-administrator-login-success.png)
 
-## 해결 과정
+## 최종 결과
 
 사용자 이름에 `test' OR 1=1 --`를 입력하여 로그인을 시도했고, `My Account` 화면에서 `Your username is: administrator`를 확인했다. 따라서 문제의 목표인 **SQL injection을 통한 administrator 계정 로그인**을 달성했다.
 
@@ -100,6 +104,6 @@ username: test' OR 1=1 --
 - **항상 참인 조건이 특정 계정 로그인을 보장하는 것은 아니다.** 이번에는 `administrator`로 로그인되었지만, `OR 1=1` 자체가 관리자 계정을 지정하는 것은 아니다. 어떤 계정으로 처리되는지는 조회 결과와 애플리케이션의 처리 방식에 달려 있으므로, `Your username is: administrator`라는 실제 표시로 목표 달성을 확인했다.
 - **관찰한 사실과 원인에 대한 추정을 구분해서 기록해야 한다.** 작은따옴표만 추가했을 때 확인한 것은 `ERR_HTTP2_PROTOCOL_ERROR`였다. 이 오류만으로 SQL 구문 오류라고 단정할 수는 없다. 입력값, 오류 화면, 최종 로그인 계정처럼 직접 확인한 증거를 남기는 것이 중요하다.
 
-## 참고
+### 참고
 
 - [PortSwigger 원본 실습](https://portswigger.net/web-security/sql-injection/lab-login-bypass)

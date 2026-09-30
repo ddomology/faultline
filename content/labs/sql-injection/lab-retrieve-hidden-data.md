@@ -39,9 +39,11 @@ WHERE category = 'Gifts'
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data)
 
-## 탐색 과정
+## 탐색 및 풀이 기록
 
-### 1. URL 관찰
+### 초기 관찰
+
+#### 1. URL 관찰
 
 먼저 다음 URL을 관찰했다.
 
@@ -61,7 +63,9 @@ Clothing, shoes and accessories
 
 이 URL에서 상품 카테고리가 `category` 파라미터로 전달된다는 점을 확인했다.
 
-### 2. 첫 번째 시도: `' OR 1=1--`
+### 실행 과정
+
+#### 2. 첫 번째 시도: `' OR 1=1--`
 
 `category` 파라미터의 값을 다음과 같이 바꿔 시도했다.
 
@@ -73,15 +77,13 @@ Clothing, shoes and accessories
 
 이 입력으로 실습 해결에 성공했다.
 
-## 해결 과정
-
-### 1. 입력이 들어가는 위치 확인
+#### 3. 입력이 들어가는 위치 확인
 
 앞서 관찰한 URL에서 `category`는 상품 카테고리를 전달하는 값이다. 문제에서 제공한 SQL에 따르면 이 값은 `WHERE category = '…'`의 작은따옴표 안에 들어간다.
 
 핵심은 입력한 문자가 카테고리 이름으로만 처리되는지, 아니면 SQL 문법으로 해석될 수 있는지다.
 
-### 2. 성공한 입력의 역할 분석
+#### 4. 성공한 입력의 역할 분석
 
 사용한 입력은 다음 세 부분으로 나눌 수 있다.
 
@@ -108,7 +110,7 @@ SELECT * FROM products WHERE category = '' OR 1=1
 > [!tip] 주석까지 포함해서 이해하기
 > 이 입력은 항상 참인 조건을 추가하는 동시에, 뒤에 붙는 출시 여부 조건을 주석으로 제거한다. `--`는 줄 끝까지 적용되므로 위 예시는 한 줄 SQL로 표시했다.
 
-### 3. 해결 결과
+## 최종 결과
 
 관찰한 URL의 `category` 값을 `' OR 1=1--`로 변경해 시도했고, 실습 해결에 성공했다.
 
@@ -125,6 +127,6 @@ SELECT * FROM products WHERE category = '' OR 1=1
 - **논리 연산과 주석을 함께 이해해야 한다.** `OR 1=1`은 조건을 참으로 만들고, `--`는 뒤쪽 조건이 적용되지 않도록 했다.
 - **근본적인 방어는 SQL과 입력값을 분리하는 것이다.** 매개변수화된 쿼리로 값을 바인딩하면 입력에 들어 있는 작은따옴표나 SQL 키워드를 쿼리 구조가 아닌 데이터로 처리할 수 있다.
 
-## 참고
+### 참고
 
 - [PortSwigger 원본 실습](https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data)
