@@ -78,6 +78,12 @@ head = head.replace(iconLinksPattern, `        {/* Notebook favicon */}
         <link rel="icon" type="image/svg+xml" sizes="any" href={iconPath} />
         <link rel="apple-touch-icon" sizes="180x180" href={joinSegments(baseDir, "static/apple-touch-icon.png?v=${faviconVersion}")} />
         {/* End notebook favicon */}`);
+// Keep tabs compact: topic and within-topic number, e.g. "SQLi #3 · Notes".
+cpSync("site/tab-title.ts", "_quartz/quartz/components/tab-title.ts");
+if (!head.includes('import { tabTitle } from "./tab-title"')) head = 'import { tabTitle } from "./tab-title"\n' + head;
+const titlePattern = /<title>[\s\S]*?<\/title>/;
+if (!titlePattern.test(head)) throw new Error("Quartz title markup changed");
+head = head.replace(titlePattern, '<title>{tabTitle(fileData.slug!, title)}</title>');
 writeFileSync(headPath, head);
 // Keep Quartz's search, TOC and clipboard behavior; use the same SVG set throughout.
 const searchPath = "_quartz/quartz/components/Search.tsx";
