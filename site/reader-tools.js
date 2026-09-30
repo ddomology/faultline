@@ -78,11 +78,41 @@
     document.documentElement.style.overflow = 'hidden';
   }
 
+  function frameScreenshot(image) {
+    if (image.closest('figure,[data-no-caption]') || image.getAttribute('role') === 'presentation') return;
+    const media = image.parentElement?.tagName === 'PICTURE' ? image.parentElement : image;
+    const content = media.parentElement?.tagName === 'A' ? media.parentElement : media;
+    const paragraph = content.parentElement;
+    // Only standalone images: preserve prose, inline icons and authored figures.
+    if (paragraph?.tagName !== 'P' || !Array.from(paragraph.childNodes).every(node =>
+      node === content || (node.nodeType === Node.TEXT_NODE && !node.textContent.trim())
+    )) return;
+
+    const figure = document.createElement('figure');
+    figure.className = 'reader-screenshot';
+    if (paragraph.id) figure.id = paragraph.id;
+    const frame = document.createElement('div');
+    frame.className = 'reader-image-frame';
+    paragraph.replaceWith(figure);
+    frame.append(content);
+    figure.append(frame);
+
+    const description = image.alt.trim();
+    const isPlaceholder = /^(?:image|img|screenshot|이미지|스크린샷|화면\s*캡처)(?:[\s_-]*\d+)?$/i.test(description);
+    const isFilename = /\.(?:png|jpe?g|gif|webp|avif|svg)(?:\?.*)?$/i.test(description);
+    if (description && !isPlaceholder && !isFilename) {
+      const descriptionElement = document.createElement('figcaption');
+      descriptionElement.textContent = description;
+      figure.append(descriptionElement);
+    }
+  }
+
   function setup() {
     if (!document.getElementById('main-content')) {
       const article = document.querySelector('.center > article');
       if (article) { article.id = 'main-content'; article.tabIndex = -1; }
     }
+    document.querySelectorAll('.center article img').forEach(frameScreenshot);
     if (!supportsDialog) return;
     document.querySelectorAll('.center article img').forEach((image) => {
       if (enhanced.has(image) || image.closest('a,button,[data-no-lightbox]') || image.getAttribute('role') === 'presentation') return;

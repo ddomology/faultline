@@ -61,6 +61,15 @@ mkdirSync("_quartz/quartz/static/icons", { recursive: true });
 cpSync(iconDirectory, "_quartz/quartz/static/icons/lucide", { recursive: true });
 // Install the approved split-shield favicon, including non-SVG browser fallbacks.
 const faviconDirectory = "site/assets/favicon";
+// Share the approved geometry; the inline mark follows the site's theme switch.
+const brandBody = readFileSync(`${faviconDirectory}/favicon.svg`, "utf8")
+  .match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1]
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, "")
+  .replace(/<!--[\s\S]*?-->/g, "")
+  .replaceAll('id="split"', 'id="notebook-brand-split"')
+  .replaceAll("url(#split)", "url(#notebook-brand-split)").trim();
+if (!brandBody || /<(?:script|foreignObject)|\bon\w+=/i.test(brandBody)) throw new Error("Invalid brand SVG");
+writeFileSync("_quartz/quartz/components/data/brand-mark.json", JSON.stringify({ body: brandBody }));
 for (const name of ["favicon.svg", "favicon-32.png", "favicon.ico", "apple-touch-icon.png"]) {
   cpSync(`${faviconDirectory}/${name}`, `_quartz/quartz/static/${name}`);
 }

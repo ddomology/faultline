@@ -4,6 +4,17 @@
 }
 .center article .reader-image-trigger img { margin:0; }
 .center article .reader-image-trigger:focus-visible { outline:2px solid var(--secondary);outline-offset:4px; }
+.center article .reader-screenshot { width:fit-content;max-width:100%;margin:28px auto; }
+.center article .reader-image-frame {
+  box-sizing:border-box;max-width:100%;padding:6px;border:1px solid var(--lightgray);
+  border-radius:5px;background:var(--highlight);
+}
+.center article .reader-image-frame :is(img,picture) { display:block;max-width:100%;margin:0;border:0;border-radius:1px; }
+.center article .reader-image-frame .reader-image-trigger { margin:0 auto; }
+.center article .reader-screenshot > figcaption {
+  max-width:80ch;margin:10px auto 0;padding:0 2px;color:var(--gray);
+  font-size:13px;line-height:1.65;text-align:center;word-break:normal;overflow-wrap:anywhere;
+}
 .reader-lightbox {
   box-sizing:border-box;width:fit-content;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);
   max-height:calc(100dvh - 48px);margin:auto;padding:0;border:1px solid var(--lightgray);
