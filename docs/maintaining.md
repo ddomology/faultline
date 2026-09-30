@@ -30,9 +30,25 @@ note_kind: solution
 
 Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합니다. 원문 제목이 첫 제목으로 반복되면 빌드 복사본에서만 중복을 정리하며 원본 Markdown은 유지합니다.
 
-코드블록에는 언어와 복사 버튼이 표시됩니다. 가로로 긴 코드에는 줄바꿈 버튼이 추가되며, 줄바꿈 표시 여부와 관계없이 원문의 탭·공백·빈 줄을 복사합니다. 줄 번호는 코드 펜스에 `showLineNumbers`를 지정한 경우에만 표시합니다. 코드 제목·캡션·줄 강조도 지원합니다.
+코드블록에는 언어와 복사 버튼이 표시됩니다. 가로로 긴 코드에는 줄바꿈 버튼이 추가됩니다. 줄 번호는 코드 펜스에 `showLineNumbers`를 지정한 경우에만 표시합니다. 코드 제목·캡션·줄 강조도 지원합니다.
 
-닫히지 않은 따옴표 등으로 시작하는 코드 조각은 일반 문법 강조기가 문자열의 범위를 잘못 해석할 수 있습니다. 이때 코드 펜스를 `~~~sql nohighlight`처럼 작성하면 언어 표시는 유지하고 본문을 한 색으로 표시합니다. `nohighlight`는 다른 언어에도 사용할 수 있으며, 원문과 복사 내용에는 영향을 주지 않습니다. 완성된 코드에는 기존 언어 이름을 그대로 사용합니다.
+정렬할 수 있는 코드는 `원문 / 정렬`로 전환할 수 있습니다. 처음에는 원문을 보여 주며, 복사 버튼은 현재 보고 있는 버전을 복사합니다. 원문 모드에서는 탭·공백·빈 줄까지 그대로 보존합니다. 줄바꿈 버튼은 화면의 표시만 바꾸며 복사 내용에는 영향을 주지 않습니다. 줄·단어 강조는 원문의 위치를 기준으로 하므로 정렬본에는 옮기지 않습니다.
+
+정렬본은 빌드할 때 미리 생성하며 브라우저에는 포매터나 편집기를 싣지 않습니다. 코드가 불완전하거나, 지원하지 않는 언어이거나, 정렬 전후가 같으면 전환 버튼이 나타나지 않습니다. 64 KiB를 넘는 코드는 원문만 표시합니다. 자동 정렬을 제외할 블록에는 `~~~python noformat`처럼 `noformat`을 붙입니다.
+
+| 코드 종류 | 정렬 방식 |
+| --- | --- |
+| JavaScript·TypeScript·JSX·TSX·Flow, JSON·JSONC·JSON5 | Prettier |
+| HTML·Vue·Angular, CSS·SCSS·Less, Markdown·MDX, YAML·GraphQL·Handlebars | Prettier |
+| XML·SVG, PHP, Java, Bash·POSIX Shell·mksh·Dockerfile | Prettier와 언어별 플러그인 |
+| Python, Go, Rust, Kotlin | Ruff·gofmt·rustfmt·ktfmt의 빌드용 WASM 포매터 |
+| C·C++·C#·Objective-C·Objective-C++, Protocol Buffers | clang-format |
+| TOML | Taplo |
+| SQL과 PostgreSQL·MySQL·Oracle·SQL Server 등 20개 SQL 표기 | SQL Formatter, 코드 펜스의 언어로 방언 지정 |
+
+문법 강조는 고정된 Shiki 1.26.2의 218개 언어를 지원합니다. PowerShell·HTTP처럼 자동 정렬 대상이 아닌 코드도 강조·복사·긴 줄 표시를 사용할 수 있습니다. `psm1`, `psd1`, `https`, `svg`와 SQL 방언 등 자주 쓰는 표기도 해당 강조 문법으로 연결합니다. 정확한 정렬 지원 언어와 별칭은 `site/code-format.ts`에 있습니다.
+
+닫히지 않은 따옴표 등으로 시작하는 코드 조각은 일반 문법 강조기가 문자열의 범위를 잘못 해석할 수 있습니다. 이때 코드 펜스를 `~~~sql nohighlight`처럼 작성하면 언어 표시는 유지하고 본문을 한 색으로 표시합니다. 이 블록은 자동 정렬에서도 제외됩니다. `nohighlight`는 다른 언어에도 사용할 수 있으며, 원문과 복사 내용에는 영향을 주지 않습니다. 완성된 코드에는 기존 언어 이름을 그대로 사용합니다.
 
 제목 링크, 가로로 넘치는 코드·표, 접을 수 있는 콜아웃은 키보드로도 조작할 수 있습니다.
 
@@ -48,12 +64,13 @@ Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합
 
 워크플로는 Quartz 4.5.2의 커밋 `d25a6eabf96751ffca56f8a8139272def7a65041`을 `_quartz/`에 받아 다음 순서로 빌드합니다.
 
-1. `node scripts/prepare-quartz.mjs`: 설정·컴포넌트·콘텐츠를 Quartz 작업 폴더로 복사합니다. 다시 실행할 수 있습니다.
-2. `_quartz/`에서 `npm ci`를 실행합니다.
-3. `node scripts/build-note-index.mjs`: 공개 노트의 제목·태그·본문 검색어·수정일을 수집합니다.
-4. `_quartz/`에서 `npx quartz build`를 실행합니다.
-5. `node scripts/build-lab-catalog.mjs`: 렌더링 주소를 검증하고 검색 목록 및 이전 주소의 이동 페이지를 만듭니다.
-6. `node scripts/fingerprint-assets.mjs`: CSS·JavaScript 파일명에 내용 해시를 붙이고 HTML 참조를 검증합니다.
+1. 저장소 루트에서 `npm ci --ignore-scripts`로 고정된 코드 정렬 의존성을 설치합니다. Node.js 24.15 이상을 사용합니다.
+2. `node scripts/prepare-quartz.mjs`: 설정·컴포넌트·콘텐츠를 Quartz 작업 폴더로 복사합니다. 다시 실행할 수 있습니다.
+3. `_quartz/`에서 `npm ci`를 실행합니다.
+4. `node scripts/build-note-index.mjs`: 공개 노트의 제목·태그·본문 검색어·수정일을 수집합니다.
+5. `_quartz/`에서 `npx quartz build`를 실행합니다.
+6. `node scripts/build-lab-catalog.mjs`: 렌더링 주소를 검증하고 검색 목록 및 이전 주소의 이동 페이지를 만듭니다.
+7. `node scripts/fingerprint-assets.mjs`: CSS·JavaScript 파일명에 내용 해시를 붙이고 HTML 참조를 검증합니다.
 
 결과물인 `_quartz/public/`을 GitHub Pages에 배포합니다. `_dashboard/catalog.json`에는 전체 실습과 공개 노트 목록이, `_dashboard/notes.json`에는 공개 노트의 검색 메타데이터가 들어갑니다. 일반 개념 노트도 포함됩니다.
 
@@ -72,6 +89,7 @@ Markdown·위키링크·콜아웃·표·코드·수식은 Quartz가 렌더링합
 | `site/reader.scss`, `site/quartz.layout.ts` | 읽기 화면의 공통 스타일과 배치 |
 | `site/markdown.scss` | 본문·목록·인용·표·콜아웃·코드블록의 스타일 |
 | `site/clipboard.inline.ts`, `site/reader-code.ts` | 코드 원문 보존, 복사와 줄바꿈 조작 |
+| `site/code-format.ts`, `package.json`, `package-lock.json` | 언어별 정렬본 생성과 고정된 빌드 의존성 |
 | `site/reader-tools.js`, `site/reader-tools.css` | 이미지 캡션과 확대 보기 |
 | `site/reader-images.ts` | 빌드 시 이미지 크기 기록 |
 

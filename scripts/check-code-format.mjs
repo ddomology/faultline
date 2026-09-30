@@ -1,0 +1,84 @@
+import assert from "node:assert/strict"
+import { FORMAT_LANGUAGES, formatCode, getCodeFormatLanguage } from "../site/code-format.ts"
+
+// These are text-only formatter inputs. No example is evaluated or executed.
+const samples = {
+  javascript: 'const item={name:"Note",count:2};',
+  jsx: 'const item=<div a="b">hello</div>;',
+  typescript: 'const item:{name:string,count:number}={name:"Note",count:2};',
+  tsx: 'const item=<div a="b">hello</div>;',
+  flow: 'const count:number=2;',
+  json: '{"title":"note","items":[1,2,3]}',
+  jsonc: '{ // Keep this comment\n"count":2}',
+  json5: "{title:'Note',count:2}",
+  css: '.note{color:red;margin:0 2px}',
+  scss: '$color:red;.note{color:$color;&:hover{color:blue}}',
+  less: '@color:red;.note{color:@color}',
+  html: '<div   class="note"><span>Note</span></div>',
+  vue: '<template><div   class="note">Note</div></template>',
+  angular: '<div   *ngIf="visible">Note</div>',
+  markdown: '# Note\n\n*   first\n*   second',
+  mdx: '# Note\n\n*    first\n\n<Button   text="Note" />',
+  yaml: 'name: Note\nitems: [1,2,3]',
+  graphql: 'query Note{note{id title}}',
+  handlebars: '<div   class="note">{{name}}</div>',
+  xml: '<note   title="Note"   count="2"/>',
+  php: '<?php\n$items=[1,2,3];\nforeach($items as $item){echo $item;}',
+  java: 'class Note{public static void main(String[] args){System.out.println("Note");}}',
+  toml: 'name="Note"\nitems=[1,2,3]',
+  bash: 'for item in one two; do\n     printf "%s\\n" "$item"\ndone',
+  sh: 'for item in one two; do\n     printf "%s\\n" "$item"\ndone',
+  mksh: 'for item in one two; do\n     print "$item"\ndone',
+  dockerfile: 'FROM alpine:3.20\nRUN echo hello && \\\n   echo world',
+  python: 'def greet(name):\n return {"message":name,"count":2}',
+  go: 'package main\nfunc sum(a,b int)int{return a+b}',
+  rust: 'fn sum(a:i32,b:i32)->i32{a+b}',
+  kotlin: 'fun sum(a:Int,b:Int):Int{return a+b}',
+  c: 'int sum(int a,int b){return a+b;}',
+  cpp: 'int sum(int a,int b){return a+b;}',
+  csharp: 'class Note{static int Sum(int a,int b){return a+b;}}',
+  'objective-c': '@interface Note:NSObject\n@property(nonatomic) int count;\n@end',
+  'objective-cpp': '@interface Note:NSObject\n@property(nonatomic) int count;\n@end',
+  protobuf: 'syntax="proto3";message Note{string title=1;}',
+}
+const sql = 'select title,count from notes where count>1 order by title;'
+
+for (const language of FORMAT_LANGUAGES) {
+  const source = language.engine === "sql" ? sql : samples[language.id]
+  assert.equal(typeof source, "string", `${language.id}: missing regression example`)
+  const formatted = await formatCode(source, language.id)
+  assert.equal(typeof formatted, "string", `${language.id}: formatter did not produce a view`)
+  assert.notEqual(formatted, source, `${language.id}: expected meaningful formatting`)
+  assert.equal(await formatCode(formatted, language.id), null, `${language.id}: unstable formatting`)
+  for (const alias of language.aliases) {
+    assert.equal(getCodeFormatLanguage(alias)?.id, language.id, `${alias}: wrong language`)
+  }
+}
+
+// Source data and embedded strings remain meaningful, and no prettified view is
+// offered when formatting fails or only terminal newlines would change.
+const comment = await formatCode(samples.jsonc, "jsonc")
+assert.match(comment, /Keep this comment/)
+const originalObject = { note: "two  spaces", items: ["한글", 3] }
+assert.deepEqual(JSON.parse(await formatCode(JSON.stringify(originalObject), "json")), originalObject)
+assert.equal(await formatCode('const note = "Ready";\r\n\r\n', "js"), null)
+assert.equal(await formatCode('const note={count:2};', " JS "), await formatCode('const note={count:2};', "javascript"))
+assert.match(await formatCode('$items=[1,2,3];', "php"), /\$items = \[1, 2, 3\];/)
+assert.equal(await formatCode('const note = html`<div   title="same">  same  </div>`;', "js"), null)
+
+for (const [language, invalid] of [
+  ["json", '{"missing":}'], ["javascript", 'const broken = ;'],
+  ["sql", "select 'unterminated"], ["python", 'def missing(:\n return 1'],
+  ["go", 'package main\nfunc missing( {'], ["rust", 'fn missing( {'],
+  ["kotlin", 'fun missing( {'], ["php", '<?php $missing = ;'],
+  ["bash", 'if true; then'], ["toml", 'name=   "unterminated'],
+]) {
+  assert.equal(await formatCode(invalid, language), null, `${language}: invalid source should stay original`)
+}
+assert.equal(await formatCode("sample", "unknown-language"), null)
+assert.equal(await formatCode("Write-Output 'Ready'", "powershell"), null)
+assert.equal(await formatCode(" ", "json"), null)
+assert.equal(await formatCode('"' + "a".repeat(65536) + '"', "json"), null)
+assert.equal(await formatCode('"before\0after"', "json"), null)
+
+console.log(`Code formatting: ${FORMAT_LANGUAGES.length} languages/dialects, aliases and fallback checks passed.`)

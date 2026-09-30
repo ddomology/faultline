@@ -22,11 +22,18 @@ for (const [before, after] of changes) {
   else if (after && !config.includes(after)) throw new Error("Quartz configuration changed: " + before);
 }
 cpSync("site/reader-code.ts", "_quartz/quartz/plugins/transformers/reader-code.ts");
-if (!config.includes('import { ReaderCode }')) config = 'import { ReaderCode } from "./quartz/plugins/transformers/reader-code"\n' + config;
+cpSync("site/code-format.ts", "_quartz/quartz/plugins/transformers/code-format.ts");
+config = config.replace('import { ReaderCode }', 'import { ReaderCode, ReaderCodeViews }');
+if (!config.includes('import { ReaderCode, ReaderCodeViews }')) config = 'import { ReaderCode, ReaderCodeViews } from "./quartz/plugins/transformers/reader-code"\n' + config;
 if (!config.includes("ReaderCode(),")) {
   const before = "      Plugin.SyntaxHighlighting({";
   if (!config.includes(before)) throw new Error("Quartz code transformer placement changed");
   config = config.replace(before, "      ReaderCode(),\n" + before);
+}
+if (!config.includes("ReaderCodeViews(),")) {
+  const syntax = /      Plugin\.SyntaxHighlighting\(\{[\s\S]*?\n      \}\),/;
+  if (!syntax.test(config)) throw new Error("Quartz syntax highlighting placement changed");
+  config = config.replace(syntax, "$&\n      ReaderCodeViews(),");
 }
 cpSync("site/reader-images.ts", "_quartz/quartz/plugins/transformers/reader-images.ts");
 if (!config.includes('import { ReaderImages }')) config = 'import { ReaderImages } from "./quartz/plugins/transformers/reader-images"\n' + config;
@@ -46,6 +53,18 @@ for (const [mode, colors] of Object.entries(palettes)) {
   config = config.replace(block, `${mode}: ${JSON.stringify(colors)}`);
 }
 writeFileSync(path, config);
+// Quartz's pinned typecheck uses the legacy Node resolver. Point its type-only
+// lookup at declarations exposed solely via exports by these formatter packages.
+const tsconfigPath = "_quartz/tsconfig.json";
+const tsconfig = JSON.parse(readFileSync(tsconfigPath, "utf8"));
+tsconfig.compilerOptions.moduleResolution = "node";
+tsconfig.compilerOptions.paths = {
+  ...tsconfig.compilerOptions.paths,
+  "@prettier/plugin-xml": ["../node_modules/@prettier/plugin-xml/types/plugin.d.ts"],
+  "@wasm-fmt/gofmt": ["../node_modules/@wasm-fmt/gofmt/gofmt.d.ts"],
+  "@wasm-fmt/clang-format": ["../node_modules/@wasm-fmt/clang-format/clang-format.d.ts"],
+};
+writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + "\n");
 cpSync("site/quartz.layout.ts", "_quartz/quartz.layout.ts");
 cpSync("site/NotebookNav.tsx", "_quartz/quartz/components/NotebookNav.tsx");
 cpSync("site/LabExplorer.tsx", "_quartz/quartz/components/LabExplorer.tsx");

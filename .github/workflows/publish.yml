@@ -31,7 +31,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: _quartz/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            _quartz/package-lock.json
+      - name: Install code formatters
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Prepare notes and configuration
         run: node scripts/prepare-quartz.mjs
       - name: Install Quartz
@@ -39,6 +43,8 @@ jobs:
         run: npm ci
       - name: Index Obsidian notes
         run: node scripts/build-note-index.mjs
+      - name: Check code formatting
+        run: node scripts/check-code-format.mjs
       - name: Render notes
         working-directory: _quartz
         run: npx quartz build
