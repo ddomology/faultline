@@ -66,9 +66,9 @@ test('code and active raw HTML are inert text; event and javascript attributes a
   assert.ok(!/<script\b/i.test(result.html));
   assert.ok(!/\sonerror=/i.test(result.html));
   assert.ok(!/href="javascript:/i.test(result.html));
-  assert.ok(result.html.includes('globalThis.fixture = 1'));
+  assert.ok(JSON.stringify(result.body).includes('globalThis.fixture = 1'));
   assert.ok(result.html.includes('globalThis.fixture = 2'));
-  assert.ok(result.html.includes('<code class="language-html">'));
+  assert.ok(result.html.includes('data-language="html"'));
 });
 
 test('relative Markdown links and attachments resolve with encoded fragments and queries retained', async () => {
@@ -81,10 +81,12 @@ test('relative Markdown links and attachments resolve with encoded fragments and
   assert.deepEqual(result.unresolvedLinks, []);
 });
 
-test('enhanced syntax still pending is recorded instead of claiming Quartz feature parity', () => {
+test('enhanced reader syntax is rendered while remaining extensions are recorded honestly', () => {
   assert.ok(manifest.compatibility.some(entry => entry.sourcePath.endsWith('lab-retrieve-hidden-data.md') && entry.features.includes('obsidian-callout')));
-  assert.ok(manifest.renderer.pending.includes('syntax-highlighting'));
-  assert.ok(manifest.renderer.pending.includes('code-format-and-copy'));
+  assert.ok(manifest.renderer.features.includes('syntax-highlighting'));
+  assert.ok(manifest.renderer.features.includes('code-format-and-copy'));
+  assert.ok(manifest.renderer.pending.includes('mermaid-diagrams'));
+  assert.ok(notes['/labs/sql-injection/lab-retrieve-hidden-data.html'].html.includes('class="callout"'));
   assert.deepEqual(manifest.unresolvedLinks, []);
 });
 

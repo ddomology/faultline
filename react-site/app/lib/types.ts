@@ -18,6 +18,7 @@ export interface NoteMeta {
 }
 export interface Note extends NoteMeta {
   html: string
+  body: import('hast').Root
   toc: { id: string; text: string; depth: number }[]
 }
 export interface Catalog {

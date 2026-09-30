@@ -43,6 +43,8 @@ function bytesIn(directory) {
   return readdirSync(directory, { withFileTypes: true }).reduce((sum, entry) => sum + (entry.isDirectory() ? bytesIn(join(directory, entry.name)) : statSync(join(directory, entry.name)).size), 0)
 }
 const totalBytes = bytesIn(dist)
+const dataFiles = readdirSync(dist, { recursive: true }).filter(path => path.endsWith('.data'))
+assert.equal(dataFiles.length, manifest.routes.length + 2, 'Old route data survived the static export')
 const sample = readFileSync(join(dist, 'labs/sql-injection/lab-retrieve-hidden-data.html'))
 const home = readFileSync(join(dist, 'index.html'), 'utf8')
 assert.equal([...home.matchAll(/class="note-row"/g)].length, Math.min(24, manifest.counts.notes), 'Prerendered home must contain the initial page, not an older full-catalog build')

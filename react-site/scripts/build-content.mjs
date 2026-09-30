@@ -12,6 +12,11 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import { imageSize } from 'image-size';
+import { readerCode } from './reader-code.mjs';
+import { remarkNotebook, rehypeReaderStructure, rehypeReaderFootnotes, compactTree } from './reader-markdown.mjs';
 import { basePath, repositoryUrl } from '../site.config.mjs';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -96,19 +101,41 @@ function inertHtmlSamples() {
 
 const articleSchema = {
   ...defaultSchema,
+  tagNames: [...defaultSchema.tagNames, 'aside'],
   attributes: {
     ...defaultSchema.attributes,
     '*': (defaultSchema.attributes['*'] || []).filter(attribute => attribute !== 'id' && attribute !== 'name'),
     img: [...(defaultSchema.attributes.img || []), 'loading', 'decoding'],
-    code: [['className', /^language-[\w+-]+$/]],
+    code: [['className', /^language-[\w+-]+$/, 'math-inline', 'math-display']],
+    aside: [['className', 'callout'], 'dataCallout'],
+    details: ['open', ['className', 'callout'], 'dataCallout'],
+    summary: [['className', 'callout-title']],
+    div: [['className', 'callout-title', 'callout-content']],
   },
 };
+const imageDimensions = new Map();
 
 export async function renderMarkdown(markdown, { sourcePath, knownNotes, assets }) {
   const toc = [];
+  const code = readerCode();
+  let body;
   const unresolved = new Set();
   const rewriteLinks = () => tree => walkTree(tree, node => {
     if (node.type !== 'element') return;
+    if (node.tagName === 'img') {
+      const local = localPath(node.properties.src, sourcePath);
+      if (local && assets.has(local.path)) {
+        if (!imageDimensions.has(local.path)) {
+          try { imageDimensions.set(local.path, imageSize(readFileSync(join(contentRoot, local.path)))); }
+          catch { imageDimensions.set(local.path, null); }
+        }
+        const dimensions = imageDimensions.get(local.path);
+        if (dimensions && !node.properties.width && !node.properties.height) {
+          node.properties.width = dimensions.width;
+          node.properties.height = dimensions.height;
+        }
+      }
+    }
     for (const attribute of ['href', 'src', 'poster']) {
       if (typeof node.properties?.[attribute] === 'string') {
         node.properties[attribute] = resolveContentUrl(node.properties[attribute], sourcePath, knownNotes, assets, unresolved);
@@ -125,14 +152,19 @@ export async function renderMarkdown(markdown, { sourcePath, knownNotes, assets 
     }
   });
   const html = String(await unified()
-    .use(remarkParse).use(remarkGfm).use(inertHtmlSamples)
-    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(remarkParse).use(remarkGfm).use(remarkMath)
+    .use(remarkNotebook, { sourcePath, knownNotes, assets }).use(code.remark).use(inertHtmlSamples)
+    .use(remarkRehype, { allowDangerousHtml: true, footnoteLabel: '각주', footnoteBackLabel: '본문으로 돌아가기' })
     .use(rehypeRaw).use(rewriteLinks).use(rehypeSanitize, articleSchema)
     // Generate our heading IDs after sanitization. This preserves the existing
     // Korean anchor URLs without allowing authored id/name DOM clobbering.
-    .use(rehypeSlug).use(collectHeadings).use(rehypeStringify)
+    .use(rehypeSlug).use(rehypeReaderFootnotes).use(collectHeadings)
+    .use(code.prepare).use(...code.highlight).use(code.finish)
+    .use(rehypeKatex, { trust: false, strict: 'ignore', maxSize: 20, maxExpand: 1000 })
+    .use(rehypeReaderStructure)
+    .use(() => tree => { body = compactTree(tree); }).use(rehypeStringify)
     .process(markdown));
-  return { html, toc, unresolvedLinks: [...unresolved].sort() };
+  return { html, body, toc, unresolvedLinks: [...unresolved].sort() };
 }
 
 function compatibilityNotes(markdown) {
@@ -238,7 +270,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
     const body = markdown.replace(/^\s*# ([^\r\n]+)(?:\r?\n|$)/, (heading, text) =>
       [data.title, originalTitle, title].some(value => value && text.trim() === String(value).trim()) ? '' : heading);
     const renderedNote = await renderMarkdown(body, { sourcePath, knownNotes, assets });
-    rendered[metadata.routePath] = { ...metadata, html: renderedNote.html, toc: renderedNote.toc };
+    rendered[metadata.routePath] = { ...metadata, html: renderedNote.html, body: renderedNote.body, toc: renderedNote.toc };
     notes.push(metadata);
     byCategory.get(category).count++;
     const features = compatibilityNotes(body);
@@ -261,7 +293,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
     schemaVersion: 1, routes: notes.map(note => note.routePath), assets: assetPaths, counts,
     sourceHashes, assetHashes,
     contentHash: sha256(JSON.stringify({ sourceHashes, assetHashes })),
-    renderer: { stage: 1, features: ['commonmark', 'gfm', 'heading-anchors', 'safe-raw-html', 'local-attachments', 'canonical-markdown-links'], pending: ['syntax-highlighting', 'code-format-and-copy', 'obsidian-callouts-and-embeds', 'math', 'mermaid', 'reader-interactions'] },
+    renderer: { stage: 3, features: ['commonmark', 'gfm', 'heading-anchors', 'safe-raw-html', 'local-attachments', 'canonical-markdown-links', 'syntax-highlighting', 'code-format-and-copy', 'obsidian-callouts', 'wikilinks-and-image-embeds', 'math', 'image-dimensions', 'reader-interactions'], pending: ['mermaid-diagrams', 'note-transclusion'] },
     compatibility, unresolvedLinks,
   };
   mkdirSync(outputDir, { recursive: true });
@@ -285,7 +317,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
     writeFileSync(join(outputDir, filename), JSON.stringify(data, null, 2) + '\n');
   }
   console.log(`React content: ${notes.length} articles (${counts.notes} notes, ${counts.concepts} concepts), ${assetPaths.length} attachments, ${categories.length} categories.`);
-  if (compatibility.length) console.log(`${compatibility.length} articles use syntax whose enhanced presentation is scheduled for phase 3; see manifest.compatibility.`);
+  if (compatibility.length) console.log(`${compatibility.length} articles use enhanced reader syntax; see manifest.compatibility.`);
   if (unresolvedLinks.length) console.warn(`${unresolvedLinks.length} articles have unresolved local links; see manifest.unresolvedLinks.`);
   return manifest;
 }

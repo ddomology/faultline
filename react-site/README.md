@@ -1,12 +1,13 @@
 # Faultline React migration
 
-React 이전 1–2회차 작업입니다. 현재 운영 사이트와 별개로 실행하며, 운영용 Quartz 워크플로는 유지합니다. 진행 상태와 다음 작업은 [이전 기록](../docs/react-migration.md)에 있습니다.
+React 이전 1–3회차 작업입니다. 현재 운영 사이트와 별개로 실행하며, 운영용 Quartz 워크플로는 유지합니다. 진행 상태와 다음 작업은 [이전 기록](../docs/react-migration.md)에 있습니다.
 
 ## 실행
 
-Node.js 24.15 이상에서 이 폴더를 작업 디렉터리로 사용합니다.
+Node.js 24.15 이상을 사용합니다. 공통 포맷터·강조 엔진은 저장소 루트에 설치하고, React 명령은 이 폴더에서 실행합니다. `_quartz` 체크아웃은 필요하지 않습니다.
 
 ```bash
+npm ci --prefix .. --include=dev --ignore-scripts
 npm ci --include=dev --ignore-scripts
 npm run dev
 ```
@@ -49,14 +50,27 @@ Linux에서 시스템 라이브러리도 필요하면 `npx playwright install --
 - `app/`: React Router 공통 레이아웃과 홈·글 화면.
 - `app/lib/catalog-context.tsx`: 페이지마다 복제하지 않는 공통 목록·검색 메타데이터.
 - `app/lib/library-query.ts`: 검색·필터·정렬과 URL 상태. `limit`은 표시 개수를 보존합니다.
-- `scripts/build-content.mjs`: 기존 `../content/`를 읽어 기본 HTML·목록·경로 manifest 생성.
-- `.generated/`: 생성된 메타데이터와 서버 빌드용 글 HTML. 커밋하지 않습니다.
+- `scripts/build-content.mjs`: 기존 `../content/`를 읽어 본문 트리·HTML·목록·경로 manifest 생성.
+- `scripts/reader-code.mjs`: 공통 `site/code-format.ts`·`site/code-highlight.ts`를 빌드에서 사용. 코드 원문과 별도 정렬본을 보관합니다.
+- `scripts/reader-markdown.mjs`: 콜아웃·위키링크·이미지 임베드·각주·표·이미지 프레임.
+- `app/components/ReaderBody.tsx`: 검증된 본문 트리를 React로 렌더링하며 복사·줄바꿈·이미지 확대를 관리합니다.
+- `app/components/ReaderNavigation.tsx`: 제목 앵커·목차·같은 주제의 이전/다음 글.
+- `.generated/`: 생성된 메타데이터와 서버 빌드용 본문. 커밋하지 않습니다.
 - `scripts/prepare-assets.mjs`: 기존 로고·폰트·아이콘·공유 이미지 복사.
 - `scripts/export-static.mjs`: basename 출력 정리, 실제 `.html` 파일과 작은 확장자 없는 이동 페이지 생성.
 - `dist/`: 정적 호스트 배포용 출력. 아직 운영 배포 대상이 아닙니다.
 
-React Router만 페이지 이동을 관리합니다. 기존 `navigation.inline.ts`와 Quartz의 `nav`/`prenav` 스크립트는 불러오지 않습니다. Markdown 글은 빌드에서 HTML로 만들고 React가 본문에 표시합니다. `.server.ts` 모듈의 전체 글 데이터는 브라우저 JS 번들에 넣지 않습니다.
+React Router만 페이지 이동을 관리합니다. 기존 `navigation.inline.ts`와 Quartz의 `nav`/`prenav` 스크립트는 불러오지 않습니다. Markdown은 빌드에서 sanitization·Shiki·KaTeX를 적용한 본문 트리로 만들고 React 컴포넌트로 정적 HTML을 생성합니다. 현재 글의 트리만 loader로 보내며, 검색 본문과 검사용 HTML은 route data에서 제외합니다. 전체 글·Shiki·포맷터는 브라우저 JS 번들에 넣지 않습니다.
 
 2회차까지 검색·필터·정렬·더 보기, 헤더 검색, Explorer 상태 유지와 뒤로 가기를 연결했습니다. 최근 수정일을 정확히 만들려면 Git 전체 이력이 필요합니다. 소스 ZIP처럼 Git 이력이 없고 작성된 날짜도 없으면 수정일을 표시하지 않습니다.
 
-본문은 기본 Markdown·표·코드 텍스트·제목 앵커·이미지 연결을 제공합니다. 기존 Shiki 강조·자동 정렬·원문 복사·콜아웃·수식·이미지 확대의 완전한 호환은 3회차 작업입니다.
+## 본문 사용
+
+- 코드 펜스에 언어를 지정하면 기존 색상표로 강조합니다. 지원되는 완성 코드에는 정렬 보기가 제공되며, 복사는 현재 선택한 보기의 정확한 문자열을 사용합니다.
+- `fragment` 또는 `sql-fragment`는 조각을 강조만 하고 정렬하지 않습니다. `noformat`은 정렬을, `nohighlight`는 강조와 정렬을 끕니다. 모르는 언어·잘못된 문법은 원문으로 남깁니다.
+- `title`, `caption`, `showLineNumbers`, 줄/단어 강조 메타데이터를 유지합니다. 원문 위치를 가리키는 강조가 있으면 첫 화면도 원문입니다.
+- `[!tip]` 등의 콜아웃, `+`/`-` 접기, 위키링크와 이미지 임베드, `$...$`/`$$...$$` 수식, 각주를 지원합니다. 코드 블록 안의 표기에는 적용하지 않습니다.
+- 로컬 이미지 크기를 HTML에 넣고, 이미지를 누르면 확대합니다. Escape·닫기·뒤로 가기 때 포커스와 스크롤 잠금을 정리합니다.
+- 코드 버튼 자리를 초기 HTML에도 확보해서 hydration 이후 본문이 밀리지 않게 합니다. JavaScript 없이도 본문·강조·수식·접는 콜아웃·목차·이전/다음 링크가 남습니다.
+
+현재 공개 글에서 사용하지 않는 Mermaid 도표 렌더링과 다른 노트 본문 전체 삽입은 아직 지원하지 않습니다. Mermaid는 읽을 수 있는 코드로, 노트 임베드는 링크로 남기며 `manifest.renderer.pending`에 기록합니다. 실제 휴대폰 확인과 운영 전환은 4회차입니다.

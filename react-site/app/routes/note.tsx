@@ -1,14 +1,23 @@
 import { Link } from 'react-router'
 import type { Route } from './+types/note'
 import { getNote } from '../lib/content.server'
-import { canonicalUrl } from '../../site.config.mjs'
+import { canonicalUrl, repositoryUrl } from '../../site.config.mjs'
 import { useListReturn } from '../lib/navigation-state'
+import ReaderBody from '../components/ReaderBody'
+import { ReaderPagination, ReaderToc } from '../components/ReaderNavigation'
+import readerStyleHref from '../reader.scss?url'
+import katexStyleHref from 'katex/dist/katex.min.css?url'
+
+export const links: Route.LinksFunction = () => [
+  { rel: 'stylesheet', href: readerStyleHref },
+  { rel: 'stylesheet', href: katexStyleHref },
+]
 
 export function loader({ params }: Route.LoaderArgs) {
   const source = getNote('/' + (params['*'] || ''))
   if (!source) throw new Response('Not found', { status: 404 })
-  const { searchText: _searchText, ...note } = source
-  return { note, canonical: canonicalUrl(note.routePath) }
+  const { searchText: _searchText, html: _html, ...note } = source
+  return { note, canonical: canonicalUrl(note.routePath), sourceUrl: repositoryUrl + '/blob/main/content/' + note.sourcePath.split('/').map(encodeURIComponent).join('/') }
 }
 export const meta: Route.MetaFunction = ({ loaderData: data, matches }) => {
   const parent = matches[0]?.loaderData as { brand: { name: string }, deployment: { siteUrl: string } } | undefined
@@ -34,7 +43,12 @@ export default function Note({ loaderData }: Route.ComponentProps) {
         {note.originalTitle && note.originalTitle !== note.title && <p className="article-subtitle" lang="en">{note.originalTitle}</p>}
       </div>
     </header>
-    <article data-note-source={note.sourcePath} dangerouslySetInnerHTML={{ __html: note.html }} />
-    {note.labUrl && <p className="source-link"><a href={note.labUrl} target="_blank" rel="noopener noreferrer">공식 실습 ↗</a></p>}
+    <ReaderToc key={note.routePath + ':toc'} toc={note.toc} returnTo={returnTo} />
+    <ReaderBody key={note.routePath} body={note.body} sourcePath={note.sourcePath} returnTo={returnTo} />
+    <div className="reader-sources">
+      {note.labUrl && <a href={note.labUrl} target="_blank" rel="noopener noreferrer">공식 실습 ↗</a>}
+      <a href={loaderData.sourceUrl} target="_blank" rel="noopener noreferrer">Markdown 원문 ↗</a>
+    </div>
+    <ReaderPagination note={note} returnTo={returnTo} />
   </>
 }

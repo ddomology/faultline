@@ -18,6 +18,8 @@
     "prettier": "3.8.1",
     "prettier-plugin-java": "2.11.0",
     "prettier-plugin-sh": "0.20.2",
+    "rehype-pretty-code": "0.14.1",
+    "shiki": "1.26.2",
     "smol-toml": "1.9.0",
     "sql-formatter": "15.9.0"
   }
