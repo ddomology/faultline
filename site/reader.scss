@@ -47,6 +47,9 @@ button,input,select,textarea { font-family:var(--bodyFont); }
 }
 .page > #quartz-body .sidebar.right { position:sticky;display:flex;flex-direction:column;height:100vh;width:224px;padding:108px 20px 24px 8px;overflow-y:auto; }
 .sidebar.left .search { width:100%;max-width:none;min-width:0; }
+// Quartz sets an inline z-index when opening search; keep its modal above the
+// shared header and sticky catalog group headings.
+.page > #quartz-body .sidebar.left:has(.search-container.active) { z-index:20!important; }
 .sidebar.left .search-button { min-height:42px;border-radius:2px;font-size:14px; }
 .sidebar.left .search-button p { font-size:14px; }
 @media(min-width:901px) {
@@ -56,7 +59,7 @@ button,input,select,textarea { font-family:var(--bodyFont); }
  .sidebar.left .topic-heading,.sidebar.left .explorer-shortcuts { flex-shrink:0; }
  .sidebar.left .topic-tree { flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:2px; }
 }
-.notebook-nav { display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px;padding:0;margin:0 0 24px;border-bottom:1px solid var(--lightgray); }
+.notebook-nav { position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px;padding:0;margin:0 0 24px;border-bottom:1px solid var(--lightgray); }
 .notebook-brand { display:inline-flex;align-items:center;gap:8px;color:var(--dark);font-size:15px;font-weight:600;white-space:nowrap; }
 .notebook-brand-mark { display:block;flex:0 0 20px;width:20px;height:20px;margin:0 2px 0 0; }
 .notebook-brand-mark .shield { stroke:var(--dark); }
@@ -88,11 +91,16 @@ html[saved-theme="dark"] .notebook-brand-mark .slash { fill:#f0787f; }
 .page > #quartz-body footer ul { display:flex;flex-wrap:wrap;gap:16px; }
 .page > #quartz-body footer li { margin-right:0; }
 .center > hr { display:none; }
-body[data-slug="index"] .page > #quartz-body { grid-template-columns:var(--sidebar-width) minmax(0,1fr) minmax(0,1200px) minmax(0,1fr);grid-template-areas:"grid-sidebar-left . grid-center ." "grid-sidebar-left . grid-footer ."; }
+// Share the same outer columns. The catalog uses the space reserved for the
+// reader's table of contents, while both pages keep the same header bounds.
+body[data-slug="index"] .page > #quartz-body { grid-template-areas:"grid-sidebar-left . grid-center grid-center ." "grid-sidebar-left . grid-footer grid-footer ."; }
 body[data-slug="index"] .page > #quartz-body > .sidebar.right,body[data-slug="index"] .center > article { display:none; }
+@media(min-width:1440px) {
+ body:not([data-slug="index"]) .notebook-nav { width:calc(100% + 224px); }
+}
 @media(max-width:1599px) and (min-width:1280px) { html:root { --sidebar-width:440px; } }
 @media(max-width:1439px) and (min-width:901px) {
- .page > #quartz-body { grid-template-columns:var(--sidebar-width) minmax(0,1fr) minmax(0,960px) minmax(0,1fr);grid-template-areas:"grid-sidebar-left . grid-center ." "grid-sidebar-left . grid-footer ."; }
+ .page > #quartz-body,body[data-slug="index"] .page > #quartz-body { grid-template-columns:var(--sidebar-width) minmax(0,1fr) minmax(0,960px) minmax(0,1fr);grid-template-areas:"grid-sidebar-left . grid-center ." "grid-sidebar-left . grid-footer ."; }
  .page > #quartz-body > .sidebar.right { display:none; }
 }
 @media(max-width:1279px) and (min-width:1024px) { html:root { --sidebar-width:320px; } }

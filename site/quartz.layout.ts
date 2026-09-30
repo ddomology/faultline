@@ -27,7 +27,8 @@ export const sharedPageComponents: SharedLayout = {
   }),
 }
 
-const left = [onReader(Component.Search()), TopicExplorer()]
+// Keep the navigation shell identical on the catalog and note pages.
+const left = [Component.Search(), TopicExplorer()]
 
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
