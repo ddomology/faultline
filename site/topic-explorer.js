@@ -109,7 +109,7 @@
       }, true);
       revealInitialTopic(browser, true);
     });
-    highlight(new URLSearchParams(location.search).get('view') || 'notes');
+    highlight(new URLSearchParams(location.search).get('view') === 'concepts' ? 'concepts' : 'notes');
   }
   document.addEventListener('notebook:view', event => highlight(event.detail.view, event.detail.category));
   document.addEventListener('nav', setup);

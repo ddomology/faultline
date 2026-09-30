@@ -9,7 +9,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
   const $ = (id) => document.getElementById(id);
   const RETURN_KEY = 'portswigger-lab-notes:last-list:v1';
   const PAGE_SIZE = 24;
-  const viewNames = { notes: '풀이 노트', all: '전체 실습', concepts: '개념 노트' };
+  const viewNames = { notes: '풀이 노트', concepts: '개념 노트' };
   const levels = { Apprentice: 0, Practitioner: 1, Expert: 2 };
   const levelNames = { Apprentice: '입문', Practitioner: '실전', Expert: '심화' };
   let catalog, entries = [], limit = PAGE_SIZE, timer;
@@ -25,11 +25,11 @@ import { difficultyBarsSvg } from './difficulty-bars';
   function normalize(value) { return String(value || '').normalize('NFKC').toLocaleLowerCase(); }
   function readState() {
     const params = new URLSearchParams(location.search);
-    // Old saved-list links now open the full catalog.
-    const view = params.get('view') || (params.get('saved') === '1' ? 'saved' : 'notes');
+    // Legacy all/saved links open the unified notes list and retain their filters.
+    const view = params.get('view');
     const sort = params.get('sort');
     return {
-      view: view === 'saved' ? 'all' : Object.hasOwn(viewNames, view) ? view : 'notes',
+      view: Object.hasOwn(viewNames, view) ? view : 'notes',
       query: params.get('q') || '', category: params.get('topic') || 'all',
       difficulty: Object.hasOwn(levels, params.get('level')) ? params.get('level') : 'all',
       sort: ['number', 'recent', 'title', 'difficulty'].includes(sort) ? sort : 'number',
@@ -47,7 +47,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
   }
   function baseEntries() {
     if (state.view === 'concepts') return entries.filter(isConceptNote);
-    return entries.filter((entry) => !isConceptNote(entry) && (state.view === 'all' || (entry.noteUrl && entry.noteKind !== 'problem')));
+    return entries.filter((entry) => !isConceptNote(entry));
   }
   function isConceptNote(entry) { return !!entry.noteUrl && !entry.labId; }
   function filteredEntries() {
@@ -107,6 +107,13 @@ import { difficultyBarsSvg } from './difficulty-bars';
       link.addEventListener('click', () => { try { sessionStorage.setItem(RETURN_KEY, location.pathname + location.search); } catch {} });
     } else { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
     heading.append(link);
+    if (!isConceptNote(entry) && (!entry.noteUrl || entry.noteKind === 'problem')) {
+      const status = node('span', 'note-status');
+      status.title = '풀이 기록을 아직 작성하지 않은 노트입니다.';
+      status.innerHTML = iconSvg('construction');
+      status.append(node('span', '', '작성 중'));
+      heading.append(' ', status);
+    }
     content.append(heading);
     if (entry.originalTitle && entry.originalTitle !== entry.title) {
       const subtitle = node('p', 'note-subtitle', entry.originalTitle);
@@ -178,12 +185,10 @@ import { difficultyBarsSvg } from './difficulty-bars';
 
     box.append(node('h2', '', hasFilter ? '검색 결과 없음' : '등록된 풀이 없음'));
     box.append(node('p', '', hasFilter ? '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.' : 'GitHub에 기록한 노트가 이곳에 표시됩니다.'));
-    const button = node('button', 'empty-action', hasFilter ? '필터 초기화' : '전체 실습 보기'); button.type = 'button';
-    button.addEventListener('click', hasFilter ? reset : () => { state.view = 'all'; reset(); });
-    box.append(button);
-    if (hasFilter && state.view === 'notes') {
-      const broader = node('button', 'empty-action secondary', '전체 실습에서 검색'); broader.type = 'button';
-      broader.addEventListener('click', () => { state.view = 'all'; limit = PAGE_SIZE; render(); }); box.append(broader);
+    if (hasFilter) {
+      const button = node('button', 'empty-action', '필터 초기화'); button.type = 'button';
+      button.addEventListener('click', reset);
+      box.append(button);
     }
     return box;
   }
@@ -196,8 +201,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
     if (!composing && $('search').value !== state.query) $('search').value = state.query;
     $('difficulty').value = state.difficulty; $('sort').value = state.sort;
     root.querySelectorAll('[data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
-    $('notes-count').textContent = entries.filter((entry) => !isConceptNote(entry) && entry.noteUrl && entry.noteKind !== 'problem').length;
-    $('labs-count').textContent = catalog.labs.length;
+    $('notes-count').textContent = entries.filter((entry) => !isConceptNote(entry)).length;
     $('concepts-count').textContent = entries.filter(isConceptNote).length;
     $('reset-filters').hidden = emptyConcepts || (!state.query && state.category === 'all' && state.difficulty === 'all' && state.sort === 'number');
     const matches = filteredEntries();
@@ -205,7 +209,7 @@ import { difficultyBarsSvg } from './difficulty-bars';
     $('lab-list').replaceChildren(renderGroups(matches));
     $('load-more').hidden = matches.length <= limit;
     $('load-more').textContent = `더 보기 · ${Math.min(limit, matches.length)} / ${matches.length}`;
-    $('library-caption').textContent = state.view === 'all' ? `전체 실습은 ${catalog.snapshotDate} 목록 기준입니다. 각 문제의 조건·설명과 작성한 풀이를 읽을 수 있습니다.` : '';
+    $('library-caption').textContent = state.view === 'notes' ? '‘작성 중’은 문제 조건을 먼저 정리하고 풀이 기록을 준비하는 노트입니다.' : '';
     $('library-caption').hidden = !$('library-caption').textContent;
     syncUrl();
     document.dispatchEvent(new CustomEvent('notebook:view', { detail: { view: state.view, category: state.category } }));

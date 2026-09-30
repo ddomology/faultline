@@ -95,13 +95,13 @@ rmSync("_quartz/quartz/components/scripts/topic-explorer.inline.ts", { force: tr
 cpSync("site/topic-explorer.js", "_quartz/quartz/components/scripts/topic-explorer.inline.js");
 cpSync("site/topic-explorer.css", "_quartz/quartz/components/styles/topic-explorer.scss");
 mkdirSync("_quartz/quartz/components/data", { recursive: true });
-const iconDirectory = "site/assets/icons/lucide";
-const iconPaths = Object.fromEntries(readdirSync(iconDirectory).filter(name => name.endsWith(".svg")).sort().map(name => {
+const iconDirectories = ["lucide", "status"].map(name => `site/assets/icons/${name}`);
+const iconPaths = Object.fromEntries(iconDirectories.flatMap(iconDirectory => readdirSync(iconDirectory).filter(name => name.endsWith(".svg")).sort().map(name => {
   const svg = readFileSync(`${iconDirectory}/${name}`, "utf8");
   const body = svg.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1].trim();
   if (!body || /<(?:script|foreignObject)|\bon\w+=/i.test(body)) throw new Error(`Invalid UI icon: ${name}`);
   return [name.slice(0, -4), body];
-}));
+})));
 writeFileSync("_quartz/quartz/components/data/icon-paths.json", JSON.stringify(iconPaths));
 // Keep all topic surfaces on the approved SVG geometry and fail on missing topics.
 const topicIconDirectory = "site/assets/icons/topics";
@@ -122,7 +122,7 @@ writeFileSync("_quartz/quartz/components/data/topic-icon-paths.json", JSON.strin
 mkdirSync("_quartz/quartz/static/fonts", { recursive: true });
 cpSync("site/assets/fonts/pretendard", "_quartz/quartz/static/fonts/pretendard", { recursive: true });
 mkdirSync("_quartz/quartz/static/icons", { recursive: true });
-cpSync(iconDirectory, "_quartz/quartz/static/icons/lucide", { recursive: true });
+for (const iconDirectory of iconDirectories) cpSync(iconDirectory, `_quartz/quartz/static/icons/${iconDirectory.split("/").pop()}`, { recursive: true });
 cpSync(topicIconDirectory, "_quartz/quartz/static/icons/topics", { recursive: true });
 // Install the approved split-shield favicon, including non-SVG browser fallbacks.
 const faviconDirectory = "site/assets/favicon";

@@ -18,7 +18,7 @@ note_kind: solution
 ```
 
 - `lab_url`: 실습 원문 주소. 같은 실습의 대표 노트 하나에만 지정합니다.
-- `note_kind: problem`: 문제 조건과 설명을 정리한 상태.
+- `note_kind: problem`: 문제 조건과 설명을 정리한 상태. 풀이 노트 목록에서 공사 안내판 SVG와 `작성 중` 표시가 붙습니다.
 - `note_kind: solution`: 직접 탐색하거나 풀이한 내용을 기록한 상태.
 - 일반 개념 노트는 `lab_url`을 생략합니다. 선택적으로 `category`, `category_title`을 지정하면 해당 분류에서 찾을 수 있습니다.
 

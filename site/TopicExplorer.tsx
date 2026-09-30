@@ -23,9 +23,11 @@ export default (() => {
     const grouped = new Map(groups.map(group => [group.id, group]))
     const labNumbers = new Map<string, { number: string, order: number }>()
     groups.forEach(group => catalog.labs.filter(lab => lab.category === group.id).sort((a,b) => a.order - b.order || a.id.localeCompare(b.id)).forEach((lab,index) => labNumbers.set(lab.id, { number: `${group.number}.${pad(index + 1)}`, order: index })))
+    let conceptCount = 0
     for (const file of allFiles) {
       if (!file.slug || ["index", "guide", "notes"].includes(file.slug) || /(?:^|\/)(?:templates|private)(?:\/|$)/.test(file.slug)) continue
       const lab = byUrl.get(normalizeUrl(file.frontmatter?.lab_url)) || bySlug.get(file.slug)
+      if (!lab) conceptCount++
       const category = lab?.category || String(file.frontmatter?.category || file.frontmatter?.topic || "notes")
       let group = grouped.get(category)
       if (!group) {
@@ -51,8 +53,8 @@ export default (() => {
         <div class="topic-note-panel" id="topic-note-panel">
           <div class="topic-heading"><span>Explorer <small>탐색기</small></span><span class="topic-total">{total}</span></div>
           <nav class="explorer-shortcuts" aria-label="목록 선택">
-            <a data-explorer-view="notes" href={`${root}/`}>풀이 노트</a>
-            <a data-explorer-view="all" href={`${root}/?view=all`}>전체 실습 <span>{catalog.labs.length}</span></a>
+            <a data-explorer-view="notes" href={`${root}/`}>풀이 노트 <span>{catalog.labs.length}</span></a>
+            <a data-explorer-view="concepts" href={`${root}/?view=concepts`}>개념 노트 <span>{conceptCount}</span></a>
           </nav>
           <ul class="topic-tree">
             {visible.map(group => {
@@ -61,7 +63,7 @@ export default (() => {
               <li class={`topic-entry${expanded ? " is-current-topic" : ""}`} data-topic={group.id}>
                 <div class="topic-row">
                   <button class="topic-expand" type="button" aria-expanded={expanded} aria-controls={`topic-${group.id}`} aria-label={`${group.title} ${expanded ? "접기" : "펼치기"}`}><Icon name="chevron-down" /></button>
-                  <a class="topic-name" href={`${root}/?view=all&topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><TopicIcon category={group.id} /><span>{group.title}</span></a>
+                  <a class="topic-name" href={`${root}/?topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><TopicIcon category={group.id} /><span>{group.title}</span></a>
                   <span class="topic-count" aria-label={`${group.notes.length}개 노트`}>{group.notes.length}</span>
                 </div>
                 <ul class="topic-children" id={`topic-${group.id}`} hidden={!expanded}>
