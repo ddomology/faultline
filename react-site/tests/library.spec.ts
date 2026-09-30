@@ -39,6 +39,7 @@ test('legacy query filters and group sort survive direct visits and browser back
   expect(levels.every(level => level === '실전')).toBe(true)
   await page.getByRole('combobox', { name: '주제 안 정렬' }).selectOption('recent')
   await expect.poll(() => new URL(page.url()).searchParams.get('sort')).toBe('recent')
+  await expect(page.locator('.note-updated time').first()).toBeVisible()
   const dates = await page.locator('.note-updated time').evaluateAll(elements => elements.map(element => Date.parse(element.getAttribute('datetime')!)))
   expect(dates.length).toBeGreaterThan(0)
   expect(dates.every((date, i) => i === 0 || dates[i - 1] >= date)).toBe(true)
