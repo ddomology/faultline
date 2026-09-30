@@ -17,16 +17,22 @@ export default function NavigationState() {
   useEffect(() => {
     if (!hydrated) return
     let mounted = true
+    let frame = 0
     // Query hydration may add rows whose Korean glyphs load another font
     // subset. Native scroll anchoring must not offset an already restored
     // pixel position during that first font swap. This never calls scrollTo.
     void document.fonts.ready.then(() => {
-      if (mounted) {
+      if (!mounted) return
+      // fonts.ready can already be resolved in WebKit before sibling query
+      // hydration commits. Keep the reserved height through that commit so
+      // removing it never momentarily clamps the restored position to 24 rows.
+      frame = requestAnimationFrame(() => {
+        if (!mounted) return
         document.documentElement.style.removeProperty('--initial-scroll-height')
         document.documentElement.removeAttribute('data-initial-scroll')
-      }
+      })
     })
-    return () => { mounted = false }
+    return () => { mounted = false; cancelAnimationFrame(frame) }
   }, [hydrated])
   useEffect(() => {
     if (location.pathname === '/') {
