@@ -40,6 +40,12 @@ test('header search supports keyboard, composition and route synchronization', a
 })
 
 test('history entry restores list length and document position without visibility jumps', async ({ page }) => {
+  page.on('console', message => { if (message.text().startsWith('SCROLLTRACE')) console.log(message.text()) })
+  await page.addInitScript(() => {
+    const log = (event: string) => console.log('SCROLLTRACE', JSON.stringify({ event, y: scrollY, key: history.state?.key, positions: sessionStorage.getItem('react-router-scroll-positions'), height: document.documentElement?.scrollHeight, reserve: document.documentElement?.style.getPropertyValue('--initial-scroll-height'), rows: document.querySelectorAll('.note-row').length, restoration: history.scrollRestoration }))
+    for (const event of ['DOMContentLoaded', 'load', 'pageshow', 'pagehide', 'beforeunload']) window.addEventListener(event, () => log(event))
+    new MutationObserver(records => { if (records.some(record => record.attributeName === 'data-initial-scroll')) log('initial-scroll-marker') }).observe(document, { attributes: true, subtree: true, attributeFilter: ['data-initial-scroll'] })
+  })
   await page.goto('./?limit=48')
   const rows = page.locator('.note-row')
   await expect(rows).toHaveCount(48)
