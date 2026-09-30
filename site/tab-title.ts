@@ -1,4 +1,5 @@
 import catalog from "./data/topic-catalog.json"
+import brand from "./data/brand.json"
 
 const topics: Record<string, string> = {
   "sql-injection": "SQLi",
@@ -39,15 +40,15 @@ for (const category of catalog.categories) {
   const labs = catalog.labs.filter(lab => lab.category === category.id)
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
   labs.forEach((lab, index) => {
-    titles.set(lab.notePath.replace(/\.md$/, ""), `${topics[category.id] || "실습"} #${index + 1} · Notes`)
+    titles.set(lab.notePath.replace(/\.md$/, ""), `${topics[category.id] || "실습"} #${index + 1} · ${brand.name}`)
   })
 }
 
 export function tabTitle(slug: string, title: string): string {
-  if (slug === "index") return "PortSwigger · Notes"
-  if (slug === "404") return "페이지 없음 · Notes"
+  if (slug === "index") return `${brand.name} · 웹 보안 노트`
+  if (slug === "404") return `페이지 없음 · ${brand.name}`
   const labTitle = titles.get(slug)
   if (labTitle) return labTitle
   const chars = Array.from(title)
-  return `${chars.length > 12 ? chars.slice(0, 11).join("") + "…" : title} · Notes`
+  return `${chars.length > 12 ? chars.slice(0, 11).join("") + "…" : title} · ${brand.name}`
 }

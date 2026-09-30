@@ -3,8 +3,11 @@ import { createHash } from "node:crypto";
 
 const path = "_quartz/quartz.config.ts";
 let config = readFileSync(path, "utf8");
+const brand = JSON.parse(readFileSync("site/brand.json", "utf8"));
+// Accept an already prepared checkout from before the Faultline rename.
+config = config.replace('pageTitle: "PortSwigger Lab Notes"', 'pageTitle: "Quartz 4"');
 const changes = [
-  ['pageTitle: "Quartz 4"', 'pageTitle: "PortSwigger Lab Notes"'],
+  ['pageTitle: "Quartz 4"', `pageTitle: ${JSON.stringify(brand.name)}`],
   ['baseUrl: "quartz.jzhao.xyz"', 'baseUrl: "ddomology.github.io/portswigger-lab-notes"'],
   ['locale: "en-US"', 'locale: "ko-KR"'],
   ['fontOrigin: "googleFonts"', 'fontOrigin: "local"'],
@@ -97,6 +100,7 @@ rmSync("_quartz/quartz/components/scripts/topic-explorer.inline.ts", { force: tr
 cpSync("site/topic-explorer.js", "_quartz/quartz/components/scripts/topic-explorer.inline.js");
 cpSync("site/topic-explorer.css", "_quartz/quartz/components/styles/topic-explorer.scss");
 mkdirSync("_quartz/quartz/components/data", { recursive: true });
+cpSync("site/brand.json", "_quartz/quartz/components/data/brand.json");
 const iconDirectories = ["lucide", "status"].map(name => `site/assets/icons/${name}`);
 const iconPaths = Object.fromEntries(iconDirectories.flatMap(iconDirectory => readdirSync(iconDirectory).filter(name => name.endsWith(".svg")).sort().map(name => {
   const svg = readFileSync(`${iconDirectory}/${name}`, "utf8");
@@ -141,6 +145,8 @@ for (const name of ["favicon.svg", "favicon-32.png", "favicon.ico", "apple-touch
   cpSync(`${faviconDirectory}/${name}`, `_quartz/quartz/static/${name}`);
 }
 cpSync(`${faviconDirectory}/favicon-32.png`, "_quartz/quartz/static/icon.png");
+cpSync("site/assets/og-image.png", "_quartz/quartz/static/og-image.png");
+const ogImageVersion = createHash("sha256").update(readFileSync("site/assets/og-image.png")).digest("hex").slice(0, 12);
 const faviconVersion = createHash("sha256").update(readFileSync(`${faviconDirectory}/favicon.svg`)).digest("hex").slice(0, 12);
 const headPath = "_quartz/quartz/components/Head.tsx";
 let head = readFileSync(headPath, "utf8");
@@ -154,12 +160,16 @@ head = head.replace(iconLinksPattern, `        {/* Notebook favicon */}
         <link rel="icon" type="image/svg+xml" sizes="any" href={iconPath} />
         <link rel="apple-touch-icon" sizes="180x180" href={joinSegments(baseDir, "static/apple-touch-icon.png?v=${faviconVersion}")} />
         {/* End notebook favicon */}`);
-// Keep tabs compact: topic and within-topic number, e.g. "SQLi #3 · Notes".
+// Keep tabs compact: topic and within-topic number, e.g. "SQLi #3 · Faultline".
 cpSync("site/tab-title.ts", "_quartz/quartz/components/tab-title.ts");
 if (!head.includes('import { tabTitle } from "./tab-title"')) head = 'import { tabTitle } from "./tab-title"\n' + head;
 const titlePattern = /<title>[\s\S]*?<\/title>/;
 if (!titlePattern.test(head)) throw new Error("Quartz title markup changed");
 head = head.replace(titlePattern, '<title>{tabTitle(fileData.slug!, title)}</title>');
+head = head.replace('<meta name="og:site_name"', '<meta property="og:site_name"');
+head = head.replace(/const ogImageDefaultPath = [^\n]+/, `const ogImageDefaultPath = \`https://\${cfg.baseUrl}/static/og-image.png?v=${ogImageVersion}\``);
+head = head.replace(/<meta property="og:image:alt"[^>]*\/>/, `<meta property="og:image:alt" content=${JSON.stringify(`${brand.name} — ${brand.tagline}`)} />`);
+head = head.replace(/content=\{`image\/\$\{getFileExtension\(ogImageDefaultPath\) \?\? "png"\}`\}/, 'content="image/png"');
 writeFileSync(headPath, head);
 // Keep Quartz's search, TOC and clipboard behavior; use the same SVG set throughout.
 const searchPath = "_quartz/quartz/components/Search.tsx";

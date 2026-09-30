@@ -1,72 +1,71 @@
 <p align="center">
   <a href="https://ddomology.github.io/portswigger-lab-notes/">
-    <img src="site/assets/favicon/favicon.svg" alt="PortSwigger Lab Notes 방패 로고" width="64" height="64">
+    <img src="site/assets/favicon/favicon.svg" alt="Faultline 방패 로고" width="64" height="64">
   </a>
 </p>
 
-<h1 align="center">PortSwigger Lab Notes</h1>
+<h1 align="center">Faultline</h1>
 
 <p align="center">
-  PortSwigger Web Security Academy를 공부하며 남기는 한국어 실습 노트.
+  웹 보안 개념과 실습, 그 과정의 기록.
 </p>
 
 <p align="center">
-  <a href="https://ddomology.github.io/portswigger-lab-notes/"><strong>노트 읽기 ↗</strong></a>
+  <a href="https://ddomology.github.io/portswigger-lab-notes/"><strong>블로그 읽기 ↗</strong></a>
   &nbsp; · &nbsp;
-  <a href="content/labs/">원본 노트</a>
+  <a href="https://ddomology.github.io/portswigger-lab-notes/?view=concepts">개념 노트</a>
   &nbsp; · &nbsp;
   <a href="#노트-작성">작성 안내</a>
 </p>
 
 <a href="https://ddomology.github.io/portswigger-lab-notes/">
-  <img src="docs/assets/readme-hero.svg" alt="PortSwigger Lab Notes — 31개 주제, 273개 실습. 문제 조건, 탐색 과정, 풀이와 배운 점을 기록합니다." width="100%">
+  <img src="docs/assets/readme-hero.svg" alt="Faultline — 웹 보안 개념과 실습, 그 과정의 기록. 붉은 사선이 가로지르는 방패." width="100%">
 </a>
 
-## 어떤 기록인가요
+## Faultline에 대하여
 
-문제에서 주어진 조건, 직접 확인한 사실, 시도한 이유와 결과를 한 노트에 쌓습니다. 해결에 이른 과정과 실패한 시도도 함께 남겨 다음 실습에서 다시 찾아볼 수 있게 합니다.
+웹이 어떻게 동작하고, 어디서 취약해지는지 공부하며 쓰는 개인 블로그입니다. 개념을 이해한 내용과 실습에서 직접 관찰한 내용을 연결해 기록합니다. 어떤 가정을 세웠는지, 무엇을 확인했는지, 결과를 어떻게 해석했는지가 글에 남도록 씁니다.
 
-현재 목록에는 **31개 주제, 273개 실습**이 있습니다. 각 실습의 문제 설명을 먼저 정리하고, 진행하면서 같은 문서에 탐색과 풀이를 이어 씁니다. 전체 개수는 풀이를 끝낸 문제 수를 뜻하지 않습니다.
+PortSwigger Web Security Academy 풀이로 시작해 HTTP·브라우저·인증과 권한 같은 기반 지식, 취약점의 원인과 대응까지 다뤄 나갑니다.
 
-## 노트 둘러보기
+## 다루는 글
 
-| 찾고 싶은 것 | 사이트에서 보는 곳 |
+| 글 | 담는 내용 |
 | --- | --- |
-| 실습 문제와 풀이 기록 | **풀이 노트**에서 주제·난이도로 필터 |
-| 보안 개념을 정리한 글 | **개념 노트**. 글은 추후 추가 예정 |
-| 기억나는 개념이나 키워드 | 제목·본문·태그 검색. 한국어 주제명과 약어도 지원 |
-| 같은 주제의 다른 실습 | 왼쪽 **Explorer**, 본문 끝의 **이전·다음 실습** |
+| **풀이 노트** | 문제 조건, 초기 관찰, 시도한 이유와 실제 결과, 풀이를 통해 배운 점 |
+| **개념 노트** | 웹의 동작 원리와 보안 개념, 실습을 이해하는 데 필요한 배경 |
+| **분석 기록** | 공부하면서 생긴 질문, 직접 확인한 동작, 원인과 대응에 대한 정리 |
 
-주제별로 묶인 목록에서 SVG 아이콘과 고정 번호로 위치를 구분하고, 난이도는 이름과 3칸 표시를 함께 보여 줍니다. 한국어 제목 아래에는 원문 영어 제목을 표시합니다. 제목을 누르면 노트로, 오른쪽 공식 문제 링크를 누르면 원본 실습으로 이동합니다.
+현재는 **PortSwigger의 31개 주제, 273개 실습**에 대한 문제 조건과 풀이 기록을 정리하고 있습니다. 이 수치는 완료한 풀이 수가 아닙니다. 풀이 기록이 아직 없는 글에는 **작성 중** 표시가 붙습니다. 개념 노트는 메뉴를 마련한 상태이며, 개념·분석 글은 앞으로 추가합니다.
 
-풀이 기록을 아직 쓰지 않은 노트에는 작은 공사 안내판 SVG와 **작성 중** 표시가 붙습니다. 왼쪽 Explorer에서도 **풀이 노트 · 개념 노트**로 이동할 수 있습니다.
+## 읽는 방법
 
-본문은 목차, 코드 복사, 이미지 확대, 다크 모드를 지원합니다. 해결 여부는 저장한 계정 상태를 필요할 때 수동 갱신합니다.
+주제와 난이도로 풀이를 찾거나 제목·본문을 검색할 수 있습니다. Explorer와 글 아래의 이전·다음 링크로 같은 주제의 글을 이어 읽습니다. 사이트 안에서 이동해도 Explorer와 헤더를 유지하며, 뒤로 가면 검색 조건과 목록 위치가 복원됩니다.
 
-사이트 안에서 글을 옮겨 읽을 때는 Explorer와 상단 헤더를 유지하고 본문을 바꿉니다. 뒤로 가면 검색 조건, 더 펼쳐 본 목록과 스크롤 위치가 복원됩니다.
+본문은 코드 문법 강조·정렬·복사, 이미지 확대와 다크 모드를 지원합니다. 실습의 영어 원제와 공식 문제 링크도 함께 표시합니다.
 
 ## 노트 작성
 
 1. `content/`를 Obsidian 보관함으로 열거나 GitHub에서 Markdown 파일을 편집합니다.
-2. 기존 실습 노트에 **문제 조건 → 직접 확인한 조건 → 시도와 결과 → 풀이·배운 점**을 이어 적습니다. 새 기록은 [노트 템플릿](content/templates/lab.md)을 복사해 시작할 수 있습니다.
-3. `main`에 반영하면 GitHub Actions가 사이트를 갱신합니다.
+2. 풀이 노트는 **문제 조건과 설명 → 탐색 및 풀이 기록 → 최종 결과 → 배운 점** 순서로 작성합니다. [노트 템플릿](content/templates/lab.md)을 참고할 수 있습니다.
+3. 개념 노트는 `lab_url` 없이 작성하고 `category`, `category_title`로 주제를 지정합니다.
+4. `main`에 반영하면 GitHub Actions가 사이트를 갱신합니다.
 
-실제 탐색·풀이를 적은 노트에는 `note_kind: solution`, 문제 설명만 정리한 노트에는 `note_kind: problem`을 사용합니다. 첨부 자료는 노트 가까이에 두고 상대 경로로 연결합니다.
+문제 설명만 정리한 노트에는 `note_kind: problem`, 직접 탐색하거나 풀이한 내용을 적은 노트에는 `note_kind: solution`을 사용합니다. 첨부 자료는 노트 가까이에 두고 상대 경로로 연결합니다.
 
-→ [메타데이터, 공개 범위, 빌드·배포 안내](docs/maintaining.md)
+→ [메타데이터, 본문 작성, 빌드·배포 안내](docs/maintaining.md)
 
 ## 저장소 구성
 
 | 경로 | 내용 |
 | --- | --- |
-| [`content/`](content/) | 실습 노트와 첨부 자료의 원본 |
-| [`data/labs.json`](data/labs.json) | 실습 목록, 주제, 해결 상태 스냅샷 |
-| [`site/`](site/) | 검색 화면, 탐색기, 읽기 화면과 스타일 |
-| [`site/assets/`](site/assets/) | 메인 로고, 주제별 SVG 아이콘, 서체 |
-| [`scripts/`](scripts/) | 노트 인덱싱, 사이트 구성, 빌드 후처리 |
-| [`publish.yml`](.github/workflows/publish.yml) | GitHub Pages 빌드·배포 |
+| [`content/`](content/) | 글과 첨부 자료의 원본 |
+| [`data/labs.json`](data/labs.json) | PortSwigger 실습 목록과 상태 스냅샷 |
+| [`site/`](site/) | 브랜드 설정, 탐색·읽기 화면, 스타일과 에셋 |
+| [`scripts/`](scripts/) | 노트 인덱싱, 이미지 생성과 사이트 빌드 |
+| [`publish.yml`](.github/workflows/publish.yml) | GitHub Pages 자동 배포 |
 
-사이트는 **Quartz 4.5.2**와 **GitHub Pages**로 만들었습니다. 본문과 이미지의 원본은 저장소에 남기고, 읽기 화면과 검색 목록은 빌드할 때 생성합니다.
+**Quartz 4.5.2**와 **GitHub Pages**로 운영합니다. 글의 원본은 Markdown으로 보관하고, 각 글의 HTML과 검색 목록은 빌드할 때 생성합니다.
 
 ---
 

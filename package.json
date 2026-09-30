@@ -1,8 +1,8 @@
 {
-  "name": "portswigger-lab-notes-build",
+  "name": "faultline-build",
   "private": true,
   "type": "module",
-  "description": "Build-time code formatting for the notebook reader",
+  "description": "Build tools for Faultline, a personal web security blog",
   "engines": {
     "node": ">=24.15.0"
   },

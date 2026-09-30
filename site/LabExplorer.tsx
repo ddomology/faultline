@@ -1,6 +1,7 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import style from "./styles/lab-explorer.scss"
 import Icon from "./Icon"
+import brand from "./data/brand.json"
 // @ts-ignore
 import script from "./scripts/lab-explorer.inline"
 
@@ -10,6 +11,7 @@ export default (() => {
     return (
       <section id="main-content" tabIndex={-1} class="lab-explorer" aria-label="풀이 노트 검색">
         <h1 class="library-title">풀이 노트</h1>
+        <p class="library-description">{brand.tagline}</p>
         <nav class="view-switch" aria-label="목록 선택">
           <button type="button" data-view="notes" aria-pressed="true">풀이 노트 <span id="notes-count">—</span></button>
           <button type="button" data-view="concepts" aria-pressed="false">개념 노트 <span id="concepts-count">0</span></button>

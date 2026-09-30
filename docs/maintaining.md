@@ -1,4 +1,4 @@
-# 노트 작성과 사이트 관리
+# Faultline 글 작성과 사이트 관리
 
 [← 프로젝트 소개](../README.md) · [노트 읽기](https://ddomology.github.io/portswigger-lab-notes/)
 
@@ -96,6 +96,7 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 
 | 파일 | 역할 |
 | --- | --- |
+| `site/brand.json`, `site/tab-title.ts` | Faultline 이름·소개와 브라우저 탭 제목 |
 | `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css` | 주제별 실습 목록·검색·필터·주제 안 정렬 |
 | `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css` | 주제와 실습 탐색기 |
 | `site/navigation.inline.ts` | 공통 화면을 유지하는 탐색·히스토리·페이지 캐시 |
@@ -128,12 +129,22 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 python scripts/import-portswigger-labs.py saved-all-practice.html --output data/labs.json --snapshot-date YYYY-MM-DD
 ```
 
-목록 개수가 달라지면 README의 주제·실습 개수도 함께 갱신합니다.
+목록 개수가 달라지면 README의 주제·실습 개수도 함께 갱신합니다. 이 숫자는 등록한 실습 수이며 풀이 완료 수와 다릅니다.
+
+## 브랜드와 사이트 주소
+
+블로그 이름은 **Faultline**입니다. `site/brand.json`의 이름과 소개를 사이트 헤더·홈 소개·공유 메타데이터에 사용하고, 홈의 검색 설명은 `content/index.md`에 둡니다. PortSwigger는 풀이 노트에서 다루는 실습 자료의 이름으로 유지합니다.
+
+현재 저장소와 배포 주소는 `ddomology/portswigger-lab-notes`를 사용합니다. 저장소 이름을 변경할 때는 `prepare-quartz.mjs`의 `baseUrl`, `fingerprint-assets.mjs`의 사이트 주소, README·관리 문서·화면 컴포넌트의 GitHub 링크, `build-lab-catalog.mjs`의 이전 주소 이동 링크와 `reader-images.ts`의 raw 이미지 경로도 함께 확인합니다. 기존 첨부 자료의 절대 주소가 있다면 새 주소에 맞춥니다.
+
+브라우저에 저장하는 `portswigger-lab-notes:*` 키는 기존 사용자의 탐색 상태를 이어 쓰기 위해 유지합니다. 화면에 표시되는 블로그 이름이나 배포 주소가 아닙니다.
 
 ## README 이미지
 
-메인 아이콘은 사이트와 같은 `site/assets/favicon/favicon.svg`를 사용합니다. `docs/assets/readme-hero.svg`는 해당 로고와 주제별 아이콘으로 구성한 벡터 배너입니다. 밝은 테마와 어두운 테마에 맞춰 색이 바뀝니다.
+메인 아이콘은 사이트와 같은 `site/assets/favicon/favicon.svg`를 사용합니다. `docs/assets/readme-hero.svg`는 Faultline 이름, 방패와 붉은 사선을 사용한 벡터 배너입니다. 밝은 테마와 어두운 테마에 맞춰 색이 바뀝니다.
 
 배너의 글자는 저장소의 Pretendard로 윤곽선을 만들어 외부 폰트를 불러오지 않습니다. 로고 윤곽의 Lucide 라이선스와 Pretendard 라이선스는 `site/assets/`에 보관되어 있습니다.
 
-필요할 때 Python의 `fonttools`, `brotli`를 설치하고 저장소 루트에서 `python scripts/build-readme-hero.py`를 실행하면 현재 실습 목록을 바탕으로 배너를 다시 만듭니다. 사이트 배포 시 실행되는 단계는 아닙니다.
+Python의 `fonttools`, `brotli`, `cairosvg`와 운영체제의 Cairo 라이브러리가 필요합니다. 저장소 루트에서 `python scripts/build-readme-hero.py`를 실행하면 `site/brand.json`을 바탕으로 README 배너와 공유 이미지 원본 `site/assets/og-image.svg`, 1200×630 PNG `site/assets/og-image.png`를 다시 만듭니다. 함께 생성된 세 파일을 커밋합니다.
+
+공유 이미지는 서비스마다 테마가 달라도 읽히도록 밝은 색상으로 고정합니다. 사이트 준비 단계는 생성된 PNG를 복사하고, 이미지 내용에 따른 버전 값을 공유 URL에 붙입니다. Python 이미지 생성은 사이트 배포 시 실행되는 단계가 아닙니다.

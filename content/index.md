@@ -1,4 +1,4 @@
 ---
-title: 풀이 노트
-description: 작성한 풀이와 학습 기록을 제목·본문·주제로 빠르게 찾습니다.
+title: Faultline · 웹 보안 노트
+description: 웹 보안의 개념과 동작 원리를 정리하고, PortSwigger 실습에서 관찰한 과정과 배운 점을 기록하는 개인 블로그.
 ---
