@@ -14,15 +14,17 @@ note_kind: problem
 
 **주어진 조건**
 
-Node.js와 Express 앱의 서버 측 Object.prototype 오염으로 시스템 명령 실행이 가능하다. 개인 계정은 wiener:peter로 로그인하며 이미 관리자 기능을 사용할 권한이 있다.
+Node.js·Express 서버의 객체 병합 결함으로 `Object.prototype`을 오염시켜 시스템 명령을 실행할 수 있다. 계정 `wiener:peter`는 이미 관리자 기능에 접근할 수 있다. 이번 목표는 파일 삭제가 아니라 Carlos의 홈 디렉터리에서 비밀 파일을 찾아 공개 Burp Collaborator 서버로 전달하는 것이다.
 
 **완료 조건**
 
-/home/carlos의 내용과 그 안의 비밀 파일을 공개 Burp Collaborator 서버로 유출하고 비밀 값을 실습 배너로 제출한다.
+`/home/carlos`의 내용을 공개 Burp Collaborator 서버로 보내 비밀 파일을 식별하고, 그 파일 내용도 전달받아 실습 배너로 제출한다. 명령 실행 확인이나 디렉터리 목록 확인만으로는 완료되지 않는다.
 
-**문제 설명**
+**문제 설명과 판단 기준**
 
-오염 소스와 명령 실행 가젯을 찾아 파일 내용을 외부로 전달할 수 있는지 살피는 문제다. 실습 서버가 멈추면 배너에서 재시작할 수 있다.
+먼저 무해한 속성으로 오염 소스를 확인하고 명령 실행 가젯이 언제 호출되는지 파악한다. 그다음 디렉터리 목록을 외부 관찰 지점에 전달할 수 있는지 확인해야 파일 이름을 알 수 있다. 목록과 비밀 파일의 실제 내용은 다른 정보이므로, 둘의 수신 결과를 분리해 검증한다.
+
+서버 기능 손상 가능성이 있다는 공식 경고를 고려해 단계마다 응답을 확인한다. 제공된 공개 서버에서 받은 내용과 제출 결과를 아래에 기록한다.
 
 출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/prototype-pollution/server-side/lab-exfiltrating-sensitive-data-via-server-side-prototype-pollution)
 
