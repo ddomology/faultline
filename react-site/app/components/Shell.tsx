@@ -215,6 +215,12 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
           </Link>
           <HeaderSearch view={view} />
           <nav className="notebook-nav-actions" aria-label="기본 탐색">
+            <span className="navigation-loader" data-loading={pending} aria-hidden="true" title={pending ? "페이지를 불러오는 중" : undefined}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" opacity=".25" />
+                <path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </span>
             <a href={deployment.repositoryUrl} target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
             <ThemeToggle />
           </nav>

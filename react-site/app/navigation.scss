@@ -10,7 +10,12 @@ html[data-initial-scroll="pending"] { overflow-anchor:none; }
 .search-shortcut { flex-shrink:0;font:10px var(--bodyFont);white-space:nowrap;opacity:.8; }
 .navigation-status { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0; }
 .notebook-nav { position:relative; }
-.notebook-nav[data-pending="true"]::after { content:"";position:absolute;inset:auto 0 -1px;height:2px;background:var(--red);opacity:.8; }
+.navigation-loader { display:inline-flex;width:16px;height:16px;flex-shrink:0;color:var(--gray);visibility:hidden;opacity:0; }
+.navigation-loader[data-loading="true"] { animation:navigation-loader-reveal 0s linear .18s forwards; }
+.navigation-loader[data-loading="true"] svg { animation:navigation-loader-spin .85s linear infinite; }
+@keyframes navigation-loader-reveal { to { visibility:visible;opacity:1; } }
+@keyframes navigation-loader-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .navigation-loader[data-loading="true"] svg { animation:none; } }
 .topic-tree { scrollbar-gutter:stable; }
 @media(max-width:1279px) { .search-shortcut { display:none; } }
 @media(max-width:900px) {
