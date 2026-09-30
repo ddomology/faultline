@@ -1,5 +1,6 @@
 import { iconSvg } from './ui-icons';
 import { topicIconSvg } from './topic-icons';
+import { difficultyBarsSvg } from './difficulty-bars';
 
 (() => {
   'use strict';
@@ -129,7 +130,12 @@ import { topicIconSvg } from './topic-icons';
     topic.innerHTML = topicIconSvg(entry.category);
     topic.append(node('span', '', entry.categoryTitle));
     meta.append(topic);
-    if (entry.difficulty) meta.append(node('span', `note-level level-${normalize(entry.difficulty)}`, `${levelNames[entry.difficulty] || ''} ${entry.difficulty}`.trim()));
+    if (entry.difficulty) {
+      const level = node('span', `note-level level-${normalize(entry.difficulty)}`);
+      level.innerHTML = difficultyBarsSvg(entry.difficulty);
+      level.append(node('span', '', `${levelNames[entry.difficulty] || ''} ${entry.difficulty}`.trim()));
+      meta.append(level);
+    }
     const heading = node('h2', 'note-title');
     const link = node('a', '', entry.title);
     link.href = entry.noteUrl || entry.url;
