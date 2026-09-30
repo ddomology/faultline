@@ -20,6 +20,13 @@ for (const [before, after] of changes) {
   if (config.includes(before)) config = config.replace(before, after);
   else if (after && !config.includes(after)) throw new Error("Quartz configuration changed: " + before);
 }
+cpSync("site/reader-images.ts", "_quartz/quartz/plugins/transformers/reader-images.ts");
+if (!config.includes('import { ReaderImages }')) config = 'import { ReaderImages } from "./quartz/plugins/transformers/reader-images"\n' + config;
+if (!config.includes("ReaderImages(),")) {
+  const before = '      Plugin.CrawlLinks({ markdownLinkResolution: "shortest" }),';
+  if (!config.includes(before)) throw new Error("Quartz image transformer placement changed");
+  config = config.replace(before, "      ReaderImages(),\n" + before);
+}
 // Match the reader palette so the initial paint and generated styles agree.
 const palettes = {
   lightMode: { light: "#ffffff", lightgray: "#e2e5e9", gray: "#68717c", darkgray: "#343b43", dark: "#20252b", secondary: "#315d8e", tertiary: "#244b76", highlight: "#f3f5f7", textHighlight: "#dce9f8" },

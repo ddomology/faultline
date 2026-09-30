@@ -23,7 +23,9 @@ html:root[saved-theme="dark"] {
   color-scheme:dark;
 }
 html,body { background:var(--light); }
-html { text-size-adjust:100%; }
+// Keep the layout inside the usable viewport, including classic scrollbars.
+// Native fragment/history scrolling must not race a page-load animation.
+html { width:100%;scrollbar-gutter:stable;scroll-behavior:auto;scroll-padding-top:0;text-size-adjust:100%; }
 body { font-size:16px;-webkit-font-smoothing:antialiased; }
 button,input,select,textarea { font-family:var(--bodyFont); }
 ::selection { background:var(--textHighlight);color:var(--dark); }
