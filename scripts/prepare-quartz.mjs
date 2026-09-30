@@ -9,7 +9,6 @@ const changes = [
   ['locale: "en-US"', 'locale: "ko-KR"'],
   ['fontOrigin: "googleFonts"', 'fontOrigin: "local"'],
   ['enableSPA: true', 'enableSPA: false'],
-  ['dark: "github-dark"', 'dark: "github-dark-default"'],
   ['ignorePatterns: ["private", "templates", ".obsidian"]', 'ignorePatterns: ["**/private/**", "**/templates/**", "**/.obsidian/**", "**/.trash/**"]'],
   ['analytics: {\n      provider: "plausible",\n    }', 'analytics: null'],
   ['Plugin.CustomOgImages(),', ''],
@@ -34,6 +33,13 @@ if (!config.includes("ReaderCodeViews(),")) {
   const syntax = /      Plugin\.SyntaxHighlighting\(\{[\s\S]*?\n      \}\),/;
   if (!syntax.test(config)) throw new Error("Quartz syntax highlighting placement changed");
   config = config.replace(syntax, "$&\n      ReaderCodeViews(),");
+}
+cpSync("site/code-highlight.ts", "_quartz/quartz/plugins/transformers/code-highlight.ts");
+if (!config.includes('import { ReaderSyntaxHighlighting }')) config = 'import { ReaderSyntaxHighlighting } from "./quartz/plugins/transformers/code-highlight"\n' + config;
+if (!config.includes("ReaderSyntaxHighlighting(),")) {
+  const syntax = /      Plugin\.SyntaxHighlighting\(\{[\s\S]*?\n      \}\),/;
+  if (!syntax.test(config)) throw new Error("Quartz syntax highlighting placement changed");
+  config = config.replace(syntax, "      ReaderSyntaxHighlighting(),");
 }
 cpSync("site/reader-images.ts", "_quartz/quartz/plugins/transformers/reader-images.ts");
 if (!config.includes('import { ReaderImages }')) config = 'import { ReaderImages } from "./quartz/plugins/transformers/reader-images"\n' + config;

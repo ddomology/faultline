@@ -2,7 +2,7 @@ import { iconSvg } from "./ui-icons"
 
 const languageNames: Record<string, string> = {
   text: "텍스트", plaintext: "텍스트", txt: "텍스트", plain: "텍스트",
-  powershell: "PowerShell", ps1: "PowerShell", psm1: "PowerShell", psd1: "PowerShell",
+  powershell: "PowerShell", ps: "PowerShell", ps1: "PowerShell", psm1: "PowerShell", psd1: "PowerShell", pwsh: "PowerShell",
   javascript: "JavaScript", js: "JavaScript", jsx: "JSX",
   typescript: "TypeScript", ts: "TypeScript", tsx: "TSX",
   sql: "SQL", json: "JSON", jsonc: "JSONC", json5: "JSON5",
@@ -79,9 +79,10 @@ document.addEventListener("nav", () => {
       tabIndex: variant.getAttribute("tabindex"),
       ariaLabel: variant.getAttribute("aria-label"),
     }))
-    let activeCode = code
-    code.hidden = false
-    if (formattedCode) formattedCode.hidden = true
+    let activeCode = formattedCode && !formattedCode.hidden ? formattedCode : code
+    const initiallyFormatted = activeCode === formattedCode
+    code.hidden = initiallyFormatted
+    if (formattedCode) formattedCode.hidden = !initiallyFormatted
     const figure = pre.parentElement?.matches("figure[data-rehype-pretty-code-figure]") ? pre.parentElement : null
     const language = (code.dataset.readerLanguage || pre.dataset.readerLanguage || figure?.dataset.readerLanguage ||
       code.dataset.language || pre.dataset.language ||
@@ -106,8 +107,9 @@ document.addEventListener("nav", () => {
     const button = document.createElement("button")
     button.className = "clipboard-button"
     button.type = "button"
-    button.setAttribute("aria-label", "원문 복사")
-    button.title = "원문 복사"
+    const initialCopyLabel = initiallyFormatted ? "정렬본 복사" : "원문 복사"
+    button.setAttribute("aria-label", initialCopyLabel)
+    button.title = initialCopyLabel
     const copyIcon = document.createElement("span")
     copyIcon.className = "clipboard-icon"
     copyIcon.innerHTML = iconSvg("copy")
@@ -130,14 +132,14 @@ document.addEventListener("nav", () => {
     sourceButton.type = "button"
     sourceButton.textContent = "원문"
     sourceButton.setAttribute("aria-label", "원문 보기")
-    sourceButton.setAttribute("aria-pressed", "true")
+    sourceButton.setAttribute("aria-pressed", String(!initiallyFormatted))
     sourceButton.title = "원문 보기"
     const formattedButton = document.createElement("button")
     formattedButton.className = "code-view-button"
     formattedButton.type = "button"
     formattedButton.textContent = "정렬"
     formattedButton.setAttribute("aria-label", "정렬해서 보기")
-    formattedButton.setAttribute("aria-pressed", "false")
+    formattedButton.setAttribute("aria-pressed", String(initiallyFormatted))
     formattedButton.title = "정렬해서 보기"
     if (formattedCode) {
       viewGroup.append(sourceButton, formattedButton)

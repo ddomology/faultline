@@ -45,6 +45,8 @@ jobs:
         run: node scripts/build-note-index.mjs
       - name: Check code formatting
         run: node scripts/check-code-format.mjs
+      - name: Check syntax highlighting
+        run: node scripts/check-code-highlight.mjs
       - name: Render notes
         working-directory: _quartz
         run: npx quartz build

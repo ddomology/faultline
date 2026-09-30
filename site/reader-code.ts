@@ -12,7 +12,7 @@ const variantAttribute = "data-reader-variant"
 
 // Extend common author-facing labels without guessing a language from its text.
 const highlightAliases: Record<string, string> = {
-  psm1: "powershell", psd1: "powershell", https: "http", svg: "xml", env: "dotenv",
+  psm1: "powershell", psd1: "powershell", pwsh: "powershell", https: "http", svg: "xml", env: "dotenv",
   "shell-session": "shellsession", shell: "shellscript", plain: "text",
   mysql: "sql", mariadb: "sql", postgresql: "sql", postgres: "sql", pgsql: "sql",
   sqlite: "sql", tsql: "sql", mssql: "sql", transactsql: "sql", sqlserver: "sql",
@@ -136,7 +136,16 @@ export const ReaderCodeViews: QuartzTransformerPlugin = () => ({
           originalCode.properties["data-reader-view"] = "source"
           formattedCode.properties["data-reader-view"] = "formatted"
           formattedCode.properties["data-clipboard"] = node.properties["data-clipboard"]
-          formattedCode.properties.hidden = true
+          // Show readable code on the first paint, before the toolbar loads.
+          // Explicit line/word annotations refer to source positions, so keep
+          // those blocks on the source view until the reader chooses otherwise.
+          let hasSourceAnnotations = false
+          visit(originalCode, "element", element => {
+            if (Object.hasOwn(element.properties, "data-highlighted-line") ||
+              Object.hasOwn(element.properties, "data-highlighted-chars")) hasSourceAnnotations = true
+          })
+          originalCode.properties.hidden = !hasSourceAnnotations
+          formattedCode.properties.hidden = hasSourceAnnotations
           pre.children.push(formattedCode)
           delete original.properties[pairAttribute]
           remove.push(() => { parent.children.splice(parent.children.indexOf(node), 1) })
