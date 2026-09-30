@@ -5,7 +5,8 @@ html:root[saved-theme="dark"] { --topic-icon-selected:#f0787f; }
 .topic-name .topic-icon { margin-top:2px; }
 .topic-name > span:last-child { min-width:0; }
 .topic-row:hover .topic-icon,.topic-name:focus-visible .topic-icon { color:var(--dark); }
-.is-current-topic > .topic-row .topic-icon {
+.is-current-topic > .topic-row .topic-icon,
+.topic-row:has(> .topic-expand[aria-expanded="true"]) .topic-icon {
   color:var(--dark);
   --topic-icon-accent:var(--topic-icon-selected);
 }
