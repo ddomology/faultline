@@ -64,6 +64,7 @@ GitHub Pages의 배포 소스는 **GitHub Actions**입니다. `.github/workflows
 - `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css`: 검색·필터·북마크 화면.
 - `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css`: 노트 주제 탐색.
 - `site/topic-aliases.json`: 한국어·약어 검색어.
+- `site/assets/icons/topics/`, `site/TopicIcon.tsx`, `site/topic-icons.ts`: 31개 주제의 SVG 원본과 탐색기·검색 목록·노트 제목의 공통 아이콘. 기본은 단색이며 현재 주제에는 파비콘과 같은 빨간 포인트를 표시합니다.
 - `site/reader.scss`, `site/quartz.layout.ts`: 공통 읽기 화면과 배치.
 
 빌드 결과의 `_dashboard/catalog.json`에 전체 실습과 공개 노트 목록이, `_dashboard/notes.json`에 공개 노트의 검색 메타데이터가 들어갑니다. 일반 개념 노트도 포함됩니다. `notes.html`과 `guide.html`은 이전 링크를 위한 이동 페이지이며 검색에 중복으로 표시되지 않습니다. 자동 생성하던 폴더·태그 목록도 없애고 기존 주소를 첫 화면의 검색·주제 필터로 연결합니다. 직접 작성한 Markdown 페이지는 유지합니다.

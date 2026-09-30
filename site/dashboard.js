@@ -1,4 +1,5 @@
 import { iconSvg } from './ui-icons';
+import { topicIconSvg } from './topic-icons';
 
 (() => {
   'use strict';
@@ -119,11 +120,15 @@ import { iconSvg } from './ui-icons';
   function renderEntry(entry) {
     const row = node('article', `note-row${entry.noteUrl ? ' has-note' : ''}`);
     row.dataset.entryId = entry.id;
+    if (state.category === entry.category) row.dataset.selectedTopic = '';
     const number = node('span', 'note-number', entry.number || '—');
     number.setAttribute('aria-label', `노트 번호 ${entry.number || ''}`);
     const content = node('div', 'note-row-content');
     const meta = node('div', 'note-meta');
-    meta.append(node('span', 'note-topic', entry.categoryTitle));
+    const topic = node('span', 'note-topic');
+    topic.innerHTML = topicIconSvg(entry.category);
+    topic.append(node('span', '', entry.categoryTitle));
+    meta.append(topic);
     if (entry.difficulty) meta.append(node('span', `note-level level-${normalize(entry.difficulty)}`, `${levelNames[entry.difficulty] || ''} ${entry.difficulty}`.trim()));
     const heading = node('h2', 'note-title');
     const link = node('a', '', entry.title);

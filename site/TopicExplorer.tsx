@@ -3,6 +3,7 @@ import { pathToRoot } from "../util/path"
 import catalog from "./data/topic-catalog.json"
 import style from "./styles/topic-explorer.scss"
 import Icon from "./Icon"
+import TopicIcon from "./TopicIcon"
 // @ts-ignore
 import script from "./scripts/topic-explorer.inline"
 
@@ -57,10 +58,10 @@ export default (() => {
             {visible.map(group => {
               const expanded = group.notes.some(note => note.slug === fileData.slug)
               return (
-              <li class="topic-entry" data-topic={group.id}>
+              <li class={`topic-entry${expanded ? " is-current-topic" : ""}`} data-topic={group.id}>
                 <div class="topic-row">
                   <button class="topic-expand" type="button" aria-expanded={expanded} aria-controls={`topic-${group.id}`} aria-label={`${group.title} ${expanded ? "접기" : "펼치기"}`}><Icon name="chevron-down" /></button>
-                  <a class="topic-name" href={`${root}/?view=all&topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><span>{group.title}</span></a>
+                  <a class="topic-name" href={`${root}/?view=all&topic=${encodeURIComponent(group.id)}`}><span class="topic-number">{group.number}</span><TopicIcon category={group.id} /><span>{group.title}</span></a>
                   <span class="topic-count" aria-label={`${group.notes.length}개 노트`}>{group.notes.length}</span>
                 </div>
                 <ul class="topic-children" id={`topic-${group.id}`} hidden={!expanded}>

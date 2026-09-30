@@ -40,6 +40,9 @@ cpSync("site/ReaderTools.tsx", "_quartz/quartz/components/ReaderTools.tsx");
 cpSync("site/reader-tools.js", "_quartz/quartz/components/scripts/reader-tools.inline.js");
 cpSync("site/reader-tools.css", "_quartz/quartz/components/styles/reader-tools.scss");
 cpSync("site/Icon.tsx", "_quartz/quartz/components/Icon.tsx");
+cpSync("site/TopicIcon.tsx", "_quartz/quartz/components/TopicIcon.tsx");
+cpSync("site/topic-icons.ts", "_quartz/quartz/components/scripts/topic-icons.ts");
+cpSync("site/topic-icons.scss", "_quartz/quartz/styles/topic-icons.scss");
 cpSync("site/Darkmode.tsx", "_quartz/quartz/components/Darkmode.tsx");
 cpSync("site/ui-icons.ts", "_quartz/quartz/components/scripts/ui-icons.ts");
 cpSync("site/ui-icons.scss", "_quartz/quartz/styles/ui-icons.scss");
@@ -55,10 +58,24 @@ const iconPaths = Object.fromEntries(readdirSync(iconDirectory).filter(name => n
   return [name.slice(0, -4), body];
 }));
 writeFileSync("_quartz/quartz/components/data/icon-paths.json", JSON.stringify(iconPaths));
+// Keep all topic surfaces on the approved SVG geometry and fail on missing topics.
+const topicIconDirectory = "site/assets/icons/topics";
+const topicIconPaths = Object.fromEntries(readdirSync(topicIconDirectory).filter(name => name.endsWith(".svg")).sort().map(name => {
+  const svg = readFileSync(`${topicIconDirectory}/${name}`, "utf8");
+  const body = svg.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1].replace(/<title>[\s\S]*?<\/title>/g, "").trim();
+  if (!body || /<(?:script|foreignObject)|\bon\w+=/i.test(body)) throw new Error(`Invalid topic icon: ${name}`);
+  return [name.slice(0, -4), body];
+}));
+const { categories } = JSON.parse(readFileSync("data/labs.json", "utf8"));
+for (const { id } of categories) {
+  if (!Object.hasOwn(topicIconPaths, id)) throw new Error(`Missing topic icon: ${id}`);
+}
+writeFileSync("_quartz/quartz/components/data/topic-icon-paths.json", JSON.stringify(topicIconPaths));
 mkdirSync("_quartz/quartz/static/fonts", { recursive: true });
 cpSync("site/assets/fonts/pretendard", "_quartz/quartz/static/fonts/pretendard", { recursive: true });
 mkdirSync("_quartz/quartz/static/icons", { recursive: true });
 cpSync(iconDirectory, "_quartz/quartz/static/icons/lucide", { recursive: true });
+cpSync(topicIconDirectory, "_quartz/quartz/static/icons/topics", { recursive: true });
 // Install the approved split-shield favicon, including non-SVG browser fallbacks.
 const faviconDirectory = "site/assets/favicon";
 // Share the approved geometry; the inline mark follows the site's theme switch.
