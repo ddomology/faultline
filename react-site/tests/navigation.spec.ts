@@ -57,6 +57,7 @@ test('history entry restores list length and document position without visibilit
   await expect(rows).toHaveCount(48)
   await expect(page.locator('html')).not.toHaveAttribute('data-initial-scroll', 'pending')
   await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(y, -1)
+  expect(await page.locator('html').evaluate(element => element.style.getPropertyValue('--initial-scroll-height'))).toBe('')
   await page.evaluate(() => window.scrollTo(0, 480))
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(480)
   await page.evaluate(() => {

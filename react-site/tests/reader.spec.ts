@@ -125,7 +125,9 @@ test('delayed reader hydration keeps narrow code toolbar geometry stable', async
   try {
     await page.goto(first, { waitUntil: 'commit' })
     await expect(page.locator('.code-toolbar').first()).toBeVisible()
-    await page.evaluate(() => document.fonts.ready)
+    // WebKit's fonts.ready also waits for document load, which deliberately
+    // blocked module scripts prevent here. Wait for the actual toolbar font.
+    await page.evaluate(() => document.fonts.load('600 12px "Pretendard Variable"', '원문 정렬 복사').then(() => true))
     const before = await page.locator('.code-toolbar').evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height))
     release()
     await expect(page.locator('article .code-actions[data-ready="true"]')).toHaveCount(firstBlocks.length)
