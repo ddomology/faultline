@@ -2,6 +2,7 @@ import { createHighlighter, type ThemeRegistration, type ThemeRegistrationRaw } 
 import githubLight from "shiki/themes/github-light.mjs"
 import githubDark from "shiki/themes/github-dark-default.mjs"
 import powershell from "shiki/langs/powershell.mjs"
+import sql from "shiki/langs/sql.mjs"
 import rehypePrettyCode, { type Options } from "rehype-pretty-code"
 import type { QuartzTransformerPlugin } from "../types"
 
@@ -35,6 +36,40 @@ export const readerCodeThemes = {
   dark: readerTheme(githubDark, "reader-dark", true),
 }
 
+function sqlFragmentGrammar() {
+  const grammar = structuredClone(sql[0])
+  grammar.name = "sql-fragment"
+  grammar.scopeName = "source.sql.fragment"
+  grammar.aliases = []
+  const single = String.raw`'(?:''|\\.|[^'\\\r\n])*+'`
+  const pair = String.raw`'(?:\\.|[^'\\\r\n])*'`
+  // An isolated leading quote must not pair with a later string's opening
+  // quote. The rest of this line must contain complete quoted pairs; quotes
+  // inside its trailing comment do not participate in that decision.
+  grammar.patterns.unshift({
+    match: String.raw`^\h*\K'(?=(?:[^'\\\r\n#-]|\\.|-(?!-)|${pair})*(?:(?:--|#)[^\r\n]*)?$)`,
+    name: "punctuation.definition.fragment.sql",
+  })
+  // Match complete literals only. Unlike begin/end strings, a missing quote
+  // cannot carry string state into the next line or swallow the whole block.
+  grammar.repository!.strings = {
+    patterns: [
+      { match: String.raw`(?i:q)'(?:\[[^\r\n]*?\]|\{[^\r\n]*?\}|\([^\r\n]*?\)|<[^\r\n]*?>)'`, name: "string.quoted.other.sql" },
+      { match: String.raw`(\$(?:[A-Za-z_]\w*)?\$)[^\r\n]*?\1`, name: "string.quoted.other.sql" },
+      { match: `(?:[NnEe])?${single}`, name: "string.quoted.single.sql" },
+      { match: String.raw`"(?:""|\\.|[^"\\\r\n])*"`, name: "string.quoted.double.sql" },
+      { match: "`(?:``|\\\\.|[^`\\\\\\r\\n])*`", name: "string.quoted.other.backtick.sql" },
+    ],
+  }
+  grammar.repository!.comments = {
+    patterns: [
+      { match: "(?:--|#)[^\\r\\n]*", name: "comment.line.sql" },
+      { include: "#comment-block" },
+    ],
+  }
+  return { ...grammar, patterns: grammar.patterns.filter(rule => rule.include !== "#regexps") }
+}
+
 export const createReaderHighlighter: NonNullable<Options["getHighlighter"]> = async options => {
   // Extend a copy: Shiki's bundled grammar is shared and must remain untouched.
   const language = structuredClone(powershell[0])
@@ -50,7 +85,8 @@ export const createReaderHighlighter: NonNullable<Options["getHighlighter"]> = a
     match: "(?:^|(?<=[|;&=]))[ \\t]*\\K(?i:pwsh|powershell|git|node|npm|npx|python|python3|dotnet)(?:\\.exe)?(?=$|[\\s;|&])",
     name: "support.function.powershell",
   })
-  return createHighlighter({ ...options, langs: [...(options.langs ?? []), language] })
+  const langs = (options.langs ?? []).filter(lang => lang !== "sql-fragment")
+  return createHighlighter({ ...options, langs: [...langs, language, sqlFragmentGrammar()] })
 }
 
 export const ReaderSyntaxHighlighting: QuartzTransformerPlugin = () => ({

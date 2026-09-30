@@ -88,11 +88,13 @@ document.addEventListener("nav", () => {
       code.dataset.language || pre.dataset.language ||
       [...code.classList].find(name => name.startsWith("language-"))?.slice(9) || "text").toLowerCase()
     const languageLabel = languageNames[language] || language
+    const fragment = code.hasAttribute("data-reader-fragment") || pre.hasAttribute("data-reader-fragment") ||
+      figure?.hasAttribute("data-reader-fragment")
     const toolbar = document.createElement("div")
     toolbar.className = "code-toolbar"
     const label = document.createElement("span")
     label.className = "code-language"
-    label.textContent = languageLabel
+    label.textContent = fragment ? `${languageLabel} · 조각` : languageLabel
     const actions = document.createElement("div")
     actions.className = "code-actions"
 

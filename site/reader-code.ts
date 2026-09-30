@@ -7,6 +7,7 @@ import { formatCode, getCodeFormatLanguage } from "./code-format"
 const sourceAttribute = "data-reader-code-source"
 const formattedAttribute = "data-reader-formatted-source"
 const languageAttribute = "data-reader-language"
+const fragmentAttribute = "data-reader-fragment"
 const pairAttribute = "data-reader-pair"
 const variantAttribute = "data-reader-variant"
 
@@ -46,15 +47,19 @@ export const ReaderCode: QuartzTransformerPlugin = () => ({
           const language = node.lang?.toLowerCase()
           const flags: string[] = node.meta?.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? []
           const plain = flags.includes("nohighlight")
+          const fragment = flags.includes("fragment") || language === "sql-fragment"
           node.data ??= {}
           const properties: NonNullable<typeof node.data.hProperties> = node.data.hProperties = {
             ...node.data.hProperties,
             [sourceAttribute]: JSON.stringify(node.value),
           }
           if (!language) return
-          node.lang = plain ? "text" : highlightAliases[language] ?? getCodeFormatLanguage(language)?.highlight ?? language
-          if (node.lang !== language) properties[languageAttribute] = language
-          if (plain || flags.includes("noformat")) return
+          const definition = getCodeFormatLanguage(language)
+          const sqlFragment = fragment && (definition?.engine === "sql" || language === "sql-fragment")
+          node.lang = plain ? "text" : sqlFragment ? "sql-fragment" : highlightAliases[language] ?? definition?.highlight ?? language
+          if (node.lang !== language || language === "sql-fragment") properties[languageAttribute] = language === "sql-fragment" ? "sql" : language
+          if (fragment) properties[fragmentAttribute] = true
+          if (plain || fragment || flags.includes("noformat")) return
           jobs.push(formatCode(node.value, language).then((formatted) => {
             if (formatted !== null) properties[formattedAttribute] = JSON.stringify(formatted)
           }))
@@ -80,6 +85,10 @@ export const ReaderCode: QuartzTransformerPlugin = () => ({
           if (typeof language === "string") {
             node.properties[languageAttribute] = language
             delete code.properties[languageAttribute]
+          }
+          if (code.properties[fragmentAttribute]) {
+            node.properties[fragmentAttribute] = true
+            delete code.properties[fragmentAttribute]
           }
           const formatted = code.properties[formattedAttribute]
           delete code.properties[formattedAttribute]

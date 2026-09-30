@@ -3,7 +3,7 @@ import { createReaderHighlighter, readerCodeThemes } from "../_quartz/quartz/plu
 
 const highlighter = await createReaderHighlighter({
   themes: Object.values(readerCodeThemes),
-  langs: ["javascript", "typescript", "json", "python", "bash", "http", "sql", "html", "css"],
+  langs: ["javascript", "typescript", "json", "python", "bash", "http", "sql", "sql-fragment", "html", "css"],
 });
 const samples = {
   javascript: 'const note = { title: "Memo", count: 3 }; console.log(note);',
@@ -23,6 +23,55 @@ try {
       assert.equal(lines.map(line => line.map(token => token.content).join("")).join("\n"), source);
       assert.ok(new Set(lines.flat().map(token => token.color)).size >= 3, `${lang}: distinct syntax colors`);
     }
+    const fragments = [
+      "' title = 'Memo' AND count = 2 -- reader's note",
+      "' title LIKE '%Memo%'",
+      "title = 'unfinished",
+      "SELECT title, 3 FROM notes",
+      "'SELECT FROM' AS label",
+      "title = 'It''s SELECT'",
+      "title = E'It\\'s SELECT'",
+      'SELECT "FROM", [WHERE], `ORDER` FROM notes',
+      "SELECT $$SELECT 'Memo'$$, $tag$WHERE 2$tag$",
+      "SELECT q'[WHERE 'Memo']' FROM notes",
+      "/* SELECT 'Memo'",
+      "FROM notes */",
+      "SELECT title FROM notes # SELECT is a comment here",
+      '\tSELECT title   ',
+      "' title = 'Memo' # reader's note",
+    ];
+    const source = fragments.join("\n");
+    const lines = highlighter.codeToTokensBase(source, { lang: "sql-fragment", theme, includeExplanation: true });
+    assert.equal(lines.map(line => line.map(token => token.content).join("")).join("\n"), source, "Fragment source must be exact");
+    const scopesAt = (row, column) => {
+      let offset = 0;
+      for (const token of lines[row]) {
+        if (column < offset + token.content.length) return token.explanation?.flatMap(part => part.scopes.map(scope => scope.scopeName)) ?? [];
+        offset += token.content.length;
+      }
+      return [];
+    };
+    const hasScope = (row, text, prefix) => scopesAt(row, fragments[row].indexOf(text)).some(scope => scope.startsWith(prefix));
+    assert.ok(!scopesAt(0, 0).some(scope => /^(string|invalid)/.test(scope)), "Leading fragment delimiter stays neutral");
+    assert.ok(hasScope(0, "'Memo'", "string."));
+    assert.ok(hasScope(0, "AND", "keyword."));
+    assert.ok(hasScope(0, "reader's", "comment."));
+    assert.ok(hasScope(1, "'%Memo%'", "string."));
+    assert.ok(!hasScope(2, "unfinished", "string."));
+    assert.ok(hasScope(3, "SELECT", "keyword."), "Unclosed strings cannot spill to the next line");
+    for (const [row, text] of [[4, "SELECT"], [5, "SELECT"], [6, "SELECT"], [7, "FROM"], [7, "ORDER"], [8, "'Memo'"], [8, "WHERE"], [9, "WHERE"]]) {
+      assert.ok(hasScope(row, text, "string."), `Fragment literal protected at ${row}: ${text}`);
+      assert.ok(!hasScope(row, text, "keyword."));
+    }
+    assert.ok(!hasScope(7, "WHERE", "keyword."), "Quoted identifiers cannot become keywords");
+    assert.ok(hasScope(10, "SELECT", "comment."));
+    assert.ok(hasScope(11, "FROM", "comment."));
+    assert.ok(hasScope(12, "# SELECT", "comment."));
+    assert.ok(!scopesAt(14, 0).some(scope => scope.startsWith("string.")));
+    assert.ok(hasScope(14, "'Memo'", "string."));
+    assert.ok(hasScope(14, "reader's", "comment."));
+    const normal = highlighter.codeToTokensBase("SELECT 'first\nsecond' FROM notes", { lang: "sql", theme, includeExplanation: true });
+    assert.ok(normal[1][0].explanation.some(part => part.scopes.some(scope => scope.scopeName.startsWith("string."))), "Ordinary SQL keeps multiline strings");
     for (const lang of ["powershell", "ps", "ps1"]) {
       await highlighter.loadLanguage(lang);
       const source = "pwsh -File .\\format-demo.ps1 `\n  -Name 'sample' `\n  -OutputPath 'report.json'\n$items = 3";
@@ -55,7 +104,7 @@ try {
       assert.ok(token?.explanation?.some(part => part.scopes.some(scope => scope.scopeName.startsWith("keyword.operator."))), `${operator}: operator priority`);
     }
   }
-  console.log("PASS: light/dark syntax, PowerShell commands/options/aliases, preserved strings/comments/operators and exact text");
+  console.log("PASS: light/dark syntax, SQL fragments without string spill, protected literals/comments, PowerShell scopes and exact text");
 } finally {
   highlighter.dispose();
 }
