@@ -10,22 +10,21 @@ export default (() => {
     return (
       <section id="main-content" tabIndex={-1} class="lab-explorer" aria-label="풀이 노트 검색">
         <h1 class="library-title">풀이 노트</h1>
-        <div class="note-search">
-          <Icon name="search" />
-          <label class="lab-sr-only" for="search">풀이 제목, 주제, 본문 검색</label>
-          <input id="search" type="search" placeholder="제목, 본문, 번호 검색" autoComplete="off" />
-          <kbd aria-hidden="true">/</kbd>
-        </div>
+        <nav class="view-switch" aria-label="목록 선택">
+          <button type="button" data-view="notes" aria-pressed="true">풀이 노트 <span id="notes-count">—</span></button>
+          <button type="button" data-view="all" aria-pressed="false">전체 실습 <span id="labs-count">—</span></button>
+        </nav>
         <div class="library-toolbar">
-          <nav class="view-switch" aria-label="목록 선택">
-            <button type="button" data-view="notes" aria-pressed="true">풀이 노트 <span id="notes-count">—</span></button>
-            <button type="button" data-view="all" aria-pressed="false">전체 실습 <span id="labs-count">—</span></button>
-            <button type="button" data-view="saved" aria-pressed="false">즐겨찾기 <span id="saved-count">0</span></button>
-          </nav>
+          <div class="note-search">
+            <Icon name="search" />
+            <label class="lab-sr-only" for="search">풀이 제목, 주제, 본문 검색</label>
+            <input id="search" type="search" placeholder="제목, 본문, 번호 검색" autoComplete="off" />
+            <kbd aria-hidden="true">/</kbd>
+          </div>
           <div class="library-filters">
             <label><span class="lab-sr-only">주제</span><select id="category"><option value="all">모든 주제</option></select></label>
-            <label><span class="lab-sr-only">난이도</span><select id="difficulty"><option value="all">모든 난이도</option><option value="Apprentice">입문 · Apprentice</option><option value="Practitioner">실전 · Practitioner</option><option value="Expert">심화 · Expert</option></select></label>
-            <label><span class="lab-sr-only">정렬</span><select id="sort"><option value="number">번호순</option><option value="recent">최근 수정순</option><option value="title">제목순</option><option value="difficulty">난이도순</option><option value="topic">주제순</option></select></label>
+            <label><span class="lab-sr-only">난이도</span><select id="difficulty"><option value="all">모든 난이도</option><option value="Apprentice">입문</option><option value="Practitioner">실전</option><option value="Expert">심화</option></select></label>
+            <label><span class="lab-sr-only">주제 안 정렬</span><select id="sort" title="각 주제 안에서 정렬"><option value="number">번호순</option><option value="recent">최근 수정순</option><option value="title">제목순</option><option value="difficulty">난이도순</option></select></label>
           </div>
         </div>
         <div class="results-heading">

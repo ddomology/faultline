@@ -94,7 +94,7 @@ SQL 조각은 별도의 Shiki 문법으로 키워드·숫자·함수·주석과 
 
 | 파일 | 역할 |
 | --- | --- |
-| `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css` | 검색·필터·즐겨찾기 화면 |
+| `site/LabExplorer.tsx`, `site/dashboard.js`, `site/dashboard.css` | 주제별 실습 목록·검색·필터·주제 안 정렬 |
 | `site/TopicExplorer.tsx`, `site/topic-explorer.js`, `site/topic-explorer.css` | 주제와 실습 탐색기 |
 | `site/NoteTitle.tsx`, `site/explorer-titles.json` | 본문 제목과 탐색기용 짧은 제목 |
 | `site/TopicIcon.tsx`, `site/topic-icons.ts`, `site/assets/icons/topics/` | 주제별 SVG 아이콘 |

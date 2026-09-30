@@ -11,9 +11,6 @@
 .topic-mobile-toggle[aria-expanded="false"] .topic-toggle-arrow { transform:rotate(-90deg); }
 .results-heading button { display:inline-flex;align-items:center;gap:6px; }
 .results-heading button .ui-icon { width:15px;height:15px; }
-.note-bookmark { display:flex;align-items:center;justify-content:center; }
-.note-bookmark .ui-icon { width:20px;height:20px; }
-.note-bookmark[aria-pressed="true"] .ui-icon { fill:currentColor; }
 .note-source { display:inline-flex;align-items:center;gap:4px; }
 article .clipboard-button .ui-icon { width:16px;height:16px;fill:none;filter:none; }
 .toc-header .ui-icon { width:18px;height:18px; }
