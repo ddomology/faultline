@@ -109,7 +109,10 @@ const topicIconPaths = Object.fromEntries(readdirSync(topicIconDirectory).filter
   const svg = readFileSync(`${topicIconDirectory}/${name}`, "utf8");
   const body = svg.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1].replace(/<title>[\s\S]*?<\/title>/g, "").trim();
   if (!body || /<(?:script|foreignObject)|\bon\w+=/i.test(body)) throw new Error(`Invalid topic icon: ${name}`);
-  return [name.slice(0, -4), body];
+  // Dark Reader cannot track this inherited custom property in an SVG stroke
+  // attribute and falls back to currentColor. CSS declarations are tracked.
+  const themedBody = body.replaceAll('stroke="var(--topic-icon-accent, currentColor)"', 'class="topic-icon-accent"');
+  return [name.slice(0, -4), themedBody];
 }));
 const { categories } = JSON.parse(readFileSync("data/labs.json", "utf8"));
 for (const { id } of categories) {

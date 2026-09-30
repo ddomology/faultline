@@ -1,6 +1,7 @@
 html:root { --topic-icon-selected:#c33b43; }
 html:root[saved-theme="dark"] { --topic-icon-selected:#f0787f; }
 .topic-icon { display:inline-block;width:18px;height:18px;flex-shrink:0;vertical-align:middle;fill:none;stroke:currentColor;color:var(--gray); }
+.topic-icon .topic-icon-accent { stroke:var(--topic-icon-accent,currentColor); }
 .topic-name { display:grid;grid-template-columns:2ch 18px minmax(0,1fr);align-items:start; }
 .topic-name .topic-icon { margin-top:2px; }
 .topic-name > span:last-child { min-width:0; }
