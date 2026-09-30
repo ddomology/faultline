@@ -1,0 +1,39 @@
+import { existsSync, readFileSync, statSync } from 'node:fs'
+import { resolve, dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import assert from 'node:assert/strict'
+import { basePath, siteOrigin } from '../site.config.mjs'
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..')
+const dist=join(root,'dist')
+const manifest=JSON.parse(readFileSync(join(root,'.generated/manifest.json'),'utf8'))
+const checked=new Set()
+for (const route of ['/', '/404.html', ...manifest.routes]) {
+  const path=route==='/'?'index.html':decodeURIComponent(route.slice(1))
+  const file=join(dist,path)
+  assert.ok(existsSync(file) && statSync(file).isFile(), `Missing exact HTML file: ${route}`)
+  const html=readFileSync(file,'utf8')
+  assert.match(html,/<title>[^<]*Faultline/)
+  assert.ok(!html.includes('postscript.js') && !html.includes('notebookSetRoute'), 'Legacy navigation leaked into React')
+  if (route.startsWith('/labs/')) {
+    assert.match(html,/<article\b/)
+    const alias=join(dist,decodeURIComponent(route.slice(1,-5)),'index.html')
+    assert.ok(existsSync(alias),`Missing extensionless alias: ${route}`)
+    assert.ok(existsSync(join(dist,path+'.data')),`Missing route data: ${route}`)
+  }
+  const current=new URL(basePath+route.slice(1),siteOrigin)
+  for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
+    const url=new URL(match[1].replaceAll('&amp;','&'),current)
+    if(url.origin!==siteOrigin || !url.pathname.startsWith(basePath))continue
+    const relative=decodeURIComponent(url.pathname.slice(basePath.length))
+    if(checked.has(relative))continue
+    let target=join(dist,relative)
+    if(existsSync(target)&&statSync(target).isDirectory())target=join(target,'index.html')
+    assert.ok(existsSync(target),`Missing local reference ${match[1]} from ${route}`)
+    checked.add(relative)
+  }
+}
+for (const [path,hash] of Object.entries(manifest.sourceHashes)) {
+  const { createHash }=await import('node:crypto')
+  assert.equal(createHash('sha256').update(readFileSync(join(root,'../content',path))).digest('hex'),hash,`Source changed: ${path}`)
+}
+console.log(`Static check: ${manifest.routes.length} canonical articles + home/404, ${manifest.routes.length} extensionless aliases, ${checked.size} local references; original Markdown unchanged. Base ${basePath}`)
