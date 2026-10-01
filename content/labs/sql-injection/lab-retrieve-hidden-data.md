@@ -130,3 +130,6 @@ SELECT * FROM products WHERE category = '' OR 1=1
 ### 참고
 
 - [PortSwigger 원본 실습](https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data)
+
+## 관련 개념
+<!-- 필요한 개념 노트 링크를 목록으로 추가 -->

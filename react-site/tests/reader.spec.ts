@@ -76,8 +76,23 @@ test('TOC anchors, previous/next and back preserve the shell and list return sta
   await page.goto('./?topic=sql-injection&limit=48')
   await page.locator(`.note-title a[href="${basePath + first}"]`).click()
   await page.evaluate(() => { (window as any).__shell = document.querySelector('.topic-browser') })
-  await page.locator('.reader-toc summary').click()
-  await page.getByRole('navigation', { name: '본문 목차' }).getByRole('link', { name: '배운 점', exact: true }).click()
+  const toc = page.locator('.reader-toc')
+  if (page.viewportSize()!.width >= 1440) {
+    await expect(toc).toBeVisible()
+    const articleBox = (await page.locator('article').boundingBox())!
+    expect((await toc.boundingBox())!.x).toBeGreaterThan(articleBox.x + articleBox.width)
+    const toggle = toc.getByRole('button', { name: '목차', exact: true })
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await toggle.click()
+    await expect(toc.getByRole('link', { name: '관련 개념', exact: true })).toHaveCount(0)
+    await toc.getByRole('link', { name: '배운 점', exact: true }).click()
+    await expect(toc).toBeInViewport()
+    await expect(toc.getByRole('link', { name: '배운 점', exact: true })).toHaveAttribute('aria-current', 'location')
+  } else {
+    await expect(toc).toBeHidden()
+    await page.locator('article #배운-점 .heading-anchor').click()
+  }
   await expect.poll(() => page.evaluate(() => decodeURIComponent(location.hash))).toBe('#배운-점')
   await expect(page.locator('article #배운-점')).toBeInViewport()
   await expect(page.locator('.lab-pagination a[rel="prev"]')).toHaveCount(0)
@@ -106,7 +121,11 @@ test('first five notes have stable source views, local images, colored code and 
   for (const note of paths) {
     await page.goto(note.routePath.slice(1))
     await expect(page.locator('.article-title')).toHaveText(note.title)
-    await expect(page.locator('.reader-toc')).toBeVisible()
+    if (page.viewportSize()!.width >= 1440) await expect(page.locator('.reader-toc')).toBeVisible()
+    else await expect(page.locator('.reader-toc')).toBeHidden()
+    const related = page.locator('article > #관련-개념')
+    await expect(related).toHaveCount(1)
+    expect(await related.evaluate(element => element.nextElementSibling)).toBeNull()
     const codes = walk(note.body).filter(node => node.data?.readerCode)
     await expect(page.locator('article .code-actions[data-ready="true"]')).toHaveCount(codes.length)
     if (note.html.includes('--shiki-light:')) expect(await page.locator('article span[style*="--shiki-light"]').count()).toBeGreaterThan(0)

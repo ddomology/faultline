@@ -166,6 +166,26 @@ test('Explorer renders all difficulty levels on a direct article load', async ({
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
+test('Explorer icon accents are neutral until hovered, opened or selected', async ({ page, isMobile }) => {
+  await page.goto('./')
+  if (isMobile) await page.locator('.topic-mobile-toggle').click()
+  const entry = page.locator('.topic-entry').first()
+  const accent = entry.locator('.topic-icon-accent').first()
+  const color = () => accent.evaluate(element => getComputedStyle(element).stroke)
+  const neutral = await color()
+  expect(neutral).toBe(await entry.locator('.topic-icon').evaluate(element => getComputedStyle(element).color))
+  await entry.locator('.topic-expand').click()
+  expect(await color()).not.toBe(neutral)
+  await entry.locator('.topic-expand').click()
+  await page.mouse.move(0, 0)
+  expect(await color()).toBe(neutral)
+  await entry.locator('.topic-name').click()
+  if (isMobile) await page.locator('.topic-mobile-toggle').click()
+  expect(await color()).not.toBe(neutral)
+  const other = page.locator('.topic-entry').nth(1)
+  expect(await other.locator('.topic-icon-accent').first().evaluate(element => getComputedStyle(element).stroke)).toBe(neutral)
+})
+
 test('desktop Explorer collapse preserves navigation, scroll and the first paint on reload', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop collapse is independent from the mobile panel.')
   await page.goto('./?topic=sql-injection')

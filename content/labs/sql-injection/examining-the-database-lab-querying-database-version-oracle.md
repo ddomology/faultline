@@ -138,3 +138,6 @@ FROM PRODUCT_COMPONENT_VERSION --
 ### 참고
 
 - [Oracle: ALL_TAB_COLUMNS의 OWNER 열](https://docs.oracle.com/cd/E18283_01/server.112/e17110/statviews_2103.htm)
+
+## 관련 개념
+<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
