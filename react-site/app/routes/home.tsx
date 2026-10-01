@@ -16,6 +16,7 @@ import { buildId } from '../../build-version.server.mjs'
 import { loadCurrentVersion } from '../lib/route-version'
 import { socialMeta } from '../lib/seo'
 import RouteFailure from '../components/RouteFailure'
+import ConceptTags, { ConceptTagFilter } from '../components/ConceptTags'
 
 export function loader() { return { buildId } }
 export function clientLoader({ serverLoader, request }: Route.ClientLoaderArgs) { return loadCurrentVersion(serverLoader, request) }
@@ -69,10 +70,11 @@ export default function Home() {
   return <section className="lab-explorer" aria-label={`${title} 목록`}>
     <h1 className="library-title">{title}</h1>
     <nav className="view-switch" aria-label="목록 선택">
-      <Link to={libraryHref({ ...query, view: 'notes', limit: PAGE_SIZE })} aria-current={!concepts ? 'page' : undefined}>포트스위거 풀이 노트 <span>{catalog.counts.notes}</span></Link>
+      <Link to={libraryHref({ ...query, view: 'notes', tag: '', limit: PAGE_SIZE })} aria-current={!concepts ? 'page' : undefined}>포트스위거 풀이 노트 <span>{catalog.counts.notes}</span></Link>
       <Link to={libraryHref({ ...query, view: 'concepts', limit: PAGE_SIZE })} aria-current={concepts ? 'page' : undefined}>개념 노트 <span>{catalog.counts.concepts}</span></Link>
     </nav>
     {!emptyConcepts && <LibraryControls catalog={catalog} query={query} onChange={changeQuery} />}
+    {concepts && query.tag && <ConceptTagFilter tag={query.tag} clearHref={libraryHref({ ...query, tag: '', limit: PAGE_SIZE })} />}
     <div className="results-heading">
       <p id="library-result-count" role="status" aria-live="polite" aria-atomic="true">{title} {notes.length}개{query.query && !emptyConcepts ? ` · “${query.query}” 검색 결과` : ''}</p>
       {!emptyConcepts && hasLibraryFilters(query) && <button type="button" onClick={reset}>필터 초기화 <span aria-hidden="true">↺</span></button>}
@@ -80,7 +82,7 @@ export default function Home() {
     <div ref={list} id="library-results" aria-label="검색 결과">
       {!notes.length && <div className="empty-state">
         <h2>{emptyConcepts ? '아직 개념 노트가 없습니다.' : '검색 결과가 없습니다.'}</h2>
-        <p>{emptyConcepts ? '개념을 정리한 글이 이곳에 표시됩니다.' : '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.'}</p>
+        <p>{emptyConcepts ? '개념을 정리한 글이 이곳에 표시됩니다.' : concepts ? '검색어를 바꾸거나 주제·태그 필터를 해제해 보세요.' : '검색어를 바꾸거나 주제·난이도 필터를 해제해 보세요.'}</p>
         {!emptyConcepts && hasLibraryFilters(query) && <button className="empty-action" type="button" onClick={reset}>필터 초기화</button>}
       </div>}
       {Array.from(groups, ([id, group]) => <section className="lab-group" key={id} aria-labelledby={`lab-group-${id}`}>
@@ -93,6 +95,7 @@ export default function Home() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M5 16v5m14-5v5M3 7h18v9H3z" /><path className="construction-accent" d="m5 7 5 9m4-9 5 9" /></svg>작성 중</span>}</h3>
             {note.originalTitle && note.title !== note.originalTitle && <p className="note-subtitle" lang="en">{note.originalTitle}</p>}
             {query.sort === 'recent' && note.updatedAt && <p className="note-updated">수정 <time dateTime={note.updatedAt}>{formatUpdatedDate(note.updatedAt)}</time></p>}
+            {note.view === 'concepts' && <ConceptTags tags={note.tags} />}
           </div>
           <div className="note-row-meta"><Difficulty level={note.difficulty} />{note.labUrl && <a className="note-source" href={note.labUrl} target="_blank" rel="noopener noreferrer" aria-label={`${note.title} 공식 문제 (새 탭)`}>공식 문제 <span aria-hidden="true">↗</span></a>}</div>
         </div>)}</div>

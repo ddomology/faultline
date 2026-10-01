@@ -52,12 +52,14 @@ Explorer의 풀이 옆에는 난이도 막대가 표시됩니다. 데스크톱�
 
 1. `content/`를 Obsidian 보관함으로 열거나 GitHub에서 Markdown 파일을 편집합니다.
 2. 풀이 노트는 **문제 조건과 설명 → 탐색 및 풀이 기록 → 최종 결과 → 배운 점** 순서로 작성합니다. [노트 템플릿](content/templates/lab.md)을 참고할 수 있습니다.
-3. 개념 노트는 `lab_url` 없이 작성하고 `category`, `category_title`로 주제를 지정합니다.
+3. 개념 노트는 [개념 템플릿](content/templates/concept.md)을 사용해 `lab_url` 없이 작성하고 `category`, `category_title`로 주제를 지정합니다. `tags: [HTTP, 쿠키, 세션]`처럼 적으면 아이콘 태그가 표시됩니다.
 4. `main`에 반영하면 GitHub Actions가 사이트를 갱신합니다.
 
 문제 설명만 정리한 노트에는 `note_kind: problem`, 직접 탐색하거나 풀이한 내용을 적은 노트에는 `note_kind: solution`을 사용합니다. 첨부 자료는 노트 가까이에 두고 상대 경로로 연결합니다.
 
 → [메타데이터, 본문 작성, 빌드·배포 안내](docs/maintaining.md)
+
+→ [개념 태그 64종 미리보기와 사용법](docs/concept-tags.md)
 
 ## 저장소 구성
 

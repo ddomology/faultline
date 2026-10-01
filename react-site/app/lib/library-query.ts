@@ -1,4 +1,5 @@
 import type { Catalog, NoteMeta, View } from './types'
+import { getConceptTag, normalizeConceptTags } from './concept-tags.ts'
 
 export const PAGE_SIZE = 24
 export const LEVEL_NAMES: Record<string, string> = { Apprentice: '입문', Practitioner: '실전', Expert: '심화' }
@@ -9,6 +10,7 @@ export interface LibraryQuery {
   view: View
   query: string
   topic: string
+  tag: string
   level: string
   sort: LibrarySort
   limit: number
@@ -18,10 +20,12 @@ export function readLibraryQuery(params: URLSearchParams, total = Number.MAX_SAF
   const sort = params.get('sort')
   const level = params.get('level') || 'all'
   const requested = Number(params.get('limit'))
+  const view = params.get('view') === 'concepts' ? 'concepts' : 'notes'
   return {
-    view: params.get('view') === 'concepts' ? 'concepts' : 'notes',
+    view,
     query: params.get('q') || '',
     topic: params.get('topic') || 'all',
+    tag: view === 'concepts' ? normalizeConceptTags(params.get('tag'))[0] || '' : '',
     level: Object.hasOwn(levels, level) ? level : 'all',
     sort: sorts.includes(sort as LibrarySort) ? sort as LibrarySort : 'number',
     limit: Number.isSafeInteger(requested) && requested >= PAGE_SIZE
@@ -34,6 +38,8 @@ export function writeLibraryQuery(query: LibraryQuery): URLSearchParams {
   if (query.view === 'concepts') params.set('view', query.view)
   if (query.query) params.set('q', query.query)
   if (query.topic !== 'all') params.set('topic', query.topic)
+  const tag = query.view === 'concepts' ? normalizeConceptTags(query.tag)[0] : ''
+  if (tag) params.set('tag', tag)
   if (query.level !== 'all') params.set('level', query.level)
   if (query.sort !== 'number') params.set('sort', query.sort)
   if (query.limit > PAGE_SIZE) params.set('limit', String(query.limit))
@@ -65,9 +71,13 @@ function searchableText(note: NoteMeta): string {
     /bypass/i.test(title) ? '우회' : '',
     /hidden/i.test(title) ? '숨김 숨겨진' : '',
   ]
+  const tags = note.view === 'concepts' ? normalizeConceptTags(note.tags).flatMap(value => {
+    const tag = getConceptTag(value)
+    return tag ? [tag.id, tag.label, ...tag.aliases] : [value]
+  }) : []
   return normalizeSearch([
     note.number, title, note.explorerTitle, note.category, note.categoryTitle,
-    note.difficulty, LEVEL_NAMES[note.difficulty] || '', note.searchText || '', ...aliases,
+    note.difficulty, LEVEL_NAMES[note.difficulty] || '', note.searchText || '', ...aliases, ...tags,
   ].join(' '))
 }
 
@@ -80,6 +90,7 @@ function searchText(note: NoteMeta): string {
 
 export function filterLibrary(catalog: Catalog, query: LibraryQuery): NoteMeta[] {
   const tokens = normalizeSearch(query.query).split(' ').filter(Boolean).map(token => /^#\d/.test(token) ? token.slice(1) : token)
+  const tag = query.view === 'concepts' ? normalizeConceptTags(query.tag)[0] : ''
   const categoryOrder = new Map(catalog.categories.map((category, index) => [category.id, index]))
   const numberOrder = (a: NoteMeta, b: NoteMeta) => a.number.localeCompare(b.number, 'en', { numeric: true }) || a.routePath.localeCompare(b.routePath, 'en')
   const updated = (note: NoteMeta) => {
@@ -89,6 +100,7 @@ export function filterLibrary(catalog: Catalog, query: LibraryQuery): NoteMeta[]
   return catalog.notes.filter(note => note.view === query.view
     && (query.topic === 'all' || note.category === query.topic)
     && (query.level === 'all' || note.difficulty === query.level)
+    && (!tag || normalizeConceptTags(note.tags).some(value => normalizeSearch(value) === normalizeSearch(tag)))
     && tokens.every(token => searchText(note).includes(token)))
     .sort((a, b) => {
       const groupOrder = (categoryOrder.get(a.category) ?? Number.MAX_SAFE_INTEGER) - (categoryOrder.get(b.category) ?? Number.MAX_SAFE_INTEGER)
@@ -103,8 +115,9 @@ export function filterLibrary(catalog: Catalog, query: LibraryQuery): NoteMeta[]
 
 export function hasLibraryFilters(query: LibraryQuery): boolean {
   return !!query.query || query.topic !== 'all' || query.level !== 'all' || query.sort !== 'number'
+    || (query.view === 'concepts' && !!normalizeConceptTags(query.tag).length)
 }
 
 export function resetLibraryQuery(view: View): LibraryQuery {
-  return { view, query: '', topic: 'all', level: 'all', sort: 'number', limit: PAGE_SIZE }
+  return { view, query: '', topic: 'all', tag: '', level: 'all', sort: 'number', limit: PAGE_SIZE }
 }

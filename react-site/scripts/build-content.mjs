@@ -19,6 +19,7 @@ import { readerCode } from './reader-code.mjs';
 import { remarkNotebook, rehypeReaderStructure, rehypeReaderFootnotes, compactTree } from './reader-markdown.mjs';
 import { basePath, repositoryUrl } from '../site.config.mjs';
 import { legacyRedirects } from './site-metadata.mjs';
+import { normalizeConceptTags } from '../app/lib/concept-tags.ts';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(appRoot, '..');
@@ -272,6 +273,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
       labUrl: String(data.lab_url || lab?.url || ''), view: lab ? 'notes' : 'concepts', sourcePath,
       updatedAt: validUpdatedAt(data.updated || data.modified) || dates.get(sourcePath) || null,
       searchText: searchableText(markdown),
+      tags: lab ? [] : normalizeConceptTags(data.tags),
     };
     if (Object.hasOwn(rendered, metadata.routePath)) throw new Error(`Duplicate route: ${metadata.routePath}`);
     const body = markdown.replace(/^\s*# ([^\r\n]+)(?:\r?\n|$)/, (heading, text) =>
