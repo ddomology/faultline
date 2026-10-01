@@ -8,12 +8,12 @@ test.beforeEach(async ({ page }) => {
 
 test('legacy folder/tag routes preserve filters and Korean hash', async ({ page }) => {
   await page.goto('labs/sql-injection/?level=Practitioner#'+encodeURIComponent('목록'))
-  await expect(page.locator('.library-title')).toHaveText('풀이 노트')
+  await expect(page.locator('.library-title')).toHaveText('포트스위거 풀이 노트')
   expect(new URL(page.url()).searchParams.get('topic')).toBe('sql-injection')
   expect(new URL(page.url()).searchParams.get('level')).toBe('Practitioner')
   expect(decodeURIComponent(new URL(page.url()).hash)).toBe('#목록')
   await page.goto('tags/sql-injection')
-  await expect(page.locator('.library-title')).toHaveText('풀이 노트')
+  await expect(page.locator('.library-title')).toHaveText('포트스위거 풀이 노트')
   expect(new URL(page.url()).searchParams.get('q')).toBe('sql-injection')
   await page.goto('notes.html?topic=sql-injection')
   await expect(page.locator('.lab-group')).toHaveCount(1)

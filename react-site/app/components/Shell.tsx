@@ -4,6 +4,7 @@ import { useHydrated } from "../lib/use-hydrated"
 import type { Catalog } from "../lib/types"
 import HeaderSearch from "./HeaderSearch"
 import NavigationState from "./NavigationState"
+import Difficulty from "./Difficulty"
 import brandSvg from "../../../site/assets/favicon/favicon.svg?raw"
 import "../navigation.scss"
 
@@ -12,6 +13,7 @@ type Deployment = { basePath: string; siteUrl: string; repositoryUrl: string }
 type ShellProps = { catalog: Catalog; deployment: Deployment; children: ReactNode }
 type ExplorerState = { expanded: Record<View, string[]>; scroll: Record<View, number> }
 const explorerStorageKey = "faultline:explorer:v1"
+export const explorerCollapsedKey = "faultline:explorer:collapsed"
 
 function loadExplorerState(categories: string[]): ExplorerState | undefined {
   try {
@@ -85,7 +87,9 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
   const selectedCategory = activeNote?.category || params.get("topic") || ""
   const [mobileOpen, setMobileOpen] = useState(false)
   const [compact, setCompact] = useState(false)
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false)
   const mobileToggle = useRef<HTMLButtonElement>(null)
+  const desktopToggle = useRef<HTMLButtonElement>(null)
   const tree = useRef<HTMLUListElement>(null)
   const currentView = useRef<View>(view)
   const restoredView = useRef<View | null>(null)
@@ -101,6 +105,10 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
       .sort((a, b) => a.number.localeCompare(b.number, "en", { numeric: true })),
   })).filter(group => group.notes.length), [catalog, view])
 
+  useLayoutEffect(() => {
+    // The document initializer applies the saved desktop layout before paint.
+    setDesktopCollapsed(document.documentElement.dataset.explorerCollapsed === "true")
+  }, [])
   useEffect(() => {
     const stored = loadExplorerState(catalog.categories.map(category => category.id))
     if (stored) {
@@ -119,7 +127,7 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
   }, [expanded, storageReady])
   useLayoutEffect(() => {
     currentView.current = view
-    if (compact && !mobileOpen) {
+    if (compact ? !mobileOpen : desktopCollapsed) {
       restoredView.current = null
       return
     }
@@ -128,7 +136,7 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
     // scrollIntoView, resize listener, or late animation fights user scrolling.
     restoredView.current = view
     tree.current.scrollTop = savedExplorer.current.scroll[view]
-  }, [view, storageReady, mobileOpen, compact])
+  }, [view, storageReady, mobileOpen, compact, desktopCollapsed])
 
   // Close after the destination commits, not when a request starts.
   useEffect(() => {
@@ -140,9 +148,25 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)")
     setCompact(media.matches)
-    function change() { setCompact(media.matches); setMobileOpen(false) }
+    // A breakpoint can hide the focused control before its change event runs.
+    let explorerFocused = !!document.activeElement?.closest('.sidebar')
+    function rememberFocus(event: FocusEvent) {
+      explorerFocused = event.target instanceof Element && !!event.target.closest('.sidebar')
+    }
+    function change() {
+      setCompact(media.matches)
+      setMobileOpen(false)
+      if (explorerFocused) {
+        const toggle = media.matches ? mobileToggle : desktopToggle
+        toggle.current?.focus({ preventScroll: true })
+      }
+    }
+    document.addEventListener("focusin", rememberFocus)
     media.addEventListener("change", change)
-    return () => media.removeEventListener("change", change)
+    return () => {
+      document.removeEventListener("focusin", rememberFocus)
+      media.removeEventListener("change", change)
+    }
   }, [])
   useEffect(() => {
     if (!mobileOpen) return
@@ -165,7 +189,17 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
     setExpanded(previous => ({ ...previous, [view]: previous[view].includes(category)
       ? previous[view].filter(value => value !== category) : [...previous[view], category] }))
   }
-  const label = view === "concepts" ? "개념 노트" : "풀이 노트"
+  function toggleDesktopExplorer() {
+    const collapsed = !desktopCollapsed
+    if (collapsed && storageReady && tree.current) {
+      savedExplorer.current.scroll[view] = tree.current.scrollTop
+      saveExplorerState(savedExplorer.current)
+    }
+    document.documentElement.dataset.explorerCollapsed = String(collapsed)
+    setDesktopCollapsed(collapsed)
+    try { localStorage.setItem(explorerCollapsedKey, String(collapsed)) } catch { /* The active layout still works without storage. */ }
+  }
+  const label = view === "concepts" ? "개념 노트" : "포트스위거 풀이 노트"
   const pending = navigation.state !== "idle"
 
   return <div className="page">
@@ -177,14 +211,22 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
           <button ref={mobileToggle} className="topic-mobile-toggle" type="button" aria-expanded={mobileOpen} aria-controls="topic-note-panel" onClick={() => setMobileOpen(open => !open)}>
             <span>Explorer <small>탐색기</small></span><Chevron open={mobileOpen} />
           </button>
+          <div className="topic-heading">
+            <span className="topic-heading-label">Explorer <small>탐색기</small></span>
+            <div className="topic-heading-actions">
+              <span className="topic-total">{catalog.counts[view]}</span>
+              <button ref={desktopToggle} className="explorer-desktop-toggle" type="button" aria-expanded={!desktopCollapsed} aria-controls="topic-note-panel" aria-label={desktopCollapsed ? "탐색기 열기" : "탐색기 접기"} title={desktopCollapsed ? "탐색기 열기" : "탐색기 접기"} onClick={toggleDesktopExplorer}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /><path className="explorer-toggle-arrow" d="m16 9-3 3 3 3" /></svg>
+              </button>
+            </div>
+          </div>
           <div id="topic-note-panel" className={`topic-note-panel${mobileOpen ? " is-open" : ""}`}>
-            <div className="topic-heading"><span>Explorer <small>탐색기</small></span><span className="topic-total">{catalog.counts[view]}</span></div>
             <nav className="explorer-shortcuts" aria-label="목록 선택">
-              <Link to="/" aria-current={view === "notes" ? "page" : undefined}>풀이 노트 <span>{catalog.counts.notes}</span></Link>
+              <Link to="/" aria-current={view === "notes" ? "page" : undefined}>포트스위거 풀이 노트 <span>{catalog.counts.notes}</span></Link>
               <Link to="/?view=concepts" aria-current={view === "concepts" ? "page" : undefined}>개념 노트 <span>{catalog.counts.concepts}</span></Link>
             </nav>
             <ul ref={tree} className="topic-tree" aria-label={`${label} 주제`} onScroll={event => {
-              if (!storageReady || currentView.current !== view || (compact && !mobileOpen)) return
+              if (!storageReady || currentView.current !== view || (compact ? !mobileOpen : desktopCollapsed)) return
               savedExplorer.current.scroll[view] = event.currentTarget.scrollTop
               saveExplorerState(savedExplorer.current)
             }}>
@@ -200,7 +242,7 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
                     <span className="topic-count" aria-label={`${group.notes.length}개 노트`}>{group.notes.length}</span>
                   </div>
                   <ul className="topic-children" id={groupId} hidden={!open}>
-                    {open && group.notes.map(note => <li key={note.slug}><Link to={note.routePath} title={[note.title, note.originalTitle].filter(Boolean).join("\n")} aria-current={note.slug === activeNote?.slug ? "page" : undefined}><span className="topic-note-number">{note.number}</span><span>{note.explorerTitle || note.title}</span></Link></li>)}
+                    {open && group.notes.map(note => <li key={note.slug}><Link className={note.view === "notes" ? "topic-lab-link" : undefined} to={note.routePath} title={[note.title, note.originalTitle].filter(Boolean).join("\n")} aria-current={note.slug === activeNote?.slug ? "page" : undefined}><span className="topic-note-number">{note.number}</span><span className="topic-note-title">{note.explorerTitle || note.title}</span>{note.view === "notes" && <Difficulty level={note.difficulty} compact />}</Link></li>)}
                   </ul>
                 </li>
               })}
