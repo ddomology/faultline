@@ -3,8 +3,7 @@ import githubLight from "shiki/themes/github-light.mjs"
 import githubDark from "shiki/themes/github-dark-default.mjs"
 import powershell from "shiki/langs/powershell.mjs"
 import sql from "shiki/langs/sql.mjs"
-import rehypePrettyCode, { type Options } from "rehype-pretty-code"
-import type { QuartzTransformerPlugin } from "../types"
+import type { Options } from "rehype-pretty-code"
 
 // Retain GitHub's language-specific scopes, with a clearer reader palette.
 // This runs only at build time; the output contains ordinary colored spans.
@@ -88,14 +87,3 @@ export const createReaderHighlighter: NonNullable<Options["getHighlighter"]> = a
   const langs = (options.langs ?? []).filter(lang => lang !== "sql-fragment")
   return createHighlighter({ ...options, langs: [...langs, language, sqlFragmentGrammar()] })
 }
-
-export const ReaderSyntaxHighlighting: QuartzTransformerPlugin = () => ({
-  name: "ReaderSyntaxHighlighting",
-  htmlPlugins() {
-    return [[rehypePrettyCode, {
-      theme: readerCodeThemes,
-      keepBackground: false,
-      getHighlighter: createReaderHighlighter,
-    } satisfies Options]]
-  },
-})

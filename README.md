@@ -62,8 +62,9 @@ PortSwigger Web Security Academy 풀이로 시작해 HTTP·브라우저·인증�
 | [`content/`](content/) | 글과 첨부 자료의 원본 |
 | [`data/labs.json`](data/labs.json) | PortSwigger 실습 목록과 상태 스냅샷 |
 | [`react-site/`](react-site/) | React 화면, 본문 렌더링, 정적 빌드와 검사 |
-| [`site/`](site/) | 브랜드·공통 에셋·코드 정렬과 문법 강조 |
-| [`scripts/`](scripts/) | 노트 인덱싱, 이미지 생성과 사이트 빌드 |
+| [`site/`](site/) | 브랜드·공통 에셋·노트 제목 데이터 |
+| [`scripts/`](scripts/) | 실습 목록 가져오기, README·공유 이미지 생성 |
+| [`check.yml`](.github/workflows/check.yml) | PR의 빌드·본문·브라우저 검사 |
 | [`publish.yml`](.github/workflows/publish.yml) | GitHub Pages 자동 배포 |
 
 **React · React Router · Vite**와 **GitHub Pages**로 운영합니다. 글의 원본은 Markdown으로 보관하고, 각 글의 HTML과 검색 목록은 빌드할 때 생성합니다.

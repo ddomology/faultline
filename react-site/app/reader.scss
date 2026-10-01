@@ -1,5 +1,5 @@
-@use '../../site/lab-pagination.scss';
-@use '../../site/reader-tools.css';
+@use './styles/pagination.scss';
+@use './styles/images.scss';
 
 .reader-toc { margin:0 0 36px;padding:12px 0;border-block:1px solid var(--lightgray);color:var(--gray);font-size:14px; }
 .reader-toc > summary { min-height:32px;align-content:center;cursor:pointer;color:var(--darkgray);font-weight:600; }

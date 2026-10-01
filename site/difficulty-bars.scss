@@ -1,5 +1,0 @@
-.difficulty-bars { display:inline-block;width:24px;height:14px;flex-shrink:0;vertical-align:middle;color:var(--accent); }
-.difficulty-bars rect { stroke-width:1; }
-.difficulty-bars .is-filled { fill:currentColor;stroke:currentColor; }
-.difficulty-bars .is-empty { fill:none;stroke:var(--gray);stroke-opacity:.55; }
-.note-level,.reader-level { display:inline-flex;align-items:center;gap:6px;white-space:nowrap; }

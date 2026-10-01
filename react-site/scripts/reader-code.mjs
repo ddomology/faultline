@@ -1,6 +1,6 @@
 import rehypePrettyCode from 'rehype-pretty-code';
-import { formatCode, getCodeFormatLanguage } from '../../site/code-format.ts';
-import { createReaderHighlighter, readerCodeThemes } from '../../site/code-highlight.ts';
+import { formatCode, getCodeFormatLanguage } from './code-format.ts';
+import { createReaderHighlighter, readerCodeThemes } from './code-highlight.ts';
 
 const walk = (node, fn) => { fn(node); for (const child of node.children || []) walk(child, fn); };
 const element = (tagName, properties, children) => ({ type: 'element', tagName, properties, children });
