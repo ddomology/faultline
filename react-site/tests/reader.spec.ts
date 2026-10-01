@@ -112,6 +112,87 @@ test('TOC anchors, previous/next and back preserve the shell and list return sta
   expect(documents).toBe(1)
 })
 
+test('TOC marks multiple visible sections and distinguishes anchors at the same scroll position', async ({ page }) => {
+  test.skip(page.viewportSize()!.width < 1440, 'The reading TOC is shown on wide screens.')
+  await page.setViewportSize({ width: 1600, height: 1000 })
+  await page.goto(first)
+  await expect(page.locator('html')).not.toHaveAttribute('data-initial-scroll', 'pending')
+  await page.evaluate(() => document.fonts.ready)
+  // Keep real headings and routing, but make a short article independently of
+  // how much content the author adds to this note in the future.
+  await page.addStyleTag({ content: '.center > article > :not(:is(h2,h3,h4,h5,h6)) { display:none!important; }' })
+  const toc = page.locator('.reader-toc')
+  let bottom = 0
+  for (const label of ['최종 결과', '배운 점', '실행 과정']) {
+    const link = toc.getByRole('link', { name: label, exact: true })
+    await link.click()
+    await expect(link).toHaveAttribute('aria-current', 'location')
+    await expect(toc.locator('[aria-current]')).toHaveCount(1)
+    await expect.poll(() => toc.locator('a[data-visible]').count()).toBeGreaterThan(1)
+    const y = await page.evaluate(() => scrollY)
+    if (bottom) expect(y).toBe(bottom)
+    bottom = y
+  }
+  await page.goBack()
+  await expect(toc.getByRole('link', { name: '배운 점', exact: true })).toHaveAttribute('aria-current', 'location')
+  await page.goForward()
+  await expect(toc.getByRole('link', { name: '실행 과정', exact: true })).toHaveAttribute('aria-current', 'location')
+  await page.evaluate(() => scrollTo(0, 0))
+  await expect(toc.getByRole('link').first()).toHaveAttribute('aria-current', 'location')
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight))
+  await expect(toc.getByRole('link').last()).toHaveAttribute('aria-current', 'location')
+})
+
+test('TOC includes the visible subsection and its parent, and refreshes on resize without scrolling', async ({ page }) => {
+  test.skip(page.viewportSize()!.width < 1440, 'The reading TOC is shown on wide screens.')
+  await page.goto(first)
+  await expect(page.locator('html')).not.toHaveAttribute('data-initial-scroll', 'pending')
+  await page.evaluate(() => document.fonts.ready)
+  await page.evaluate(() => scrollTo(0, scrollY + document.getElementById('실행-과정')!.getBoundingClientRect().top + 150))
+  const toc = page.locator('.reader-toc')
+  await expect(toc.getByRole('link', { name: '탐색 및 풀이 기록', exact: true })).toHaveAttribute('data-visible', 'true')
+  await expect(toc.getByRole('link', { name: '실행 과정', exact: true })).toHaveAttribute('data-visible', 'true')
+  await expect(toc.getByRole('link', { name: '문제 조건과 설명', exact: true })).not.toHaveAttribute('data-visible')
+  await expect(toc.locator('[aria-current]')).toHaveCount(1)
+  expect(await page.locator('article #탐색-및-풀이-기록').evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThan(0)
+  const y = await page.evaluate(() => scrollY)
+  await page.setViewportSize({ width: 1440, height: 650 })
+  await expect(toc.getByRole('link', { name: '실행 과정', exact: true })).toHaveAttribute('data-visible', 'true')
+  expect(await page.evaluate(() => scrollY)).toBe(y)
+})
+
+test('TOC fragment reloads and keyboard focus stay clear in both themes', async ({ page }) => {
+  test.skip(page.viewportSize()!.width < 1440, 'The reading TOC is shown on wide screens.')
+  const shortNote = Object.values(notes).find((note: any) => note.noteKind === 'problem') as any
+  await page.goto(shortNote.routePath.slice(1) + '#' + encodeURIComponent('배운-점'))
+  const toc = page.locator('.reader-toc')
+  const selected = toc.getByRole('link', { name: '배운 점', exact: true })
+  await expect(selected).toHaveAttribute('aria-current', 'location')
+  await page.reload()
+  await expect(selected).toHaveAttribute('aria-current', 'location')
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(theme => document.documentElement.setAttribute('saved-theme', theme), theme)
+    await page.keyboard.press('Tab')
+    for (const control of [toc.getByRole('button', { name: '목차', exact: true }), toc.getByRole('link').last()]) {
+      await control.focus()
+      await expect(control).toBeFocused()
+      // The full keyboard outline must fit inside the scroll container,
+      // including the final item which previously lost two sides.
+      const ring = await control.evaluate(element => {
+        const style = getComputedStyle(element)
+        const extra = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset)
+        const bounds = element.getBoundingClientRect()
+        const clip = element.closest('.reader-toc')!.getBoundingClientRect()
+        return { visible: element.matches(':focus-visible') && style.outlineStyle !== 'none', contained: bounds.left - extra >= clip.left && bounds.right + extra <= clip.right && bounds.top - extra >= clip.top && bounds.bottom + extra <= clip.bottom }
+      })
+      expect(ring).toEqual({ visible: true, contained: true })
+    }
+    await selected.focus()
+    await page.keyboard.press('Enter')
+    await expect(selected).toHaveAttribute('aria-current', 'location')
+  }
+})
+
 test('first five notes have stable source views, local images, colored code and no hydration errors', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))

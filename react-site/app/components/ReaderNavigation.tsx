@@ -1,30 +1,73 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { useCatalog } from '../lib/catalog-context'
 import type { Note } from '../lib/types'
 import { TopicIcon } from './Shell'
 
 export function ReaderToc({ toc, returnTo }: { toc: Note['toc']; returnTo: string }) {
-  const [active, setActive] = useState('')
+  const location = useLocation()
+  const [position, setPosition] = useState<{ active: string; visible: string[] }>({ active: '', visible: [] })
   const [open, setOpen] = useState(true)
   const entries = toc.filter(item => item.id !== '관련-개념')
   useEffect(() => {
-    const headings = toc.filter(item => item.id !== '관련-개념').map(item => document.getElementById(item.id)).filter((node): node is HTMLElement => Boolean(node))
+    const sections = toc.filter(item => item.id !== '관련-개념').flatMap(item => {
+      const element = document.getElementById(item.id)
+      return element ? [{ ...item, element }] : []
+    })
+    const article = sections[0]?.element.closest('article')
+    if (!article) return
+    // A parent section includes its subsections, even after its own heading
+    // has scrolled away. Several sections can be visible at the same time.
+    const ends = sections.map((item, index) => sections.slice(index + 1).find(next => next.depth <= item.depth)?.element)
+    let anchorId = ''
+    try { anchorId = decodeURIComponent(location.hash.slice(1)) } catch { /* Ignore malformed fragments. */ }
+    let anchor = sections.find(item => item.id === anchorId)
+    const wide = window.matchMedia('(min-width: 1440px)')
     let frame = 0
     const update = () => {
       frame = 0
-      let current = headings[0]
-      for (const heading of headings) {
-        if (heading.getBoundingClientRect().top > 100) break
-        current = heading
+      if (!wide.matches) return
+      const tops = sections.map(item => item.element.getBoundingClientRect().top)
+      const articleBottom = article.getBoundingClientRect().bottom
+      const visible = sections.filter((_, index) => tops[index] < innerHeight && (ends[index]?.getBoundingClientRect().top ?? articleBottom) > 0).map(item => item.id)
+      let current = sections[0]
+      for (let index = 0; index < sections.length; index++) {
+        if (tops[index] > 100) break
+        current = sections[index]
       }
-      setActive(current?.id || '')
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight)
+      if (maxScroll > 0 && scrollY >= maxScroll - 2) current = sections[sections.length - 1]
+      // Near the page bottom, several anchors land at the same clamped scroll
+      // position. Respect the chosen fragment until the reader scrolls away.
+      if (anchor) {
+        const margin = parseFloat(getComputedStyle(anchor.element).scrollMarginTop) || 0
+        const target = Math.max(0, Math.min(maxScroll, scrollY + anchor.element.getBoundingClientRect().top - margin))
+        if (Math.abs(scrollY - target) <= 2) current = anchor
+        else anchor = undefined
+      }
+      const active = current?.id || ''
+      setPosition(previous => previous.active === active && previous.visible.length === visible.length && previous.visible.every((id, index) => id === visible[index]) ? previous : { active, visible })
     }
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update) }
+    const schedule = () => { if (wide.matches && !frame) frame = requestAnimationFrame(update) }
+    const observer = new ResizeObserver(schedule)
+    // Observe only the article while the TOC is displayed. Watching the root
+    // also reacts to unrelated route/layout changes and can loop in WebKit.
+    const observeArticle = () => {
+      observer.disconnect()
+      if (wide.matches) { observer.observe(article); schedule() }
+    }
     document.addEventListener('scroll', schedule, { passive: true })
-    update()
-    return () => { document.removeEventListener('scroll', schedule); cancelAnimationFrame(frame) }
-  }, [toc])
+    window.addEventListener('resize', schedule)
+    wide.addEventListener('change', observeArticle)
+    observeArticle()
+    return () => {
+      document.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      wide.removeEventListener('change', observeArticle)
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+    }
+  }, [toc, location.key, location.hash])
   if (!entries.length) return null
   const rootDepth = Math.min(...entries.map(item => item.depth))
   return <aside className="reader-toc" aria-label="목차">
@@ -32,7 +75,7 @@ export function ReaderToc({ toc, returnTo }: { toc: Note['toc']; returnTo: strin
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
     </button>
     <nav id="reader-toc-links" aria-label="본문 목차" hidden={!open}><ol>{entries.map(item => <li key={item.id} style={{ paddingInlineStart: `${(item.depth - rootDepth) * 10}px` }}>
-      <Link to={'#' + encodeURIComponent(item.id)} state={{ fromList: returnTo }} preventScrollReset aria-current={item.id === active ? 'location' : undefined}>{item.text}</Link>
+      <Link to={'#' + encodeURIComponent(item.id)} state={{ fromList: returnTo }} preventScrollReset data-visible={position.visible.includes(item.id) || undefined} aria-current={item.id === position.active ? 'location' : undefined}>{item.text}</Link>
     </li>)}</ol></nav>
   </aside>
 }
