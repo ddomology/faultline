@@ -11,6 +11,7 @@ import { buildId } from '../../build-version.server.mjs'
 import { loadCurrentVersion } from '../lib/route-version'
 import { socialMeta } from '../lib/seo'
 import RouteFailure from '../components/RouteFailure'
+import ConceptTags from '../components/ConceptTags'
 
 export const links: Route.LinksFunction = () => [
   { rel: 'stylesheet', href: readerStyleHref },
@@ -45,6 +46,7 @@ export default function Note({ loaderData }: Route.ComponentProps) {
       <div className="note-title-group"><h1 className="article-title">{note.title}</h1>
         {note.originalTitle && note.originalTitle !== note.title && <p className="article-subtitle" lang="en">{note.originalTitle}</p>}
       </div>
+      {note.view === 'concepts' && <ConceptTags tags={note.tags} />}
     </header>
     <ReaderToc key={note.routePath + ':toc'} toc={note.toc} returnTo={returnTo} />
     <ReaderBody key={note.routePath} body={note.body} sourcePath={note.sourcePath} returnTo={returnTo} />

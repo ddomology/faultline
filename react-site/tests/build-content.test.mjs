@@ -29,6 +29,7 @@ test('every catalog lab retains its .html route and source bytes', () => {
     const route = '/' + lab.notePath.replace(/\.md$/, '.html');
     assert.ok(notes[route], `Missing original route: ${route}`);
     assert.equal(notes[route].sourcePath, lab.notePath);
+    assert.deepEqual(notes[route].tags, [], 'Existing lab frontmatter tags are not concept tags');
     assert.equal(manifest.sourceHashes[lab.notePath], beforeHashes[lab.notePath]);
     assert.equal(hashFile(join(repoRoot, 'content', lab.notePath)), beforeHashes[lab.notePath]);
   }

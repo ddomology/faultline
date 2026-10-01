@@ -15,6 +15,7 @@ export interface NoteMeta {
   sourcePath: string
   updatedAt: string | null
   searchText: string
+  tags: string[]
 }
 export interface Note extends NoteMeta {
   description: string

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { filterLibrary, formatUpdatedDate, hasLibraryFilters, libraryHref, normalizeSearch, readLibraryQuery, resetLibraryQuery, writeLibraryQuery } from '../app/lib/library-query.ts'
+import { conceptTags } from '../app/lib/concept-tags.ts'
 
 const base = { slug: '', originalTitle: '', explorerTitle: '', category: 'a', categoryTitle: '웹 보안', difficulty: 'Apprentice', noteKind: 'solution', labUrl: '', view: 'notes', sourcePath: '', updatedAt: null, searchText: '' }
 const note = (id, extra = {}) => ({ ...base, title: id, number: id, routePath: `/${id}.html`, ...extra })
@@ -69,4 +70,61 @@ test('displayed update date uses Korea time independently of build or browser zo
   assert.equal(formatUpdatedDate('2026-09-30T23:00:00Z'), '2026.10.01')
   assert.equal(formatUpdatedDate('2026-10-01T01:00:00+09:00'), '2026.10.01')
   assert.equal(formatUpdatedDate('invalid'), '')
+})
+
+test('concept tag URLs round-trip aliases and custom labels without leaking into notes', () => {
+  const tag = conceptTags[0]
+  const state = query({ view: 'concepts', tag: tag.id, query: '관찰', topic: 'a', sort: 'recent', limit: 48 })
+  assert.deepEqual(readLibraryQuery(writeLibraryQuery(state)), state)
+  const aliasParams = writeLibraryQuery(state)
+  aliasParams.set('tag', tag.label)
+  assert.deepEqual(readLibraryQuery(aliasParams), state)
+  const custom = { ...state, tag: '내 주제 & C++ #메모' }
+  assert.deepEqual(readLibraryQuery(writeLibraryQuery(custom)), custom)
+  assert.equal(writeLibraryQuery({ ...state, view: 'notes' }).has('tag'), false)
+  assert.equal(readLibraryQuery(new URLSearchParams(`tag=${tag.id}`)).tag, '')
+  assert.equal(hasLibraryFilters(query({ view: 'concepts', tag: tag.id })), true)
+  assert.equal(hasLibraryFilters(query({ tag: tag.id })), false)
+  assert.equal(resetLibraryQuery('concepts').tag, '')
+  assert.deepEqual(readLibraryQuery(new URLSearchParams()), resetLibraryQuery('notes'))
+})
+
+test('tag filters match complete normalized tags and intersect with existing filters', () => {
+  const tag = conceptTags[0]
+  const taggedCatalog = {
+    ...catalog,
+    notes: [
+      note('01.01', { view: 'concepts', title: '응답 관찰', tags: [tag.id], updatedAt: '2026-09-29T00:00:00Z' }),
+      note('01.02', { view: 'concepts', title: '요청 관찰', tags: [tag.label], difficulty: 'Expert', updatedAt: '2026-09-30T00:00:00Z' }),
+      note('02.01', { view: 'concepts', category: 'b', tags: [tag.id] }),
+      note('01.03', { view: 'concepts', tags: [tag.id + '-extra'] }),
+      note('01.04', { view: 'concepts' }),
+      note('01.05', { view: 'concepts', tags: ['내 주제 & C++'] }),
+      note('01.06', { view: 'notes', tags: [tag.id] }),
+    ],
+  }
+  const before = structuredClone(taggedCatalog)
+  const taggedIds = patch => filterLibrary(taggedCatalog, query({ view: 'concepts', tag: tag.id, ...patch })).map(item => item.number)
+  assert.deepEqual(taggedIds({}), ['01.01', '01.02', '02.01'])
+  assert.deepEqual(taggedIds({ tag: tag.label, topic: 'a', query: '관찰', sort: 'recent' }), ['01.02', '01.01'])
+  assert.deepEqual(taggedIds({ topic: 'a', level: 'Expert', query: '요청' }), ['01.02'])
+  assert.deepEqual(taggedIds({ topic: 'b', query: '없는문구' }), [])
+  assert.deepEqual(taggedIds({ tag: '  내 주제 & c++  ' }), ['01.05'])
+  assert.deepEqual(taggedIds({ tag: '내 주제' }), [])
+  assert.deepEqual(taggedIds({ view: 'notes' }), ['01.06'])
+  assert.deepEqual(filterLibrary({ ...taggedCatalog, notes: [] }, query({ view: 'concepts', tag: tag.id })), [])
+  assert.deepEqual(taggedCatalog, before)
+})
+
+test('concept search includes registered labels, IDs, aliases and unregistered tags', () => {
+  const tag = conceptTags[0]
+  const taggedCatalog = { ...catalog, notes: [
+    note('01.01', { view: 'concepts', tags: [tag.id] }),
+    note('01.02', { view: 'concepts', tags: ['내가 만든 고유태그'] }),
+    note('01.03', { view: 'concepts' }),
+  ] }
+  for (const term of [tag.id, tag.label, ...tag.aliases]) {
+    assert.ok(filterLibrary(taggedCatalog, query({ view: 'concepts', query: term })).some(item => item.number === '01.01'), `Missing tag search: ${term}`)
+  }
+  assert.deepEqual(filterLibrary(taggedCatalog, query({ view: 'concepts', query: '내가 만든 고유태그' })).map(item => item.number), ['01.02'])
 })
