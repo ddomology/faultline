@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { Route } from './+types/root'
 import { catalog } from './lib/content.server'
 import { basePath, siteUrl, repositoryUrl } from '../site.config.mjs'
-import Shell from './components/Shell'
+import Shell, { explorerCollapsedKey } from './components/Shell'
 import { CatalogProvider, useCatalog } from './lib/catalog-context'
 import styleHref from './styles.scss?url'
 import { buildId } from '../build-version.server.mjs'
@@ -31,7 +31,7 @@ export const meta: Route.MetaFunction = ({ loaderData: data }) => [
 export function Layout({ children }: { children: ReactNode }) {
   const static404 = useMatches().some(match => match.id === 'routes/not-found')
   return <html lang="ko" suppressHydrationWarning>
-    <head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="faultline-build" content={__FAULTLINE_BUILD_ID__} /><script dangerouslySetInnerHTML={{ __html: "try{const t=localStorage.getItem('theme');document.documentElement.setAttribute('saved-theme',t==='dark'||t==='light'?t:matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch{}" }} /><Meta /><Links /></head>
+    <head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="faultline-build" content={__FAULTLINE_BUILD_ID__} /><script dangerouslySetInnerHTML={{ __html: "try{const t=localStorage.getItem('theme');document.documentElement.setAttribute('saved-theme',t==='dark'||t==='light'?t:matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch{}" + `try{document.documentElement.dataset.explorerCollapsed=localStorage.getItem(${JSON.stringify(explorerCollapsedKey)})==='true'?'true':'false'}catch{}` }} /><Meta /><Links /></head>
     <body>{children}{!static404 && <><ScrollRestoration /><Scripts /></>}</body>
   </html>
 }

@@ -1,0 +1,4 @@
+.note-level { display:inline-flex;align-items:center;gap:5px;white-space:nowrap; }
+.difficulty-bars { flex-shrink:0;color:var(--darkgray); }
+.difficulty-bars .is-filled { fill:currentColor;stroke:currentColor; }
+.difficulty-bars .is-empty { fill:none;stroke:var(--gray);stroke-opacity:.55; }

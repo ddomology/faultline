@@ -45,7 +45,7 @@ test('client navigation keeps header and Explorer; browser back works', async ({
   await expect.poll(() => page.evaluate(() => (window as any).__shell[0] === document.querySelector('.notebook-nav') && (window as any).__shell[1] === document.querySelector('.topic-browser'))).toBe(true)
   expect(documents).toBe(1)
   await page.goBack()
-  await expect(page.locator('.library-title')).toHaveText('풀이 노트')
+  await expect(page.locator('.library-title')).toHaveText('포트스위거 풀이 노트')
   await expect(page.locator('.lab-group')).toHaveCount(1)
 })
 

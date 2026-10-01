@@ -4,10 +4,11 @@ import type { ShouldRevalidateFunctionArgs } from 'react-router'
 import type { loader as rootLoader } from '../root'
 import { useCatalog } from '../lib/catalog-context'
 import { useHydrated } from '../lib/use-hydrated'
-import { filterLibrary, formatUpdatedDate, hasLibraryFilters, libraryHref, LEVEL_NAMES, PAGE_SIZE, readLibraryQuery, resetLibraryQuery, writeLibraryQuery } from '../lib/library-query'
+import { filterLibrary, formatUpdatedDate, hasLibraryFilters, libraryHref, PAGE_SIZE, readLibraryQuery, resetLibraryQuery, writeLibraryQuery } from '../lib/library-query'
 import type { LibraryQuery } from '../lib/library-query'
 import type { NoteMeta } from '../lib/types'
 import LibraryControls from '../components/LibraryControls'
+import Difficulty from '../components/Difficulty'
 import { TopicIcon } from '../components/Shell'
 import type { Route } from './+types/home'
 import '../library.scss'
@@ -30,16 +31,6 @@ export const meta: Route.MetaFunction = ({ matches }) => {
   ]
 }
 
-function Difficulty({ level }: { level: string }) {
-  const count = ['Apprentice', 'Practitioner', 'Expert'].indexOf(level) + 1
-  if (!count) return null
-  return <span className="note-level" aria-label={`난이도 ${LEVEL_NAMES[level]} · ${level}`} title={`${LEVEL_NAMES[level]} · ${level}`}>
-    <svg className="difficulty-bars" width="24" height="14" viewBox="0 0 24 14" aria-hidden="true">
-      {[1, 9, 17].map((x, i) => <rect key={x} x={x} y="3" width="5" height="8" rx="1" className={i < count ? 'is-filled' : 'is-empty'} />)}
-    </svg>{LEVEL_NAMES[level]}
-  </span>
-}
-
 export default function Home() {
   const catalog = useCatalog()
   const location = useLocation()
@@ -56,7 +47,7 @@ export default function Home() {
     groups.get(note.category)!.notes.push(note)
   }
   const concepts = query.view === 'concepts'
-  const title = concepts ? '개념 노트' : '풀이 노트'
+  const title = concepts ? '개념 노트' : '포트스위거 풀이 노트'
   const emptyConcepts = concepts && !catalog.counts.concepts
   const pendingFocus = useRef<number | null>(null)
   const list = useRef<HTMLDivElement>(null)
@@ -79,7 +70,7 @@ export default function Home() {
     <h1 className="library-title">{title}</h1>
     <p className="library-description">{catalog.brand.tagline}</p>
     <nav className="view-switch" aria-label="목록 선택">
-      <Link to={libraryHref({ ...query, view: 'notes', limit: PAGE_SIZE })} aria-current={!concepts ? 'page' : undefined}>풀이 노트 <span>{catalog.counts.notes}</span></Link>
+      <Link to={libraryHref({ ...query, view: 'notes', limit: PAGE_SIZE })} aria-current={!concepts ? 'page' : undefined}>포트스위거 풀이 노트 <span>{catalog.counts.notes}</span></Link>
       <Link to={libraryHref({ ...query, view: 'concepts', limit: PAGE_SIZE })} aria-current={concepts ? 'page' : undefined}>개념 노트 <span>{catalog.counts.concepts}</span></Link>
     </nav>
     {!emptyConcepts && <LibraryControls catalog={catalog} query={query} onChange={changeQuery} />}

@@ -28,10 +28,6 @@
 .lab-group-count { flex-shrink:0;color:var(--gray);font-family:var(--codeFont);font-size:11px;font-variant-numeric:tabular-nums; }
 .lab-explorer .note-row { grid-template-columns:48px minmax(0,1fr) 148px;gap:14px;padding:16px 8px;scroll-margin-top:64px; }
 .lab-explorer .note-row-meta { display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:24px;color:var(--gray);font-size:12px; }
-.note-level { display:inline-flex;align-items:center;gap:5px;white-space:nowrap; }
-.difficulty-bars { flex-shrink:0;color:var(--darkgray); }
-.difficulty-bars .is-filled { fill:currentColor;stroke:currentColor; }
-.difficulty-bars .is-empty { fill:none;stroke:var(--gray);stroke-opacity:.55; }
 .note-source { display:inline-flex;align-items:center;gap:3px;min-height:24px;color:var(--gray);font-size:12px;white-space:nowrap; }
 .note-source:hover { color:var(--dark);text-decoration:underline;text-underline-offset:3px; }
 .note-status svg { flex-shrink:0; }

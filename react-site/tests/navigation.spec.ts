@@ -26,7 +26,7 @@ test('header search supports keyboard, composition and route synchronization', a
   await search.dispatchEvent('compositionend')
   await search.press('Enter')
   await expect(page).toHaveURL(new RegExp(`${basePath}\\?q=`))
-  await expect(page.locator('.library-title')).toHaveText('풀이 노트')
+  await expect(page.locator('.library-title')).toHaveText('포트스위거 풀이 노트')
   await expect(search).toHaveValue('로그인')
   await search.fill('미완성 입력')
   await search.press('Escape')
@@ -116,6 +116,8 @@ test('desktop Explorer keeps folders and independent collection scroll after nav
 
 test('mobile Explorer waits for committed navigation and releases focus at breakpoints', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Inline mobile Explorer is checked in touch emulation.')
+  // A saved desktop preference must not prevent the mobile panel from opening.
+  await page.addInitScript(() => localStorage.setItem('faultline:explorer:collapsed', 'true'))
   await page.goto('./?topic=sql-injection')
   expect(await page.locator('.notebook-nav').evaluate(element => getComputedStyle(element).display)).toBe('grid')
   expect(await page.locator('#header-search').evaluate(element => getComputedStyle(element).fontSize)).toBe('16px')
@@ -145,5 +147,73 @@ test('mobile Explorer waits for committed navigation and releases focus at break
   await expect(toggle).toBeVisible()
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('')
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('Explorer renders all difficulty levels on a direct article load', async ({ page, isMobile }) => {
+  await page.goto('labs/authentication/password-based-lab-username-enumeration-via-different-responses.html')
+  if (isMobile) await page.locator('.topic-mobile-toggle').click()
+  const tree = page.locator('.topic-tree')
+  await expect(page.locator('.explorer-shortcuts a').first()).toContainText('포트스위거 풀이 노트')
+  for (const [label, count] of [['입문 · Apprentice', 1], ['실전 · Practitioner', 2], ['심화 · Expert', 3]] as const) {
+    const rating = tree.getByRole('img', { name: `난이도 ${label}`, exact: true }).first()
+    await rating.scrollIntoViewIfNeeded()
+    await expect(rating).toBeVisible()
+    await expect(rating.locator('.is-filled')).toHaveCount(count)
+    await expect(rating.locator('.is-empty')).toHaveCount(3 - count)
+    if (count < 3) await expect(rating.locator('.is-empty').first()).toHaveCSS('fill', 'none')
+  }
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('desktop Explorer collapse preserves navigation, scroll and the first paint on reload', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop collapse is independent from the mobile panel.')
+  await page.goto('./?topic=sql-injection')
+  const tree = page.locator('.topic-tree')
+  const panel = page.locator('#topic-note-panel')
+  const toggle = page.locator('.explorer-desktop-toggle')
+  await expect(page.locator('.topic-children:not([hidden])')).toHaveCount(1)
+  await tree.evaluate(element => { element.scrollTop = 650 })
+  await expect.poll(() => tree.evaluate(element => element.scrollTop)).toBe(650)
+  const expandedWidth = await page.locator('.site-content').evaluate(element => element.getBoundingClientRect().width)
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(toggle).toHaveAccessibleName('탐색기 열기')
+  await expect(toggle).toBeFocused()
+  await expect(panel).toBeHidden()
+  expect(await page.locator('.site-content').evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThan(expandedWidth)
+  await page.locator(`.note-title a[href="${basePath + first}"]`).click()
+  await expect(page.locator('article')).toBeVisible()
+  await expect(panel).toBeHidden()
+
+  let release: () => void = () => {}
+  const gate = new Promise<void>(resolve => { release = resolve })
+  await page.route('**/*.js', async route => { await gate; await route.continue().catch(() => {}) })
+  try {
+    await page.reload({ waitUntil: 'commit' })
+    // Saved layout is applied before the React bundle can run.
+    await expect(page.locator('.sidebar')).toHaveCSS('width', '56px')
+    await expect(panel).toBeHidden()
+  } finally { release() }
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await toggle.click()
+  await expect(panel).toBeVisible()
+  await expect.poll(() => tree.evaluate(element => element.scrollTop)).toBe(650)
+  await page.goBack()
+  await expect(page.locator('.library-title')).toHaveText('포트스위거 풀이 노트')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await expect.poll(() => tree.evaluate(element => element.scrollTop)).toBe(650)
+
+  await toggle.click()
+  await page.setViewportSize({ width: 700, height: 850 })
+  const mobileToggle = page.locator('.topic-mobile-toggle')
+  await expect(mobileToggle).toBeFocused()
+  await mobileToggle.click()
+  await expect(panel).toBeVisible()
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(panel).toBeHidden()
+  await expect(toggle).toBeFocused()
+  await toggle.click()
+  await expect(panel).toBeVisible()
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
