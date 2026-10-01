@@ -1,17 +1,23 @@
 @use './styles/pagination.scss';
 @use './styles/images.scss';
 
-.reader-toc { margin:0 0 36px;padding:12px 0;border-block:1px solid var(--lightgray);color:var(--gray);font-size:14px; }
-.reader-toc > summary { min-height:32px;align-content:center;cursor:pointer;color:var(--darkgray);font-weight:600; }
-.reader-toc > summary > span { margin-left:8px;color:var(--gray);font-family:var(--codeFont);font-size:12px;font-weight:400; }
-.reader-toc ol { list-style:none;margin:10px 0 2px;padding:0; }
-.reader-toc li.is-subheading { padding-left:18px;font-size:13px; }
-.reader-toc a { display:inline-flex;align-items:center;min-height:36px;line-height:1.6;padding:4px 0; }
-.reader-toc a:hover,.reader-toc a[aria-current] { color:var(--dark);text-decoration:underline;text-underline-offset:4px; }
+.reader-toc { display:none;min-width:0;color:var(--gray);font-size:14px; }
+.reader-toc-toggle { display:flex;align-items:center;gap:8px;min-height:36px;padding:0;border:0;background:none;color:var(--dark);font-size:14px;font-weight:600; }
+.reader-toc-toggle[aria-expanded="false"] svg { transform:rotate(-90deg); }
+.reader-toc ol { list-style:none;margin:12px 0 0;padding:0 0 0 12px;border-left:1px solid var(--lightgray); }
+.reader-toc a { display:block;padding:6px 0;font-size:13px;line-height:1.65;overflow-wrap:anywhere; }
+.reader-toc a:hover,.reader-toc a[aria-current] { color:var(--accent); }
+.reader-toc a[aria-current] { font-weight:600; }
+@media(min-width:1440px) {
+  .center:has(> .reader-toc) { display:grid;grid-template-columns:minmax(0,1fr) 196px;column-gap:40px; }
+  .center:has(> .reader-toc) > :not(.reader-toc) { grid-column:1;min-width:0; }
+  .reader-toc { display:block;position:sticky;top:32px;grid-column:2;grid-row:1 / span 6;align-self:start;max-height:calc(100dvh - 64px);overflow-y:auto;scrollbar-width:thin; }
+}
 .reader-sources { display:flex;flex-wrap:wrap;gap:12px 24px;margin-top:36px;font-size:13px;color:var(--gray); }
 .reader-sources a { display:inline-flex;align-items:center;min-height:36px; }
 .reader-sources a:hover { color:var(--dark);text-decoration:underline;text-underline-offset:4px; }
 .center > article {
+  > h2#관련-개념 { margin-top:40px;padding-top:24px;border-top:1px solid var(--lightgray);font-size:17px; }
   .heading-anchor { display:inline-block;margin-left:10px;padding:0 3px;color:var(--gray);font-size:.75em;font-weight:400;opacity:0;text-decoration:none; }
   :is(h1,h2,h3,h4,h5,h6):hover .heading-anchor,.heading-anchor:focus-visible { opacity:1; }
   .callout > .callout-title { color:var(--color);font-weight:600;line-height:1.6; }

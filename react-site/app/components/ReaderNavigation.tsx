@@ -6,8 +6,10 @@ import { TopicIcon } from './Shell'
 
 export function ReaderToc({ toc, returnTo }: { toc: Note['toc']; returnTo: string }) {
   const [active, setActive] = useState('')
+  const [open, setOpen] = useState(true)
+  const entries = toc.filter(item => item.id !== '관련-개념')
   useEffect(() => {
-    const headings = toc.map(item => document.getElementById(item.id)).filter((node): node is HTMLElement => Boolean(node))
+    const headings = toc.filter(item => item.id !== '관련-개념').map(item => document.getElementById(item.id)).filter((node): node is HTMLElement => Boolean(node))
     let frame = 0
     const update = () => {
       frame = 0
@@ -23,13 +25,16 @@ export function ReaderToc({ toc, returnTo }: { toc: Note['toc']; returnTo: strin
     update()
     return () => { document.removeEventListener('scroll', schedule); cancelAnimationFrame(frame) }
   }, [toc])
-  if (!toc.length) return null
-  return <details className="reader-toc">
-    <summary>이 글의 순서 <span>{toc.filter(item => item.depth <= 2).length}</span></summary>
-    <nav aria-label="본문 목차"><ol>{toc.map(item => <li key={item.id} className={item.depth > 2 ? 'is-subheading' : undefined}>
+  if (!entries.length) return null
+  const rootDepth = Math.min(...entries.map(item => item.depth))
+  return <aside className="reader-toc" aria-label="목차">
+    <button className="reader-toc-toggle" type="button" aria-expanded={open} aria-controls="reader-toc-links" onClick={() => setOpen(value => !value)}>목차
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+    </button>
+    <nav id="reader-toc-links" aria-label="본문 목차" hidden={!open}><ol>{entries.map(item => <li key={item.id} style={{ paddingInlineStart: `${(item.depth - rootDepth) * 10}px` }}>
       <Link to={'#' + encodeURIComponent(item.id)} state={{ fromList: returnTo }} preventScrollReset aria-current={item.id === active ? 'location' : undefined}>{item.text}</Link>
     </li>)}</ol></nav>
-  </details>
+  </aside>
 }
 
 export function ReaderPagination({ note, returnTo }: { note: Pick<Note, 'view' | 'category' | 'routePath'>; returnTo: string }) {

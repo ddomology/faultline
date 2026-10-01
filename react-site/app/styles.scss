@@ -69,6 +69,14 @@ button { color:inherit; }
 .topic-name { display:flex;align-items:flex-start;gap:8px;min-width:0;padding:9px 0;color:var(--darkgray);font-weight:600;font-size:14px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere; }
 .topic-icon { display:block;flex-shrink:0;margin-top:1px;color:var(--darkgray); }
 .topic-icon-accent { stroke:var(--red); }
+.topic-browser .topic-icon { color:var(--gray); }
+.topic-browser .topic-icon-accent { stroke:var(--topic-icon-accent,currentColor); }
+.topic-name:focus-visible .topic-icon,
+.is-current-topic > .topic-row .topic-icon,
+.topic-row:has(> .topic-expand[aria-expanded="true"]) .topic-icon { color:var(--dark);--topic-icon-accent:var(--red); }
+@media(hover:hover) and (pointer:fine) {
+  .topic-row:hover .topic-icon { color:var(--dark);--topic-icon-accent:var(--red); }
+}
 .topic-number,.topic-note-number { flex-shrink:0;color:var(--gray);font-family:var(--codeFont);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;white-space:nowrap; }
 .topic-count { display:flex;align-items:center;justify-content:flex-end;min-height:40px;padding-right:4px;color:var(--gray);font-family:var(--codeFont);font-size:11px; }
 .topic-children { margin:4px 0 10px 13px;padding-left:10px;border-left:1px solid var(--explorer-rule); }
