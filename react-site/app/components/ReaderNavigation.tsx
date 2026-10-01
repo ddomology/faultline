@@ -22,9 +22,11 @@ export function ReaderToc({ toc, returnTo }: { toc: Note['toc']; returnTo: strin
     let anchorId = ''
     try { anchorId = decodeURIComponent(location.hash.slice(1)) } catch { /* Ignore malformed fragments. */ }
     let anchor = sections.find(item => item.id === anchorId)
+    const wide = window.matchMedia('(min-width: 1440px)')
     let frame = 0
     const update = () => {
       frame = 0
+      if (!wide.matches) return
       const tops = sections.map(item => item.element.getBoundingClientRect().top)
       const articleBottom = article.getBoundingClientRect().bottom
       const visible = sections.filter((_, index) => tops[index] < innerHeight && (ends[index]?.getBoundingClientRect().top ?? articleBottom) > 0).map(item => item.id)
@@ -46,16 +48,22 @@ export function ReaderToc({ toc, returnTo }: { toc: Note['toc']; returnTo: strin
       const active = current?.id || ''
       setPosition(previous => previous.active === active && previous.visible.length === visible.length && previous.visible.every((id, index) => id === visible[index]) ? previous : { active, visible })
     }
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update) }
+    const schedule = () => { if (wide.matches && !frame) frame = requestAnimationFrame(update) }
     const observer = new ResizeObserver(schedule)
-    observer.observe(article)
-    observer.observe(document.documentElement)
+    // Observe only the article while the TOC is displayed. Watching the root
+    // also reacts to unrelated route/layout changes and can loop in WebKit.
+    const observeArticle = () => {
+      observer.disconnect()
+      if (wide.matches) { observer.observe(article); schedule() }
+    }
     document.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
-    schedule()
+    wide.addEventListener('change', observeArticle)
+    observeArticle()
     return () => {
       document.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
+      wide.removeEventListener('change', observeArticle)
       observer.disconnect()
       cancelAnimationFrame(frame)
     }
