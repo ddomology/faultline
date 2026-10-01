@@ -37,8 +37,10 @@ button { color:inherit; }
 .sidebar { position:sticky;top:0;height:100vh;height:100dvh;width:100%;min-width:0;padding:28px 20px;background:var(--sidebar-bg);border-right:1px solid var(--lightgray); }
 .site-content { width:100%;max-width:1140px;min-width:0;padding:0 40px;margin-inline:auto; }
 .center { min-width:0; }
-.notebook-nav { display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:76px;margin:0 0 28px;border-bottom:1px solid var(--lightgray); }
+.notebook-nav { display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:76px;margin:0 0 28px;padding-block:12px;border-bottom:1px solid var(--lightgray); }
+.notebook-identity { display:flex;flex:0 1 252px;flex-direction:column;align-items:flex-start;gap:5px;min-width:0; }
 .notebook-brand { display:inline-flex;align-items:center;gap:10px;color:var(--dark);font-size:17px;font-weight:650;letter-spacing:-.025em;white-space:nowrap; }
+.notebook-tagline { margin:0;color:var(--gray);font-size:12px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere; }
 .notebook-brand-mark { display:block;flex-shrink:0; }
 .notebook-brand-mark .shield { stroke:var(--dark); }
 .notebook-brand-mark .slash { fill:var(--red); }
@@ -96,12 +98,8 @@ button { color:inherit; }
 .article-title { margin:0;color:var(--dark);font-size:32px;font-weight:700;letter-spacing:-.035em;line-height:1.4;word-break:keep-all;overflow-wrap:anywhere; }
 .article-subtitle { max-width:72ch;margin:14px 0 0;color:var(--gray);font-size:15px;line-height:1.65;overflow-wrap:anywhere; }
 .notebook-return { display:inline-flex;align-items:center;min-height:40px;margin-bottom:14px;color:var(--gray);font-size:14px; }
-.center > article table { display:block;max-width:100%;overflow-x:auto;border-collapse:collapse; }
-.center > article table :is(th,td) { padding:10px 14px;border:1px solid var(--md-rule);font-size:14px;line-height:1.7;vertical-align:top; }
-.center > article table th { background:var(--md-surface);color:var(--dark); }
 
-.library-title { margin:24px 0 8px;color:var(--dark);font-size:26px;font-weight:650;letter-spacing:-.025em;line-height:1.4; }
-.library-description { margin:0 0 22px;color:var(--gray);font-size:14px;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere; }
+.library-title { margin:24px 0 22px;color:var(--dark);font-size:26px;font-weight:650;letter-spacing:-.025em;line-height:1.4; }
 .view-switch { display:flex;gap:24px;margin-bottom:28px;border-bottom:1px solid var(--lightgray); }
 .view-switch a { display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:10px 0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--gray);font-size:14px; }
 .view-switch a[aria-current],.view-switch a.active { border-bottom-color:var(--dark);color:var(--dark);font-weight:650; }

@@ -68,7 +68,6 @@ export default function Home() {
   }, [shown.length])
   return <section className="lab-explorer" aria-label={`${title} 목록`}>
     <h1 className="library-title">{title}</h1>
-    <p className="library-description">{catalog.brand.tagline}</p>
     <nav className="view-switch" aria-label="목록 선택">
       <Link to={libraryHref({ ...query, view: 'notes', limit: PAGE_SIZE })} aria-current={!concepts ? 'page' : undefined}>포트스위거 풀이 노트 <span>{catalog.counts.notes}</span></Link>
       <Link to={libraryHref({ ...query, view: 'concepts', limit: PAGE_SIZE })} aria-current={concepts ? 'page' : undefined}>개념 노트 <span>{catalog.counts.concepts}</span></Link>
