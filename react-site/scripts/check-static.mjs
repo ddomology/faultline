@@ -84,8 +84,6 @@ for (const item of release.releases.flatMap(release => release.assets)) {
   assert.equal(bytes.length, item.bytes)
   assert.equal(createHash('sha256').update(bytes).digest('hex'), item.sha256)
 }
-if (release.legacy) {
-  assert.equal(createHash('sha256').update(readFileSync(join(dist, 'index.css'))).digest('hex'), release.legacy.css.sha256)
-  for (const file of ['prescript.js', 'postscript.js', ...release.legacy.scripts]) assert.ok(readFileSync(join(dist, file), 'utf8').includes(buildId))
-}
+assert.equal(Object.hasOwn(release, 'legacy'), false, 'Obsolete deployment adapter metadata survived')
+assert.ok(!readdirSync(dist).some(path => /^(index(?:\.[a-f0-9]+)?\.css|(?:pre|post)script(?:\.[a-f0-9]+)?\.js)$/.test(path)), 'Obsolete deployment assets survived')
 console.log(`SEO and release check: ${manifest.legacyRedirects.length} legacy redirects; ${release.releases.length} retained release(s).`)

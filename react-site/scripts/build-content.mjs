@@ -301,7 +301,7 @@ export async function buildContent({ outputDir = join(appRoot, '.generated') } =
     sourceHashes, assetHashes,
     contentHash: sha256(JSON.stringify({ sourceHashes, assetHashes })),
     legacyRedirects: legacyRedirects(sources, notes),
-    renderer: { stage: 3, features: ['commonmark', 'gfm', 'heading-anchors', 'safe-raw-html', 'local-attachments', 'canonical-markdown-links', 'syntax-highlighting', 'code-format-and-copy', 'obsidian-callouts', 'wikilinks-and-image-embeds', 'math', 'image-dimensions', 'reader-interactions'], pending: ['mermaid-diagrams', 'note-transclusion'] },
+    renderer: { features: ['commonmark', 'gfm', 'heading-anchors', 'safe-raw-html', 'local-attachments', 'canonical-markdown-links', 'syntax-highlighting', 'code-format-and-copy', 'obsidian-callouts', 'wikilinks-and-image-embeds', 'math', 'image-dimensions', 'reader-interactions'], pending: ['mermaid-diagrams', 'note-transclusion'] },
     compatibility, unresolvedLinks,
   };
   mkdirSync(outputDir, { recursive: true });

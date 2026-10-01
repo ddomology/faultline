@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { format as formatSql } from "sql-formatter"
-import { FORMAT_LANGUAGES, formatCode, getCodeFormatLanguage } from "../site/code-format.ts"
+import { FORMAT_LANGUAGES, formatCode, getCodeFormatLanguage } from "../scripts/code-format.ts"
 
 // These are text-only formatter inputs. No example is evaluated or executed.
 const samples = {

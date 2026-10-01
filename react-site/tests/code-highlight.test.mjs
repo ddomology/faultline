@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createReaderHighlighter, readerCodeThemes } from "../_quartz/quartz/plugins/transformers/code-highlight.ts";
+import { createReaderHighlighter, readerCodeThemes } from "../scripts/code-highlight.ts";
 
 const highlighter = await createReaderHighlighter({
   themes: Object.values(readerCodeThemes),

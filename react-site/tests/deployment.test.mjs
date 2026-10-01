@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import vm from 'node:vm'
-import { retainAssets, legacyBridge } from '../scripts/retain-assets.mjs'
+import { retainAssets } from '../scripts/retain-assets.mjs'
 import { legacyRedirects, redirectHtml, sitemapXml, feedXml } from '../scripts/site-metadata.mjs'
 const descriptor = (path, text) => ({ path, bytes: Buffer.byteLength(text), sha256: createHash('sha256').update(text).digest('hex') })
 
@@ -40,25 +40,27 @@ test('retention refuses missing, altered or escaping assets instead of publishin
   }
 });
 
-test('Quartz cached HTML keeps its CSS and gets one versioned document transition', async t => {
+test('retention copies only versioned assets and discards obsolete adapter metadata', async t => {
   const directory = fixture(t)
-  const result = await retainAssets({ directory, fromUrl: 'https://example.test/site/', fetcher: fetcher({ '': '<link href="index.css"><script src="prescript.js"></script>', 'index.css': 'body{color:#222}', 'prescript.js': 'old pre', 'postscript.js': 'old post' }) })
-  assert.equal(readFileSync(join(directory, 'index.css'), 'utf8'), 'body{color:#222}')
-  assert.ok(result.legacy)
-  let moved = ''
-  const location = { href: 'https://example.test/site/note.html?topic=notes#한글', replace: value => { moved = value } }
-  vm.runInNewContext(legacyBridge('new'), { URL, window: {}, location })
-  const target = new URL(moved)
-  assert.equal(target.searchParams.get('topic'), 'notes')
-  assert.equal(target.searchParams.get('_flv'), 'new')
-  assert.equal(decodeURIComponent(target.hash), '#한글')
-  moved = ''
-  vm.runInNewContext(legacyBridge('new'), { URL, window: {}, location: { ...location, href: target.href } })
-  assert.equal(moved, '')
+  const previous = {
+    schemaVersion: 1,
+    releases: [{ id: 'old', assets: [descriptor('assets/old.js', 'old')] }],
+    legacy: { css: descriptor('index.css', 'unused'), scripts: ['prescript.js'] },
+  }
+  const files = { '_deployment.json': JSON.stringify(previous), 'assets/old.js': 'old' }
+  const result = await retainAssets({ directory, fromUrl: 'https://example.test/site/', fetcher: async url => {
+    assert.ok(Object.hasOwn(files, new URL(url).pathname.replace('/site/', '')), 'Requested an obsolete adapter asset')
+    return fetcher(files)(url)
+  } })
+  assert.deepEqual(result.releases.map(release => release.id), ['new', 'old'])
+  assert.equal(Object.hasOwn(result, 'legacy'), false)
+  assert.deepEqual(readdirSync(directory).sort(), ['_deployment.json', 'assets'])
 });
 
-test('missing React release manifest is an error, while a genuinely new site is supported', async t => {
-  await assert.rejects(retainAssets({ directory: fixture(t), fromUrl: 'https://example.test/site/', fetcher: fetcher({ '': '<meta name="faultline-build" content="old">' }) }), /manifest/)
+test('missing release manifest is an error, while a genuinely new site is supported', async t => {
+  for (const html of ['<meta name="faultline-build" content="old">', '<title>Existing site</title>']) {
+    await assert.rejects(retainAssets({ directory: fixture(t), fromUrl: 'https://example.test/site/', fetcher: fetcher({ '': html }) }), /manifest/)
+  }
   const result = await retainAssets({ directory: fixture(t), fromUrl: 'https://example.test/site/', fetcher: fetcher({}) })
   assert.equal(result.releases.length, 1)
 });

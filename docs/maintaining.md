@@ -56,9 +56,9 @@ SQL은 절의 키워드·내용과 짧은 컬럼 목록을 88자 안에서 같�
 | TOML | Taplo |
 | SQL과 PostgreSQL·MySQL·Oracle·SQL Server 등 20개 SQL 표기 | SQL Formatter, 코드 펜스의 언어로 방언 지정 |
 
-문법 강조는 고정된 Shiki 1.26.2의 218개 언어를 지원합니다. PowerShell·HTTP처럼 자동 정렬 대상이 아닌 코드도 강조·복사·긴 줄 표시를 사용할 수 있습니다. `psm1`, `psd1`, `https`, `svg`와 SQL 방언 등 자주 쓰는 표기도 해당 강조 문법으로 연결합니다. 정확한 정렬 지원 언어와 별칭은 `site/code-format.ts`에 있습니다.
+문법 강조는 고정된 Shiki 1.26.2의 218개 언어를 지원합니다. PowerShell·HTTP처럼 자동 정렬 대상이 아닌 코드도 강조·복사·긴 줄 표시를 사용할 수 있습니다. `psm1`, `psd1`, `https`, `svg`와 SQL 방언 등 자주 쓰는 표기도 해당 강조 문법으로 연결합니다. 정확한 정렬 지원 언어와 별칭은 `react-site/scripts/code-format.ts`에 있습니다.
 
-밝은·어두운 테마 모두 `site/code-highlight.ts`의 팔레트를 자동 적용합니다. GitHub 테마의 언어별 규칙을 유지하면서 문자열·키워드·함수의 색을 구분합니다. PowerShell은 빌드용 문법 사본에 옵션과 주요 실행 명령의 강조를 보완합니다. `pwsh` 언어 표기도 지원하며, 문자열·주석·연산자와 원문은 그대로 보존합니다.
+밝은·어두운 테마 모두 `react-site/scripts/code-highlight.ts`의 팔레트를 자동 적용합니다. GitHub 테마의 언어별 규칙을 유지하면서 문자열·키워드·함수의 색을 구분합니다. PowerShell은 빌드용 문법 사본에 옵션과 주요 실행 명령의 강조를 보완합니다. `pwsh` 언어 표기도 지원하며, 문자열·주석·연산자와 원문은 그대로 보존합니다.
 
 닫히지 않은 따옴표 등으로 시작하는 SQL 조각은 `~~~sql fragment`로 표시합니다. `~~~mysql fragment`처럼 SQL 방언 표기도 지원하며, `~~~sql-fragment`는 같은 모드의 별칭입니다. 조각에는 자동 정렬을 적용하지 않고 원문·줄바꿈·복사 내용을 유지합니다. 도구 모음에는 `SQL · 조각`처럼 표시됩니다.
 
@@ -97,9 +97,7 @@ npm run test:browser
 
 ## 복구
 
-React 전환 직전 화면으로 긴급 복구하려면 Actions → **Restore Quartz baseline** → **Run workflow**를 실행합니다. 이 워크플로는 전환 직전 커밋 `b8d8821f49ad666e60b7fdd6dce453b03b199654`와 고정된 Quartz 커밋으로 다시 빌드해 Pages에 배포합니다. 저장소의 `main`이나 노트 파일은 되돌리지 않습니다. 이후 추가한 글은 이 화면에 나타나지 않으며, 복구 전에 열려 있던 React 탭은 새로고침이 필요할 수 있습니다.
-
-이후 React 변경 자체를 되돌릴 때는 문제가 된 커밋을 되돌리는 PR을 만들어 검사를 통과시킨 후 병합합니다. 최근 성공 실행의 `faultline-site-snapshot`은 배포 결과 비교·복원 자료로 30일간 보관합니다. Quartz 복구 후 React로 다시 전환하려면 `main`의 **Publish Faultline**을 수동 실행합니다.
+문제가 된 커밋을 되돌리는 PR을 만들어 검사를 통과시킨 후 병합합니다. 최근 성공 실행의 `faultline-site-snapshot`은 배포 결과 비교·복원 자료로 30일간 보관합니다. 현재 `main`을 다시 배포하려면 Actions → **Publish Faultline** → **Run workflow**를 실행합니다.
 
 ## 화면을 수정할 때
 
@@ -113,11 +111,12 @@ React 전환 직전 화면으로 긴급 복구하려면 Actions → **Restore Qu
 | `react-site/app/components/ReaderBody.tsx` | 코드 도구·이미지 확대·본문 컴포넌트 |
 | `react-site/app/components/ReaderNavigation.tsx` | 목차와 이전·다음 글 |
 | `react-site/app/styles.scss`, `navigation.scss`, `library.scss`, `reader.scss` | 화면 스타일 |
+| `react-site/app/styles/` | 본문·이전/다음 글·이미지 확대 스타일 |
 | `react-site/scripts/reader-markdown.mjs` | 본문 변환·위키링크·첨부 경로 |
-| `site/code-format.ts`, `site/code-highlight.ts` | 빌드용 코드 정렬과 문법 강조 |
-| `react-site/scripts/retain-assets.mjs` | 이전 배포 에셋 보존·Quartz 호환 |
+| `react-site/scripts/code-format.ts`, `react-site/scripts/code-highlight.ts` | 빌드용 코드 정렬과 문법 강조 |
+| `react-site/scripts/retain-assets.mjs` | 직전 두 React 배포의 에셋 보존 |
 
-React Router가 이동과 문서 스크롤 복원을 관리합니다. 기존 Quartz의 `nav`, `prenav`, `notebookSetRoute`를 새 화면에 추가하지 않습니다. 이벤트와 관찰자는 React effect의 cleanup에서 해제합니다. 모바일 탐색창과 이미지 확대의 스크롤 잠금도 같은 수명 주기로 정리합니다.
+React Router가 이동과 문서 스크롤 복원을 관리합니다. 이벤트와 관찰자는 React effect의 cleanup에서 해제합니다. 모바일 탐색창과 이미지 확대의 스크롤 잠금도 같은 수명 주기로 정리합니다.
 
 ## 실습 목록 갱신
 
@@ -131,7 +130,7 @@ python scripts/import-portswigger-labs.py saved-all-practice.html --output data/
 
 ## 브랜드와 사이트 주소
 
-블로그 이름은 **Faultline**입니다. `site/brand.json`의 이름과 소개를 사이트 헤더·홈 소개·공유 메타데이터에 사용하고, 홈의 검색 설명은 `content/index.md`에 둡니다. PortSwigger는 풀이 노트에서 다루는 실습 자료의 이름으로 유지합니다.
+블로그 이름은 **Faultline**입니다. `site/brand.json`의 이름과 소개를 사이트 헤더·홈 소개·검색 설명·공유 메타데이터에 사용합니다. PortSwigger는 풀이 노트에서 다루는 실습 자료의 이름으로 유지합니다.
 
 현재 저장소와 배포 주소는 `ddomology/faultline`입니다. 주소 변경은 `react-site/site.config.mjs`의 기본값 또는 `FAULTLINE_BASE_PATH`, `FAULTLINE_SITE_ORIGIN`, `FAULTLINE_REPOSITORY_URL` 환경변수로 관리합니다. 실제 지원 변수명과 예시는 `react-site/README.md`를 확인하고 README·공유 이미지 링크도 함께 갱신합니다. 원본에 남은 예전 raw 이미지 주소는 빌드에서 현재 첨부 경로로 연결합니다. GitHub 저장소 이름 변경과 달리 예전 GitHub Pages 주소는 자동 연결되지 않습니다.
 
