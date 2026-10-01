@@ -252,9 +252,12 @@ export default function Shell({ catalog, deployment, children }: ShellProps) {
       </aside>
       <div className="site-content">
         <header className="notebook-nav" data-pending={pending}>
-          <Link className="notebook-brand" to="/" aria-label={`${catalog.brand.name} 홈`}>
-            <svg className="notebook-brand-mark" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true" dangerouslySetInnerHTML={{ __html: brandBody }} />{catalog.brand.name}
-          </Link>
+          <div className="notebook-identity">
+            <Link className="notebook-brand" to="/" aria-label={`${catalog.brand.name} 홈`}>
+              <svg className="notebook-brand-mark" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true" dangerouslySetInnerHTML={{ __html: brandBody }} />{catalog.brand.name}
+            </Link>
+            <p className="notebook-tagline">{catalog.brand.tagline}</p>
+          </div>
           <HeaderSearch view={view} />
           <nav className="notebook-nav-actions" aria-label="기본 탐색">
             <span className="navigation-loader" data-loading={pending} aria-hidden="true" title={pending ? "페이지를 불러오는 중" : undefined}>

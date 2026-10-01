@@ -24,9 +24,6 @@
   .callout > .callout-content > :first-child { margin-top:0; }
   .callout > .callout-content > :last-child { margin-bottom:16px; }
   details.callout > summary { cursor:pointer; }
-  .table-container > table { display:table;width:100%;border:0; }
-  .table-container > table :is(th,td) { border:0;border-bottom:1px solid var(--md-rule); }
-  .table-container > table tr:last-child td { border-bottom:0; }
   img { max-width:100%;height:auto; }
   .reader-image-trigger:disabled { opacity:1;cursor:default; }
   pre code [style*='--shiki-light'] { color:var(--shiki-light);font-style:var(--shiki-light-font-style,normal);font-weight:var(--shiki-light-font-weight,400); }

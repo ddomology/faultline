@@ -1,4 +1,4 @@
-// Reading typography and Markdown. Keep prose open; reserve surfaces for data.
+// Reading typography and Markdown. Keep prose and tables open.
 html:root {
   --md-surface:#f6f8fa;
   --md-inline:#f0f3f6;
@@ -149,19 +149,24 @@ html:root[saved-theme="dark"] {
   }
 
   .table-container {
-    max-width:100%;margin:24px 0;overflow-x:auto;border:1px solid var(--md-rule);
-    border-radius:6px;scrollbar-width:thin;scrollbar-color:var(--gray) transparent;
+    max-width:100%;margin:24px 0;overflow-x:auto;
+    scrollbar-width:thin;scrollbar-color:var(--gray) transparent;
     &:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
-    > table { width:100%;margin:0;padding:0;border-collapse:collapse;font-size:14px; }
-    :is(th,td) { padding:12px 16px;line-height:1.7;vertical-align:top; }
-    th { border-bottom:1px solid var(--md-rule);background:var(--md-surface);color:var(--dark);font-weight:600; }
-    td { border-bottom:1px solid var(--md-rule); }
-    tr { border:0; }
-    tbody tr:last-child > td { border-bottom:0; }
-    tbody tr:hover { background:var(--md-surface); }
+    > table { display:table;width:100%;margin:0;padding:0;border:0;border-collapse:collapse;font-size:15px; }
+    :is(th,td) {
+      padding:15px 12px;border:0;border-bottom:1px solid var(--lightgray);
+      text-align:left;line-height:1.75;vertical-align:top;
+      &:first-child { padding-left:0; }
+      &:last-child { padding-right:0; }
+    }
+    th { color:var(--dark);font-weight:600; }
+    thead th { padding-block:10px;border-bottom-color:var(--md-divider-strong);font-size:13px;line-height:1.6; }
     :is(th,td)[align="center"] { text-align:center; }
     :is(th,td)[align="right"] { text-align:right;font-variant-numeric:tabular-nums; }
-    :is(th,td) code { white-space:nowrap;word-break:normal;overflow-wrap:normal; }
+    :not(pre) > code {
+      padding:0;border:0;border-radius:0;background:none;color:inherit;
+      white-space:normal;word-break:normal;overflow-wrap:normal;
+    }
   }
   .math.math-display { max-width:100%;margin:24px 0;overflow-x:auto; }
   figure { max-width:100%;margin:28px 0; }
@@ -274,7 +279,7 @@ html:root[saved-theme="dark"] {
     h3 { font-size:19px; }
     :is(ul,ol) { padding-left:23px; }
     input[type="checkbox"] { margin-inline-start:-22px; }
-    .table-container :is(th,td) { padding:10px 12px; }
+    .table-container :is(th,td) { padding-block:12px; }
     .callout { padding-inline:14px; }
     pre > code:not(.mermaid) { font-size:13px; }
     pre > code:not(.mermaid) > [data-line] { padding-right:14px;padding-left:12px; }
