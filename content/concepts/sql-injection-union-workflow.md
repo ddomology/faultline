@@ -66,11 +66,27 @@ FROM pragma_table_info('users')-- -
 Gifts' UNION SELECT username, email FROM users-- -
 ```
 
-흐름은 **결과의 모양 확인 → 객체 이름 확인 → 열 이름 확인 → 데이터 조회**다. 이 예시는 SQLite의 메타데이터 이름을 쓴다. 다른 DBMS에서는 목록을 조회하는 대상이 다르며, 실제로 읽을 수 있는 데이터는 앱의 DB 계정 권한에 따른다.
+흐름은 **결과의 모양 확인 → 객체 이름 확인 → 열 이름 확인 → 데이터 조회**다.
+
+## 다른 DB에서도 같은 흐름일까
+
+`UNION`으로 두 조회를 합칠 때 열 수와 자료형을 맞추고, 앱에 표시되는 칸을 찾는 원리는 같다. 다만 위 입력은 SQLite의 목록과 함수를 사용하므로 다른 DB에 그대로 넣을 수는 없다.
+
+| DB | 테이블·뷰 이름을 보는 곳 | 열 이름을 보는 곳 |
+| --- | --- | --- |
+| SQLite | `sqlite_schema` | `pragma_table_info('users')` |
+| MySQL·PostgreSQL | `information_schema.tables` | `information_schema.columns` |
+| Oracle | 테이블은 `ALL_TABLES`, 뷰는 `ALL_VIEWS` | `ALL_TAB_COLUMNS` |
+
+`information_schema`는 메타데이터 영역이고 그 안의 `tables`가 테이블·뷰 목록이다. Oracle의 `ALL_TABLES`와 `ALL_VIEWS`도 목록을 보여 주는 뷰다. 여기서 `ALL`은 **현재 DB 계정이 접근할 수 있는 객체**를 뜻한다. 어느 목록을 쓰든 실제 데이터 조회는 그 계정의 권한에 따른다.
+
+또 Oracle 예제에서는 두 개의 `NULL`을 시험할 때 `UNION SELECT NULL, NULL FROM DUAL`처럼 쓸 수 있다. `DUAL`은 상수를 한 행으로 조회할 때 쓰는 Oracle의 기본 테이블이며, 테이블 목록은 아니다.
 
 ## 참고
 
 - [PortSwigger — SQL injection UNION attacks](https://portswigger.net/web-security/sql-injection/union-attacks)
 - [SQLite — The Schema Table](https://www.sqlite.org/schematab.html)
 - [SQLite — PRAGMA functions](https://www.sqlite.org/pragma.html#pragma_functions)
-
+- [MySQL — INFORMATION_SCHEMA](https://dev.mysql.com/doc/refman/8.4/en/information-schema-introduction.html)
+- [PostgreSQL — information_schema.tables](https://www.postgresql.org/docs/current/infoschema-tables.html)
+- [Oracle — ALL_TABLES](https://docs.oracle.com/en/database/oracle/oracle-database/26/refrn/ALL_TABLES.html), [ALL_VIEWS](https://docs.oracle.com/en/database/oracle/oracle-database/26/refrn/ALL_VIEWS.html), [ALL_TAB_COLUMNS](https://docs.oracle.com/en/database/oracle/oracle-database/26/refrn/ALL_TAB_COLUMNS.html), [DUAL](https://docs.oracle.com/en/database/oracle/oracle-database/26/sqlrf/Selecting-from-the-DUAL-Table.html)
