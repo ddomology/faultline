@@ -1,7 +1,7 @@
 // Strict static preview: no SPA catch-all. Missing paths return HTTP 404.
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
-import { resolve, extname, join, dirname } from 'node:path'
+import { resolve, extname, join, dirname, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { basePath } from '../site.config.mjs'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -14,7 +14,7 @@ export function staticServer({ directory = join(root, 'dist'), base = basePath }
       if (!url.pathname.startsWith(base)) throw new Error('Outside base')
       const decoded = decodeURIComponent(url.pathname.slice(base.length))
       const filename = resolve(directory, decoded || 'index.html')
-      if (filename !== resolve(directory) && !filename.startsWith(resolve(directory) + '/')) throw new Error('Outside root')
+      if (filename !== resolve(directory) && !filename.startsWith(resolve(directory) + sep)) throw new Error('Outside root')
       const info = await stat(filename)
       if (info.isDirectory() && !url.pathname.endsWith('/')) { res.writeHead(308,{Location:url.pathname+'/'+url.search});res.end();return }
       const file = info.isDirectory() ? join(filename,'index.html') : filename
