@@ -102,7 +102,7 @@ test('desktop Explorer keeps folders and independent collection scroll after nav
   await expect.poll(() => tree.evaluate(element => element.scrollTop)).toBe(650)
   await page.locator('.explorer-shortcuts a').filter({ hasText: '개념 노트' }).click()
   await expect(page.locator('.topic-browser')).toHaveAttribute('data-explorer-mode', 'concepts')
-  await expect(page.locator('.topic-empty')).toContainText('개념 노트')
+  await expect(page.locator('.topic-tree .topic-name').filter({ hasText: 'SQL 인젝션' })).toBeVisible()
   await page.locator('.explorer-shortcuts a').filter({ hasText: '풀이 노트' }).click()
   await expect(page.locator('.topic-children:not([hidden])')).toHaveCount(2)
   await expect.poll(() => tree.evaluate(element => element.scrollTop)).toBe(650)
