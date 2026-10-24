@@ -280,7 +280,7 @@
       "category": "sql-injection",
       "categoryTitle": "SQL injection",
       "difficulty": "Practitioner",
-      "solved": false,
+      "solved": true,
       "notePath": "labs/sql-injection/examining-the-database-lab-listing-database-contents-oracle.md",
       "noteUrl": null,
       "noteStatus": null,
