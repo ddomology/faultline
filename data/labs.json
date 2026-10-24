@@ -322,7 +322,7 @@
       "category": "sql-injection",
       "categoryTitle": "SQL injection",
       "difficulty": "Practitioner",
-      "solved": false,
+      "solved": true,
       "notePath": "labs/sql-injection/union-attacks-lab-retrieve-data-from-other-tables.md",
       "noteUrl": null,
       "noteStatus": null,
