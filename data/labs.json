@@ -308,7 +308,7 @@
       "category": "sql-injection",
       "categoryTitle": "SQL injection",
       "difficulty": "Practitioner",
-      "solved": false,
+      "solved": true,
       "notePath": "labs/sql-injection/union-attacks-lab-find-column-containing-text.md",
       "noteUrl": null,
       "noteStatus": null,
