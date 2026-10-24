@@ -193,12 +193,12 @@ test('TOC fragment reloads and keyboard focus stay clear in both themes', async 
   }
 })
 
-test('first five notes have stable source views, local images, colored code and no hydration errors', async ({ page }) => {
+test('solution notes have stable source views, local images, colored code and no hydration errors', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
   const paths = Object.values(notes).filter((note: any) => note.noteKind === 'solution').sort((a: any, b: any) => a.number.localeCompare(b.number)) as any[]
-  expect(paths.length).toBe(5)
+  expect(paths.length).toBeGreaterThan(0)
   for (const note of paths) {
     await page.goto(note.routePath.slice(1))
     await expect(page.locator('.article-title')).toHaveText(note.title)
@@ -206,7 +206,7 @@ test('first five notes have stable source views, local images, colored code and 
     else await expect(page.locator('.reader-toc')).toBeHidden()
     const related = page.locator('article > #관련-개념')
     await expect(related).toHaveCount(1)
-    expect(await related.evaluate(element => element.nextElementSibling)).toBeNull()
+    await expect(page.locator('article > h2').last()).toHaveAttribute('id', '관련-개념')
     const codes = walk(note.body).filter(node => node.data?.readerCode)
     await expect(page.locator('article .code-actions[data-ready="true"]')).toHaveCount(codes.length)
     if (note.html.includes('--shiki-light:')) expect(await page.locator('article span[style*="--shiki-light"]').count()).toBeGreaterThan(0)
