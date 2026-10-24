@@ -5,47 +5,59 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # Blind SQL injection with conditional responses
 
-## 문제 조건과 설명
+## 문제
 
-애플리케이션은 방문자를 분석하기 위한 **추적 쿠키의 값**을 SQL 조회에 넣는다. 이 입력에 blind SQL injection 취약점이 있다. 조회 결과와 SQL 오류는 응답에 표시되지 않지만, 조회가 한 행 이상을 반환하면 페이지에 `Welcome back` 문구가 나온다. 즉 데이터 자체는 보이지 않아도 **행의 존재 여부**는 응답 문구로 관찰할 수 있다.
+`TrackingId` 쿠키가 SQL 조회에 들어간다. 결과나 오류는 화면에 나오지 않지만, 조회가 행을 반환하면 `Welcome back!`이 표시된다. 주어진 `users(username, password)` 테이블에서 `administrator`의 비밀번호를 알아내 로그인하는 실습이다.
 
-**주어진 데이터와 완료 조건**
+[PortSwigger 실습](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses)
 
-별도의 `users` 테이블과 `username`, `password` 열이 있다는 사실은 공식 설명에 주어진다. `administrator` 계정의 비밀번호 값은 알려 주지 않는다. **완료 조건은 취약한 쿠키 값을 이용해 그 비밀번호를 알아내고, 실제로 관리자 계정으로 로그인하는 것**이다. 환영 문구를 한 번 띄우는 것만으로는 끝나지 않는다.
+## 풀이 기록
 
-**이 실습에서 응답을 읽는 방법**
+### 1. 응답 문구를 참·거짓 신호로 확인
 
-| 관찰 | 문제 설명에서 확실히 말하는 것 |
-| --- | --- |
-| `Welcome back`이 보임 | SQL 조회가 하나 이상의 행을 반환했다. |
-| 문구가 보이지 않음 | 해당 요청에서 행 반환 신호를 얻지 못했다. 그 이유는 기준 요청과 비교해 판단해야 한다. |
-| SQL 결과·오류 내용 | 페이지에 직접 나타나지 않는다. |
+`TrackingId`에 `' OR 1=1 -- -`를 넣자 `Welcome back!`이 표시됐다. 이후 원래 쿠키 값 뒤에 조건을 붙여 비교했다. `'1'='1'`일 때는 문구가 나오고 `'1'='2'`일 때는 나오지 않아, 조건의 결과를 이 문구로 구별할 수 있었다.
 
-따라서 먼저 같은 페이지에서 정상적인 쿠키 요청과 값을 바꾼 요청을 비교해 문구가 안정적으로 나타나는 조건을 확인해야 한다. 그다음 관리자 비밀번호에 관한 한 가지 질문만 쿠키의 SQL 조건에 반영하고, 문구의 유무를 통해 답을 추론할 수 있다. 비밀번호의 길이나 각 문자를 처음부터 안다고 가정하지 않고, **확인한 조건과 응답을 누적**해야 한다. 아래에는 실제 쿠키 이름, 요청, 응답 문구와 로그인 결과를 확인한 뒤 기록한다.
+~~~sql fragment
+<원래 TrackingId>' AND '1'='1' -- -
+<원래 TrackingId>' AND '1'='2' -- -
+~~~
 
-출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses)
+### 2. 비밀번호 길이 확인
 
-## 탐색 및 풀이 기록
+`LENGTH(password)`가 특정 숫자와 같은지 차례로 물었다. `administrator`에 대해 **20**일 때 `Welcome back!`이 나와 길이를 확인했다.
 
-<!-- 아직 이 실습의 요청·응답을 직접 기록하지 않았다. 위 표는 공식 문제 조건을 해석한 것이며, 비밀번호나 로그인 성공을 확인했다는 뜻은 아니다. -->
+~~~sql fragment
+<원래 TrackingId>' AND (SELECT LENGTH(password) FROM users WHERE username='administrator')=20 -- -
+~~~
 
-### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+### 3. 문자별 ASCII 이진 탐색
 
-### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+각 위치의 문자에 `ASCII`를 적용하고 중간값보다 큰지 비교했다. 참이면 탐색 범위의 하한을, 거짓이면 상한을 옮겼다. 출력 가능한 ASCII 범위에서 이 과정을 20번 반복해 비밀번호를 얻었다.
 
-## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+~~~sql fragment
+<원래 TrackingId>' AND (SELECT ASCII(SUBSTRING(password FROM 5 FOR 1)) FROM users WHERE username='administrator')>115 -- -
+~~~
 
-## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+처음 쓴 `SUBSTR(password,5,1)`은 쉼표 때문에 PowerShell의 `CookieContainer.Add()`에서 거부됐다. 이 실습에서는 쉼표가 없는 `SUBSTRING(password FROM 5 FOR 1)` 문법이 동작했다. 이번 인스턴스에서 추출한 값은 `ckcozdbt8d14jzjxpxx9`(20자)였고, 비밀번호 전체를 조건으로 다시 조회해 `검증 성공`을 확인했다.
+
+![20글자 비밀번호를 순서대로 추출하고 최종 검증한 PowerShell 결과](images/lab-conditional-responses/01-extracted-password.png)
+
+### 4. 관리자 로그인
+
+확인한 비밀번호로 로그인하자 계정 화면에 `administrator`가 표시됐다.
+
+![administrator 계정으로 로그인한 화면](images/lab-conditional-responses/02-administrator-login.png)
+
+## 정리
+
+SQL 결과가 화면에 직접 나타나지 않아도, `Welcome back!`의 유무로 조건 하나의 참·거짓을 알 수 있었다. 그 신호를 이용해 길이를 확인하고 각 문자의 ASCII 범위를 좁혀 관리자 비밀번호를 복원했다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)
