@@ -11,15 +11,17 @@ draft: false
 
 # SQL injection attack, listing the database contents on Oracle
 
-## 문제
+## 문제 조건과 설명
 
 상품 카테고리 필터에 SQL injection이 있다. Oracle에서 계정 테이블과 열 이름을 찾아 사용자 이름·비밀번호를 조회하고, `administrator`로 로그인해야 한다. 테이블과 열의 실제 이름은 주어지지 않았다.
 
 [PortSwigger 실습](https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-oracle)
 
-## 풀이 기록
+## 탐색 및 풀이 기록
 
-### 1. 주입과 열 개수 확인
+### 초기 관찰
+
+#### 주입과 열 개수 확인
 
 카테고리에 `' OR 1=1 -- -`를 넣자 다른 카테고리의 상품까지 표시됐다. 이어 `ORDER BY` 번호를 올렸을 때 1과 2는 통과했고, 3에서는 HTTP 500이 났다. 원래 조회의 반환 열을 **두 개**로 판단했다. HTTP 500의 서버 내부 원인은 확인하지 못했다.
 
@@ -27,7 +29,9 @@ draft: false
 ' ORDER BY 3-- -
 ~~~
 
-### 2. 테이블과 열 찾기
+### 실행 과정
+
+#### 테이블과 열 찾기
 
 두 열에 맞춰 Oracle의 `ALL_TABLES`를 조회했다.
 
@@ -50,7 +54,7 @@ draft: false
   WHERE owner = 'PETER' AND table_name = 'USERS_QMYYSW'-- -
 ~~~
 
-### 3. 계정 조회와 로그인
+#### 계정 조회와 로그인
 
 찾은 두 열을 상품 조회 결과의 출력 위치에 넣었다.
 
@@ -62,9 +66,13 @@ draft: false
 
 ![administrator 로그인 후 실습 완료 화면](images/lab-listing-database-contents-oracle/01-administrator-solved.png)
 
-## 정리
+## 최종 결과
 
 `ORDER BY` 오류로 반환 열 수를 확인한 뒤 `ALL_TABLES`에서 테이블을, `ALL_TAB_COLUMNS`에서 열을 찾았다. 확인한 이름으로 계정 행을 조회하고 `administrator`로 로그인해 실습을 완료했다. 이 인스턴스의 `USERS_QMYYSW`, `USERNAME_JSBEKU`, `PASSWORD_HTFYTU`는 조회 결과로 알아낸 이름이다.
+
+## 배운 점
+
+Oracle의 메타데이터에서 실제 테이블과 열 이름을 확인한 뒤 그 이름으로 조회해야 한다. 계정 테이블 이름의 접미사는 실습마다 달라질 수 있다.
 
 ## 관련 개념
 
