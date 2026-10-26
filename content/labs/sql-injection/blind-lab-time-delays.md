@@ -5,7 +5,8 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/blind/lab-time-delays"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # Blind SQL injection with time delays
@@ -28,20 +29,41 @@ note_kind: problem
 
 ## 탐색 및 풀이 기록
 
-<!-- 아직 이 실습의 요청 시간이나 응답을 직접 기록하지 않았다. 10초 지연을 확인했다는 관찰이 생기면 기준 요청과 함께 같은 파일에 이어서 적는다. -->
-
 ### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+
+입력 지점은 상품 페이지 요청의 `TrackingId` 쿠키였다. 원래 값으로 요청하면 HTTP 200, 본문 4304자였고 1.61초 걸렸다. 쿠키 값 끝에 `'`를 붙여도 HTTP 200, 본문 4304자로 **본문이 완전히 같았고**, 1.66초 걸렸다. 작은따옴표 입력만으로는 화면에서 차이를 읽을 수 없었다.
 
 ### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+
+같은 쿠키 값 뒤에 PostgreSQL의 `pg_sleep(3)`을 이어 붙여 시간을 비교했다.
+
+~~~sql fragment
+<원래 TrackingId>'||pg_sleep(3)--
+~~~
+
+정상 요청과 지연 요청을 번갈아 보냈다. 모든 응답은 HTTP 200이었고 본문 길이는 4304자로 같았다.
+
+| 요청 | 응답 시간 |
+| --- | --- |
+| 정상 | 1.61초, 1.46초, 1.38초 |
+| `pg_sleep(3)` | 5.18초, 4.58초, 4.43초 |
+
+지연 요청이 매번 약 3초 더 걸렸다. 이어 완료 조건인 10초 지연을 시험했다.
+
+~~~sql fragment
+<원래 TrackingId>'||pg_sleep(10)--
+~~~
+
+바로 앞 정상 요청은 1.78초, `pg_sleep(10)` 요청은 11.36초 걸렸다. 지연 요청도 HTTP 200, 본문 4304자였다.
 
 ## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+
+10초 지연 요청 후 다시 페이지를 열자 `Congratulations, you solved the lab!` 배너가 표시됐다. 실습을 완료했다.
 
 ## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+
+본문과 상태 코드가 같아도 SQL 조회가 응답 전에 실행되면 처리 시간이 신호가 된다. 정상 요청과 지연 요청을 반복해 비교하니 네트워크 변동과 약 3초의 의도적인 지연을 구별할 수 있었다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)

