@@ -1,0 +1,100 @@
+\documentclass{article}
+\usepackage{texloom}
+\begin{document}
+\TLScene{Collaborator hostname as a character machine}{1120}{620}{1}
+\TLSetup{\usepackage{kotex}\setlength{\textheight}{1100bp}\setlength{\textwidth}{1300bp}\setlength{\paperheight}{1300bp}\setlength{\paperwidth}{1450bp}}
+\TLTikZ{art}{
+\begin{tikzpicture}[x=1bp,y=-1bp]
+  \definecolor{paper}{HTML}{F8F9FB}
+  \definecolor{ink}{HTML}{252B33}
+  \definecolor{muted}{HTML}{5C6673}
+  \definecolor{rule}{HTML}{DCE1E7}
+  \definecolor{blue}{HTML}{216E91}
+  \definecolor{bluebg}{HTML}{E8F3F8}
+  \definecolor{green}{HTML}{23795D}
+  \definecolor{greenbg}{HTML}{E7F4EE}
+  \definecolor{amber}{HTML}{AC7120}
+  \definecolor{amberbg}{HTML}{FFF2DA}
+  \definecolor{white}{HTML}{FFFFFF}
+  \path[fill=paper,draw=none] (0,0) rectangle (1120,620);
+
+  % Hash the secret, encode it, and keep the first twenty characters.
+  \path[fill=ink,draw=none] (95,70) circle (40bp);
+  \node[anchor=center,text=white,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (95,70) {32B};
+  \draw[draw=muted,line width=2.5bp] (137,70) -- (179,70);
+  \path[fill=muted,draw=none] (177,65) -- (188,70) -- (177,75) -- cycle;
+  \path[fill=white,draw=rule,rounded corners=18bp,line width=1.5bp] (190,36) rectangle (300,104);
+  \node[anchor=center,text=ink,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (245,70) {SHA-1};
+  \draw[draw=muted,line width=2.5bp] (302,70) -- (344,70);
+  \path[fill=muted,draw=none] (342,65) -- (353,70) -- (342,75) -- cycle;
+  \path[fill=white,draw=rule,rounded corners=18bp,line width=1.5bp] (355,36) rectangle (485,104);
+  \node[anchor=center,text=ink,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (420,70) {base36};
+  \draw[draw=blue,line width=2.5bp] (487,70) -- (529,70);
+  \path[fill=blue,draw=none] (527,65) -- (538,70) -- (527,75) -- cycle;
+  \node[anchor=north west,text=muted,font=\sffamily\fontsize{17}{22}\selectfont] at (555,22) {왼쪽 20자만 사용};
+  \path[fill=bluebg,draw=blue,rounded corners=12bp,line width=1.5bp] (550,51) rectangle (774,101);
+  \path[fill=bluebg,draw=blue,rounded corners=12bp,line width=1.5bp] (781,51) rectangle (1005,101);
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (662,76) {key[0:10]};
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (893,76) {key[10:20]};
+
+  % Each ten-character half gets its own check character.
+  \draw[draw=blue,line width=2.5bp] (662,103) -- (662,147);
+  \draw[draw=blue,line width=2.5bp] (893,103) -- (893,147);
+  \node[anchor=center,text=muted,font=\sffamily\fontsize{16}{21}\selectfont] at (336,168) {각 10자의 문자 코드 합계 mod 36};
+  \path[fill=bluebg,draw=blue,rounded corners=10bp,line width=1.5bp] (550,148) rectangle (720,202);
+  \path[fill=amberbg,draw=amber,rounded corners=10bp,line width=1.5bp] (724,148) rectangle (775,202);
+  \path[fill=bluebg,draw=blue,rounded corners=10bp,line width=1.5bp] (782,148) rectangle (952,202);
+  \path[fill=amberbg,draw=amber,rounded corners=10bp,line width=1.5bp] (956,148) rectangle (1007,202);
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{18}{23}\selectfont] at (635,175) {앞 10자};
+  \node[anchor=center,text=amber,font=\ttfamily\bfseries\fontsize{19}{24}\selectfont] at (749,175) {C1};
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{18}{23}\selectfont] at (867,175) {뒤 10자};
+  \node[anchor=center,text=amber,font=\ttfamily\bfseries\fontsize{19}{24}\selectfont] at (981,175) {C2};
+
+  % The exact character order of the plaintext is visible in one strip.
+  \draw[draw=muted,line width=2.5bp] (779,204) -- (779,253);
+  \path[fill=muted,draw=none] (774,251) -- (779,262) -- (784,251) -- cycle;
+  \node[anchor=north west,text=muted,font=\sffamily\fontsize{16}{21}\selectfont] at (60,270) {변환할 평문};
+  \path[fill=bluebg,draw=blue,rounded corners=12bp,line width=1.5bp] (216,256) rectangle (602,314);
+  \path[fill=white,draw=rule,rounded corners=10bp,line width=1.5bp] (610,256) rectangle (682,314);
+  \path[fill=white,draw=rule,rounded corners=10bp,line width=1.5bp] (690,256) rectangle (850,314);
+  \path[fill=white,draw=rule,rounded corners=10bp,line width=1.5bp] (858,256) rectangle (930,314);
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{19}{24}\selectfont] at (409,285) {key\_hash (22자)};
+  \node[anchor=center,text=ink,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (646,285) {1g};
+  \node[anchor=center,text=ink,font=\ttfamily\bfseries\fontsize{19}{24}\selectfont] at (770,285) {counter};
+  \node[anchor=center,text=ink,font=\ttfamily\bfseries\fontsize{20}{25}\selectfont] at (894,285) {yz};
+
+  % Two alternating state paths, with a three-character worked example.
+  \node[anchor=north west,text=muted,font=\sffamily\fontsize{16}{21}\selectfont] at (60,365) {세 글자만 떼어 계산한 예: 평문 a b c, 무작위 시작값 d e};
+  \node[anchor=north west,text=blue,font=\sffamily\bfseries\fontsize{18}{23}\selectfont] at (60,411) {짝수 위치 0, 2};
+  \node[anchor=north west,text=green,font=\sffamily\bfseries\fontsize{18}{23}\selectfont] at (60,521) {홀수 위치 1};
+  \path[fill=blue,draw=none] (265,447) circle (26bp);
+  \path[fill=green,draw=none] (265,557) circle (26bp);
+  \node[anchor=center,text=white,font=\ttfamily\bfseries\fontsize{24}{29}\selectfont] at (265,447) {d};
+  \node[anchor=center,text=white,font=\ttfamily\bfseries\fontsize{24}{29}\selectfont] at (265,557) {e};
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{15}{19}\selectfont] at (265,480) {state[0]};
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{15}{19}\selectfont] at (265,590) {state[1]};
+  \draw[draw=blue,line width=3bp] (294,447) -- (353,447);
+  \path[fill=blue,draw=none] (351,442) -- (362,447) -- (351,452) -- cycle;
+  \draw[draw=green,line width=3bp] (294,557) -- (495,557);
+  \path[fill=green,draw=none] (493,552) -- (504,557) -- (493,562) -- cycle;
+
+  \path[fill=bluebg,draw=blue,rounded corners=18bp,line width=1.5bp] (365,405) rectangle (526,487);
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{16}{20}\selectfont] at (445,414) {위치 0};
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{22}{28}\selectfont] at (445,453) {a + d = d};
+  \draw[draw=blue,line width=3bp] (528,447) -- (747,447);
+  \path[fill=blue,draw=none] (745,442) -- (756,447) -- (745,452) -- cycle;
+  \node[anchor=south,text=blue,font=\sffamily\fontsize{15}{19}\selectfont] at (640,441) {출력 d가 다음 상태};
+  \path[fill=bluebg,draw=blue,rounded corners=18bp,line width=1.5bp] (758,405) rectangle (919,487);
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{16}{20}\selectfont] at (838,414) {위치 2};
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{22}{28}\selectfont] at (838,453) {c + d = f};
+
+  \path[fill=greenbg,draw=green,rounded corners=18bp,line width=1.5bp] (507,515) rectangle (668,597);
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{16}{20}\selectfont] at (587,524) {위치 1};
+  \node[anchor=center,text=green,font=\ttfamily\bfseries\fontsize{22}{28}\selectfont] at (587,563) {b + e = f};
+  \draw[draw=green,line width=3bp] (670,557) -- (875,557);
+  \path[fill=green,draw=none] (873,552) -- (884,557) -- (873,562) -- cycle;
+  \node[anchor=west,text=green,font=\sffamily\fontsize{17}{22}\selectfont] at (895,557) {다음 상태 f};
+
+\end{tikzpicture}}
+\TLNode{art-node}{tex}{"resourceId":"art","x":0,"y":620,"scale":1}
+\end{document}

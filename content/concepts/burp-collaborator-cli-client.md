@@ -8,28 +8,44 @@ note_kind: note
 
 # Burp Collaborator 공개 서버용 CLI 클라이언트 구현
 
-웹 응답에 결과가 드러나지 않는 테스트에서는 별도의 DNS 조회를 관찰 지점으로 쓸 수 있다. Burp Collaborator는 고유한 하위 도메인에 들어온 조회를 기록하고, 주소를 만든 클라이언트가 비밀값으로 해당 기록을 가져오게 한다. 여기서는 **공개 Collaborator 서버에 맞는 주소 생성과 수신 조회**만 다룬다. 어떤 입력으로 대상 시스템의 외부 상호작용을 유도할지는 이 클라이언트의 역할과 별개다.
+웹 응답에 결과가 드러나지 않는 테스트에서는 대상이 외부로 보낸 DNS 조회를 관찰할 수 있다. Burp Collaborator 공개 서버는 고유한 하위 도메인으로 들어온 조회를 기록한다. 클라이언트는 그 주소를 만들고, 나중에 자신만 가진 비밀값으로 기록을 가져온다. 이 글은 **주소 생성 → DNS 조회 확인 → 수신 기록 저장**까지의 CLI 구현을 설명한다.
 
-이 글의 Python 구현은 비공식 [OAST-Community 클라이언트](https://github.com/Groppoxx/OAST-Community)의 주소 생성 방식을 참고했다. PortSwigger가 보장하는 공개 API는 아니므로 서버의 주소 형식이나 조회 방식이 바뀌면 다시 검증해야 한다. PortSwigger는 비밀값에서 파생한 식별자가 요청에 포함되고, 비밀값은 HTTPS 조회에만 사용된다고 설명한다. [PortSwigger — Collaborator data security](https://portswigger.net/burp/documentation/collaborator/server/security)
+아래 Python 구현은 비공식 [OAST-Community 클라이언트](https://github.com/Groppoxx/OAST-Community)의 주소 생성 방식을 참고했다. **공식 SDK나 고정된 공개 API의 명세가 아니다.** 공개 서버의 형식이 바뀌면 자체 DNS 조회와 폴링으로 다시 확인해야 한다. PortSwigger는 비밀값에서 파생한 식별자를 요청에 사용하고, 비밀값은 HTTPS 조회에만 사용한다고 설명한다. [PortSwigger — Collaborator data security](https://portswigger.net/burp/documentation/collaborator/server/security)
 
-## 주소와 비밀값의 관계
+## 먼저 구분할 것: 주소와 BIID
 
-```text
-32바이트 난수 ──Base64──> BIID(로컬에 보관)
-       │
-       └──SHA-1·인코딩·검사 문자·암호화──> 고유 식별자.oastify.com
+![32바이트 비밀 난수에서 비공개 BIID와 공개 DNS 주소가 갈라지고, 각각 HTTPS 폴링과 DNS 조회에 쓰이는 과정](images/burp-collaborator-cli/01-two-identities.svg)
 
-DNS 조회 ──> 공개 Collaborator 서버에 기록
-BIID로 HTTPS 조회 ──> 그 식별자의 수신 기록 반환
-```
+처음에 만든 **32바이트 난수 하나**에서 두 값이 나온다.
 
-`BIID`는 수신 기록을 읽는 데 필요한 비밀값이다. 주소만 안다고 해당 기록을 조회할 수는 없다. 비밀값은 DNS 이름에 넣지 않고 로컬에 보관하며, 폴링 요청의 `biid` 매개변수로만 보낸다. [PortSwigger — Collaborator data security](https://portswigger.net/burp/documentation/collaborator/server/security)
+- **BIID:** 난수를 Base64 문자열로 표현한 값이다. Base64는 암호화가 아니므로 BIID를 비밀로 보관한다. 수신 기록을 읽을 때 HTTPS 폴링 요청의 `biid` 매개변수로 보낸다.
+- **공개 호스트 이름:** 같은 난수에서 여러 변환을 거쳐 만든 `식별자.oastify.com`이다. DNS 조회를 받을 주소이므로 외부에 드러나도 된다. 주소 문자열에 BIID를 직접 넣지 않는다.
 
-## 1. 비밀값에서 주소 만들기
+이 둘을 연결해 주는 쪽은 Collaborator 서버다. 누군가 공개 주소를 조회하면 서버가 상호작용을 기록하고, 클라이언트는 해당 BIID로 그 기록을 읽는다. 주소만으로 기록을 조회할 수는 없다. [PortSwigger — Collaborator data security](https://portswigger.net/burp/documentation/collaborator/server/security)
 
-먼저 암호학적 난수 32바이트를 만든다. 주소에 들어갈 키 해시는 원본 바이트의 SHA-1 다이제스트를 부호 없는 정수로 해석한 뒤, `a-z0-9` 순서의 36진 문자열로 바꾸어 만든다. 앞을 `a`로 채워 최소 20자로 만든 뒤 첫 20자를 쓴다.
+## 공개 주소를 만드는 다섯 단계
 
-그 20자를 열 글자씩 나누어 각 부분의 **문자 ASCII 코드 합계**를 36으로 나눈 나머지로 검사 문자를 붙인다. `alphabet.index(char)`의 합계가 아니라 `ord(char)`의 합계라는 점이 중요하다. 이렇게 만든 22자 뒤에 형식 문자 `1g`, 16진수 카운터와 `y`, 끝의 `z`를 이어 붙인다. 아래 코드는 첫 주소의 카운터를 `0`으로 시작한다.
+![SHA-1, 36진 변환, 검사 문자, 카운터, 두 상태 레지스터를 거쳐 공개 호스트 이름을 조립하는 다섯 단계](images/burp-collaborator-cli/02-hostname-construction.svg)
+
+1. **키 20자:** 원본 난수의 SHA-1 다이제스트를 부호 없는 정수로 읽고 `abcdefghijklmnopqrstuvwxyz0123456789` 순서의 36진 문자열로 바꾼다. 앞을 `a`로 채워 최소 20자로 만든 뒤 왼쪽 20자를 취한다.
+2. **검사 문자 두 개:** 키를 10자씩 나눈다. 각 조각의 문자 코드값(`ord`)을 모두 더하고 36으로 나눈 나머지를 알파벳의 인덱스로 사용한다. 각 조각 뒤에 검사 문자 하나씩 붙여 총 22자가 된다. 작은 예로 `a`, `b`의 코드값은 97, 98이므로 `(97 + 98) % 36 = 15`, `alphabet[15]`는 `p`다. 실제 계산 대상은 각 **10자 조각**이다.
+3. **형식 문자열:** 22자 뒤에 `1g`, 16진수 카운터, `yz`를 붙인다. 카운터를 `0`, `1`, `2`로 올리면 같은 BIID에 연결되는 새 주소를 만들 수 있다.
+4. **위치별 변환:** 무작위 문자 두 개를 뽑아 두 상태 레지스터의 초기값으로 쓴다. 평문의 짝수 위치는 첫째, 홀수 위치는 둘째 레지스터와 36진 인덱스를 더한다. 출력 문자를 해당 레지스터의 다음 상태로 바꾼다. 마지막에 이 두 난수 문자와 그 검사 문자를 변환 결과 앞에 붙인다. 여기서 검사 문자는 형식 검사값이지 비밀키가 아니다.
+5. **도메인 연결:** 완성된 식별자에 `.oastify.com`을 붙인다. 이 주소로 DNS 조회가 일어나면 서버에서 상호작용을 확인할 수 있다.
+
+네 번째 단계의 상태 갱신이 낯설다면 세 글자만 손으로 계산해 볼 수 있다. 아래는 **실제 주소 형식이 아닌 계산 예시**다. `a=0`, `b=1`, …인 36진 알파벳에서 초기 상태를 `d`, `e`, 평문을 `abc`로 둔다.
+
+| 위치 | 입력 | 사용한 상태 | 계산 | 출력 및 다음 상태 |
+| --- | --- | --- | --- | --- |
+| 0 | `a`(0) | 첫째 `d`(3) | `(0 + 3) % 36` | `d`; 첫째 상태가 `d` |
+| 1 | `b`(1) | 둘째 `e`(4) | `(1 + 4) % 36` | `f`; 둘째 상태가 `f` |
+| 2 | `c`(2) | 첫째 `d`(3) | `(2 + 3) % 36` | `f`; 첫째 상태가 `f` |
+
+첫째 상태는 위치 0과 2에서, 둘째 상태는 위치 1에서 사용된다. 코드의 `state[index % 2] = output`이 바로 이 갱신이다. 두 난수 문자 때문에 같은 평문이라도 주소의 겉모습은 달라질 수 있다.
+
+## Python으로 주소 생성하기
+
+위 다섯 단계를 그대로 옮기면 다음과 같다. `check_char`는 **알파벳 인덱스의 합**이 아니라 **문자 코드값의 합**을 쓴다. 아래 예제는 BIID를 출력하지 않는다.
 
 ```python
 import base64
@@ -76,11 +92,11 @@ hostname = make_hostname(secret, counter=0)
 print(hostname)  # BIID는 출력하지 않는다.
 ```
 
-암호화 단계는 두 개의 소금 문자로 상태 레지스터를 시작하고, 평문의 짝수·홀수 위치에 서로 다른 레지스터를 번갈아 적용한다. 매번 출력 문자를 다음 상태로 갱신한다. 마지막으로 두 소금 문자와 그 검사 문자를 암호문 앞에 붙인다. 같은 비밀값으로 새 주소를 만들 때는 카운터를 증가시키고, **BIID와 카운터를 함께 로컬에 보관**해야 한다.
+`make_hostname(secret, 0)`이 만든 첫 주소로 자체 조회를 한 다음 `make_hostname(secret, 1)`을 만들 수 있다. 실제 CLI는 실행을 나눠도 주소를 다시 읽을 수 있도록 **BIID, 다음 카운터, 이미 만든 주소**를 로컬 상태 파일에 저장한다.
 
-## 2. DNS 조회와 수신 기록 확인
+## DNS 조회와 폴링으로 검증하기
 
-생성된 이름을 DNS로 조회한 뒤 공개 서버의 폴링 주소에 BIID를 URL 인코딩해 보낸다. 실제 CLI에서는 응답의 `responses`를 **먼저 파일에 저장한 다음** 요약을 출력한다. 폴링한 이벤트는 서버에서 다시 반환되지 않을 수 있기 때문이다. [OAST-Community — Persistent Interaction History](https://github.com/Groppoxx/OAST-Community#persistent-interaction-history)
+먼저 **내 컴퓨터에서** 생성한 이름을 DNS로 조회한다. 이어서 공개 서버의 폴링 주소에 BIID를 URL 인코딩해 보낸다. 아래 코드는 두 동작의 최소 예시다. 전체 CLI에서는 폴링 응답의 `responses`를 **먼저 파일에 저장하고**, 그다음 요약을 출력한다. 읽은 이벤트가 다음 폴링에서 다시 돌아오지 않을 수 있기 때문이다. [OAST-Community — Persistent Interaction History](https://github.com/Groppoxx/OAST-Community#persistent-interaction-history)
 
 ```python
 import json
@@ -102,13 +118,13 @@ for item in interactions:
     print(item.get("protocol"), item.get("data", {}).get("subDomain"))
 ```
 
-DNS 이벤트의 `protocol`은 `dns`, `data.subDomain`은 실제로 조회된 호스트 이름이다. `A`와 `AAAA` 조회나 여러 리졸버의 요청으로 같은 주소가 여러 이벤트로 나타날 수 있다. 직접 만든 주소에 조회를 한 뒤 동일한 BIID로 폴링한 시험에서는 **DNS 이벤트 4건**이 수신되었다. 이 확인은 클라이언트의 주소 생성·조회 조합이 작동한다는 뜻이며, 대상 시스템에서 어떤 동작이 일어났다는 증거는 아니다.
+DNS 이벤트의 `protocol`은 `dns`, `data.subDomain`은 실제로 조회된 호스트 이름이다. `A`와 `AAAA` 조회나 여러 리졸버 때문에 같은 주소가 여러 이벤트로 나타날 수 있다. 자체 조회 뒤 같은 BIID로 폴링한 시험에서는 **DNS 이벤트 4건**이 수신되었다. 이는 주소 생성과 조회의 연결이 작동한다는 확인이며, 다른 시스템에서 조회가 발생했다는 뜻은 아니다.
 
-처음 구현할 때 키 해시의 검사 문자를 `alphabet.index(char)`의 합계로 계산하자 DNS 조회는 되었지만 해당 BIID의 폴링 결과가 비어 있었다. 이를 `sum(ord(char) for char in value)`로 고친 뒤 자체 DNS 이벤트가 반환되었다. **DNS 이름이 해석되는 것과 비밀값으로 그 이벤트를 읽을 수 있는 것은 별개 검증**이다.
+처음에는 검사 문자를 `alphabet.index(char)`의 합계로 계산했다. DNS 이름은 해석됐지만 해당 BIID의 폴링 결과가 비어 있었다. `sum(ord(char) for char in value)`로 고친 뒤 자체 조회 이벤트가 반환되었다. **DNS 해석 성공과 BIID로 이벤트 조회 성공을 각각 확인해야 한다.**
 
 ## 로컬 상태 관리
 
-CLI로 나누어 실행할 때는 BIID, 다음 카운터, 생성한 주소 목록을 사용자만 읽을 수 있는 로컬 상태 파일에 저장한다. 수신 기록은 폴링 직후 별도 로그에 저장한다. 상태 파일을 Git에 커밋하거나 BIID를 실행 로그에 출력하면 다른 사람이 수신 기록을 조회할 수 있으므로 피한다. `*.oastify.com`과 `polling.oastify.com`은 여기서 검증한 공개 서버 조합이며, 제공 도메인은 바뀔 수 있다. [PortSwigger — Getting started with Burp Collaborator](https://portswigger.net/burp/documentation/desktop/tools/collaborator/getting-started)
+CLI를 여러 번 실행한다면 BIID, 다음 카운터, 만든 주소 목록을 사용자만 읽을 수 있는 로컬 상태 파일에 저장한다. 폴링 결과는 받은 직후 별도 로그에 기록한다. BIID가 담긴 상태 파일은 Git에 커밋하거나 화면에 출력하지 않는다. `*.oastify.com`과 `polling.oastify.com`은 여기서 검증한 공개 서버 조합이며, 제공 도메인은 바뀔 수 있다. [PortSwigger — Getting started with Burp Collaborator](https://portswigger.net/burp/documentation/desktop/tools/collaborator/getting-started)
 
 ## 참고 구현의 라이선스
 
