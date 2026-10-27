@@ -1,0 +1,78 @@
+\documentclass{article}
+\usepackage{texloom}
+\begin{document}
+\TLScene{Secret forks into address and BIID}{1120}{560}{1}
+\TLSetup{\usepackage{kotex}\setlength{\textheight}{1100bp}\setlength{\textwidth}{1300bp}\setlength{\paperheight}{1300bp}\setlength{\paperwidth}{1450bp}}
+\TLTikZ{art}{
+\begin{tikzpicture}[x=1bp,y=-1bp]
+  \definecolor{paper}{HTML}{F8F9FB}
+  \definecolor{ink}{HTML}{252B33}
+  \definecolor{muted}{HTML}{5C6673}
+  \definecolor{rule}{HTML}{DCE1E7}
+  \definecolor{blue}{HTML}{216E91}
+  \definecolor{bluebg}{HTML}{E8F3F8}
+  \definecolor{green}{HTML}{23795D}
+  \definecolor{greenbg}{HTML}{E7F4EE}
+  \definecolor{white}{HTML}{FFFFFF}
+  \path[fill=paper,draw=none] (0,0) rectangle (1120,560);
+
+  \path[fill=ink,draw=none] (137,193) circle (79bp);
+  \foreach \x/\y in {94/160,116/160,138/160,94/182,116/182,138/182,94/204,116/204,138/204} {
+    \path[fill=white,draw=none,rounded corners=3bp] (\x,\y) rectangle +(12,12);
+  }
+  \node[anchor=north,text=ink,font=\sffamily\bfseries\fontsize{23}{29}\selectfont] at (137,300) {32바이트 난수};
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{17}{22}\selectfont] at (137,336) {한 번 생성};
+
+  \draw[draw=blue,line width=4bp] (205,165) .. controls (265,165) and (244,103) .. (298,103);
+  \path[fill=blue,draw=none] (297,97) -- (309,103) -- (297,109) -- cycle;
+  \path[fill=bluebg,draw=blue,rounded corners=23bp,line width=1.5bp] (315,63) rectangle (454,143);
+  \node[anchor=center,text=blue,font=\ttfamily\bfseries\fontsize{24}{30}\selectfont] at (384,103) {Base64};
+  \draw[draw=blue,line width=4bp] (455,103) -- (510,103);
+  \path[fill=blue,draw=none] (509,97) -- (521,103) -- (509,109) -- cycle;
+
+  \path[fill=white,draw=blue,rounded corners=20bp,line width=2bp] (526,43) rectangle (756,163);
+  \path[fill=bluebg,draw=none] (570,94) circle (31bp);
+  \draw[draw=blue,line width=3bp] (558,83) .. controls (558,61) and (582,61) .. (582,83);
+  \path[fill=blue,draw=none,rounded corners=3bp] (553,82) rectangle (587,107);
+  \node[anchor=north west,text=ink,font=\sffamily\bfseries\fontsize{25}{31}\selectfont] at (610,68) {BIID};
+  \node[anchor=north west,text=muted,font=\sffamily\fontsize{17}{22}\selectfont] at (610,106) {로컬에 보관};
+  \node[anchor=north west,text=blue,font=\ttfamily\fontsize{17}{22}\selectfont] at (548,137) {Base64(secret)};
+
+  \draw[draw=blue,line width=3bp] (757,103) -- (835,103) .. controls (881,103) and (900,164) .. (913,192);
+  \path[fill=blue,draw=none] (907,185) -- (916,197) -- (919,184) -- cycle;
+  \node[anchor=north,text=blue,font=\sffamily\bfseries\fontsize{18}{23}\selectfont] at (822,139) {HTTPS 폴링};
+
+  \draw[draw=green,line width=4bp] (205,231) .. controls (265,231) and (244,412) .. (298,412);
+  \path[fill=green,draw=none] (297,406) -- (309,412) -- (297,418) -- cycle;
+  \path[fill=greenbg,draw=green,rounded corners=23bp,line width=1.5bp] (315,372) rectangle (454,452);
+  \node[anchor=center,text=green,font=\sffamily\bfseries\fontsize{22}{28}\selectfont] at (384,412) {주소 변환};
+  \draw[draw=green,line width=4bp] (455,412) -- (510,412);
+  \path[fill=green,draw=none] (509,406) -- (521,412) -- (509,418) -- cycle;
+
+  \path[fill=white,draw=green,rounded corners=20bp,line width=2bp] (526,352) rectangle (756,472);
+  \path[fill=greenbg,draw=none] (570,402) circle (31bp);
+  \draw[draw=green,line width=2bp] (570,402) circle (29bp);
+  \draw[draw=green,line width=2bp] (541,402) -- (599,402);
+  \draw[draw=green,line width=2bp] (570,373) .. controls (558,389) and (558,417) .. (570,431);
+  \draw[draw=green,line width=2bp] (570,373) .. controls (582,389) and (582,417) .. (570,431);
+  \node[anchor=north west,text=ink,font=\sffamily\bfseries\fontsize{23}{29}\selectfont] at (610,376) {공개 주소};
+  \node[anchor=north west,text=muted,font=\sffamily\fontsize{16}{21}\selectfont] at (610,412) {DNS 조회에 사용};
+  \node[anchor=north west,text=green,font=\ttfamily\fontsize{17}{22}\selectfont] at (548,446) {id.oastify.com};
+
+  \draw[draw=green,line width=3bp] (757,412) -- (835,412) .. controls (881,412) and (900,356) .. (913,331);
+  \path[fill=green,draw=none] (907,336) -- (916,325) -- (918,339) -- cycle;
+  \node[anchor=north,text=green,font=\sffamily\bfseries\fontsize{18}{23}\selectfont] at (824,454) {DNS 조회};
+
+  \path[fill=white,draw=rule,rounded corners=22bp,line width=1.8bp] (919,187) rectangle (1080,344);
+  \path[fill=ink,draw=none] (999,218) ellipse (39bp and 12bp);
+  \path[fill=ink,draw=none] (960,218) rectangle (1038,274);
+  \path[fill=ink,draw=none] (999,274) ellipse (39bp and 12bp);
+  \draw[draw=white,line width=2bp] (962,244) .. controls (982,255) and (1016,255) .. (1036,244);
+  \path[fill=blue,draw=none] (983,274) circle (4bp);
+  \path[fill=green,draw=none] (999,274) circle (4bp);
+  \path[fill=blue,draw=none] (1015,274) circle (4bp);
+  \node[anchor=north,text=ink,font=\sffamily\bfseries\fontsize{19}{24}\selectfont] at (999,296) {수신 기록};
+  \node[anchor=north,text=muted,font=\sffamily\fontsize{15}{20}\selectfont] at (999,321) {Collaborator};
+\end{tikzpicture}}
+\TLNode{art-node}{tex}{"resourceId":"art","x":0,"y":560,"scale":1}
+\end{document}
