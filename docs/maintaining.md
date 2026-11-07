@@ -134,6 +134,8 @@ python scripts/import-portswigger-labs.py saved-all-practice.html --output data/
 
 목록 개수가 달라지면 README의 주제·실습 개수도 함께 갱신합니다. 이 숫자는 등록한 실습 수이며 풀이 완료 수와 다릅니다.
 
+사이트의 주제 표시 순서는 [PortSwigger All topics](https://portswigger.net/web-security/all-topics)에 맞춘 `site/topic-order.json`에서 관리합니다. 이 파일에는 `data/labs.json`의 주제 ID를 나열하며, 주제 안의 실습 순서는 가져온 목록을 따릅니다. 새 주제를 등록하면 이 순서 파일에도 추가합니다.
+
 ## 브랜드와 사이트 주소
 
 블로그 이름은 **Faultline**입니다. `site/brand.json`의 이름과 소개를 사이트 헤더·홈 소개·검색 설명·공유 메타데이터에 사용합니다. PortSwigger는 풀이 노트에서 다루는 실습 자료의 이름으로 유지합니다.
