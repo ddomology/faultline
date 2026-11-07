@@ -219,13 +219,18 @@ function contentDates() {
 
 export async function buildContent({ outputDir = join(appRoot, '.generated') } = {}) {
   const labCatalog = readJson('data/labs.json');
+  // Use https://portswigger.net/web-security/all-topics for display order;
+  // keep the imported All labs snapshot and each topic's lab order intact.
+  const topicOrder = new Map(readJson('site/topic-order.json').map((id, index) => [id, index]));
   const titles = readJson('site/lab-titles.json');
   const explorerTitles = readJson('site/explorer-titles.json');
   const brand = readJson('site/brand.json');
   const dates = contentDates();
   const byLabUrl = new Map(labCatalog.labs.map(lab => [normalizeLabUrl(lab.url), lab]));
   const byLabPath = new Map(labCatalog.labs.map(lab => [lab.notePath, lab]));
-  const categories = labCatalog.categories.map((category, index) => ({ id: category.id, title: category.title, number: pad(index + 1), count: 0 }));
+  const categories = [...labCatalog.categories]
+    .sort((a, b) => (topicOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (topicOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER))
+    .map((category, index) => ({ id: category.id, title: category.title, number: pad(index + 1), count: 0 }));
   const byCategory = new Map(categories.map(category => [category.id, category]));
   const labNumbers = new Map();
   for (const category of categories) {
