@@ -425,7 +425,7 @@ var render=function(){
  $('next').disabled=$('mobileNext').disabled=finished;
  $('wake').checked=!!state.wake;$('sound').checked=!!state.sound;
  $('mobileStep').textContent='STEP '+(i+1)+' · '+s.n;
- if(i<7){$('upcomingLabel').textContent='UP NEXT · '+steps[i+1].m+' MIN';$('upcomingTitle').textContent=steps[i+1].n;$('previewNext').disabled=false;$('previewNext').textContent='다음 단계 보기 →';}
+ if(i<7){$('upcomingLabel').textContent='UP NEXT · '+steps[i+1].m+' MIN';$('upcomingTitle').textContent=steps[i+1].n;$('previewNext').disabled=false;$('previewNext').textContent='다음 단계로 이동 →';}
  else{$('upcomingLabel').textContent='FINISH';$('upcomingTitle').textContent='맛있게 드세요!';$('previewNext').disabled=finished;$('previewNext').textContent='조리 완료 ✓';}
  var weighted=0;steps.forEach(function(step,j){if(state.done.includes(j))weighted+=step.m;});
  if(!state.done.includes(i))weighted+=Math.min(steps[i].m,elapsed(i)/60000);
